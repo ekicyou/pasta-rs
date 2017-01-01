@@ -5,19 +5,6 @@ use std::collections::HashMap;
 
 
 /// SHIORI3リクエストの解析結果を格納します。
-///
-/// # Examples
-///
-/// ```
-/// use shiori3::parsers::Token;
-/// use shiori3::req::ShioriRequest;
-///
-/// let s = "GET SHIORI/3.0\r\nCharset: UTF-8\r\n\r\n";
-/// let x = ShioriRequest::from_str(s).unwrap();
-/// assert_eq!(x.version, Token::SHIORI3);
-/// assert_eq!(x.method, Token::GET);
-/// assert_eq!(x.charset, "UTF-8");
-/// ```
 #[derive(PartialEq,Eq,Debug)]
 pub struct ShioriRequest<'a> {
     pub version: Token<'a>,
@@ -97,6 +84,13 @@ impl<'a> ShioriRequest<'a> {
 
 #[test]
 fn req_parser_test() {
+    {
+        let s = "GET SHIORI/3.0\r\nCharset: UTF-8\r\n\r\n";
+        let x = ShioriRequest::from_str(s).unwrap();
+        assert_eq!(x.version, Token::SHIORI3);
+        assert_eq!(x.method, Token::GET);
+        assert_eq!(x.charset, "UTF-8");
+    }
     {
         let text = concat!(
             "GET Version SHIORI/2.6\r\n",

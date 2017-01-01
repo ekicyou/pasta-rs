@@ -6,14 +6,14 @@ use shiori3::req::ShioriRequest;
 use shiori3::res::ShioriResponse;
 
 /// SHIORI manage API
-trait ShioriAPI {
+pub trait ShioriAPI {
     fn load<STR: AsRef<OsStr> + ?Sized>(dir: &STR) -> Option<Shiori>;
     fn unload(&mut self) -> bool;
     fn request(&mut self, req_text: &str) -> Option<Cow<str>>;
 }
 
 /// SHIORI構造体
-struct Shiori<'a> {
+pub struct Shiori<'a> {
     load_dir: Cow<'a, Path>,
 }
 

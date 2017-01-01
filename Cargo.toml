@@ -15,6 +15,11 @@ unicode-normalization = "^0.1.3"
 features = ["verbose-errors", "regexp_macros"]
 version = "^2.0"
 
+[lib]
+crate-type = ["lib", "cdylib"]
+name = "shiori"
+path = "src/lib.rs"
+
 [target]
 
 [target."cfg(windows)"]
