@@ -23,6 +23,9 @@ extern crate kernel32;
 
 
 #[cfg(any(windows))]
+mod gstr;
+
+#[cfg(any(windows))]
 mod win32;
 
 #[cfg(any(windows))]

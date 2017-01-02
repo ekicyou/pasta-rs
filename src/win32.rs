@@ -1,4 +1,4 @@
-use winapi::*;
+use winapi::{HGLOBAL, UINT, size_t};
 use kernel32::{GlobalFree, GlobalAlloc};
 
 const GMEM_FIXED: UINT = 0;
