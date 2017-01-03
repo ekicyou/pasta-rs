@@ -1,6 +1,7 @@
 use libc::{memcpy, c_void};
 use winapi::{HGLOBAL, UINT, size_t};
 use kernel32::{GlobalFree, GlobalAlloc};
+use std::mem::transmute;
 
 const GMEM_FIXED: UINT = 0;
 
@@ -31,10 +32,11 @@ impl GStr {
         }
     }
     fn from_bytes(bytes: &[u8]) -> GStr {
-        let len = bytes.len() as size_t;
+        let len = bytes.len();
         unsafe {
-            let p = bytes as *const c_void;
-            let h = GlobalAlloc(GMEM_FIXED, len);
+            let h = GlobalAlloc(GMEM_FIXED, len as size_t);
+            let mut dst = transmute::<HGLOBAL, [u8; len]>(h);
+
             GStr {
                 h: h,
                 len: len,
