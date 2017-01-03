@@ -6,6 +6,7 @@ version = "0.1.0"
 [dependencies]
 lazy_static = "^0.2.2"
 libc = "^0.2.18"
+local-encoding = "^0.2.0"
 log = "^0.3.6"
 regex = "^0.1.80"
 toml = "^0.2.1"
@@ -15,7 +16,7 @@ features = ["verbose-errors", "regexp_macros"]
 version = "^2.0"
 
 [lib]
-crate-type = ["lib","staticlib", "cdylib"]
+crate-type = ["lib", "staticlib", "cdylib"]
 name = "shiori"
 path = "src/lib.rs"
 

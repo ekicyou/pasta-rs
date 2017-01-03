@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
 use shiori3::enums::Token;
 use shiori3::req::ShioriRequest;
@@ -13,15 +13,16 @@ pub trait ShioriAPI {
 }
 
 /// SHIORI構造体
-pub struct Shiori<'a> {
-    load_dir: Cow<'a, Path>,
+#[derive(Debug)]
+pub struct Shiori {
+    load_dir: PathBuf,
 }
 
-impl<'a> Drop for Shiori<'a> {
+impl Drop for Shiori {
     fn drop(&mut self) {}
 }
 
-impl<'a> Shiori<'a> {
+impl Shiori {
     fn request_impl<'b, 'c>(&mut self, req_text: &'b str) -> Result<Cow<'c, str>, &'c str> {
         match ShioriRequest::from_str(req_text) {
             Err(reason) => return Result::Ok(ShioriResponse::bad_request(reason)),
@@ -37,9 +38,9 @@ impl<'a> Shiori<'a> {
 }
 
 
-impl<'a> ShioriAPI for Shiori<'a> {
+impl ShioriAPI for Shiori {
     fn load<STR: AsRef<OsStr> + ?Sized>(dir: &STR) -> Option<Shiori> {
-        let shiori = Shiori { load_dir: Cow::Owned(Path::new(dir).to_path_buf()) };
+        let shiori = Shiori { load_dir: Path::new(dir).to_path_buf() };
         Option::Some(shiori)
     }
 

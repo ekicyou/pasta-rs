@@ -9,6 +9,8 @@ extern crate nom;
 #[macro_use]
 extern crate libc;
 
+extern crate local_encoding;
+
 mod shiori3;
 
 // windows モジュール登録
