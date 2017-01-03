@@ -28,7 +28,7 @@ extern crate kernel32;
 mod gstr;
 
 #[cfg(any(windows))]
-mod win32;
+mod windows;
 
 #[cfg(any(windows))]
-pub use win32::{load, unload, request};
+pub use windows::{load, unload, request};
