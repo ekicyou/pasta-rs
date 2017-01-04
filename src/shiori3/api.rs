@@ -7,7 +7,7 @@ use shiori3::res::ShioriResponse;
 
 /// SHIORI manage API
 pub trait ShioriAPI {
-    fn load<STR: AsRef<OsStr> + ?Sized>(dir: &STR) -> Option<Shiori>;
+    fn load<STR: AsRef<OsStr> + ?Sized>(module: &usize, dir: &STR) -> Option<Shiori>;
     fn unload(&mut self) -> bool;
     fn request(&mut self, req_text: &str) -> Option<Cow<str>>;
 }
@@ -15,6 +15,7 @@ pub trait ShioriAPI {
 /// SHIORI構造体
 #[derive(Debug)]
 pub struct Shiori {
+    module: usize,
     load_dir: PathBuf,
 }
 
@@ -39,8 +40,11 @@ impl Shiori {
 
 
 impl ShioriAPI for Shiori {
-    fn load<STR: AsRef<OsStr> + ?Sized>(dir: &STR) -> Option<Shiori> {
-        let shiori = Shiori { load_dir: Path::new(dir).to_path_buf() };
+    fn load<STR: AsRef<OsStr> + ?Sized>(module: &usize, dir: &STR) -> Option<Shiori> {
+        let shiori = Shiori {
+            module: *module,
+            load_dir: Path::new(dir).to_path_buf(),
+        };
         Option::Some(shiori)
     }
 
@@ -61,7 +65,7 @@ impl ShioriAPI for Shiori {
 #[test]
 fn shiori_test() {
     let dir_data = "LOAD_DIR";
-    let rc = Shiori::load(dir_data);
+    let rc = Shiori::load(&0, dir_data);
     let mut shiori = rc.unwrap();
     assert!(shiori.load_dir.to_str().unwrap() == dir_data);
     {

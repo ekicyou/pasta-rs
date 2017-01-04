@@ -27,10 +27,9 @@ mod app {
         }
     }
 
-    static mut H_MODULE: size_t = 0 as size_t;
 
     lazy_static! {
-        //static ref H_MODULE: RwLock<HINSTANCE> = RwLock::new(ptr::null_mut::<HINSTANCE__>());
+        static ref H_MODULE: RwLock<usize> = RwLock::new(0);
         static ref PASTA: RwLock<Option<Shiori>> = RwLock::new(Option::None);
     }
 
@@ -45,8 +44,9 @@ mod app {
     pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), AppError> {
         let g = GStr::new(hdir, len);
         let os_dir = g.to_os_str().unwrap();
+        let module = H_MODULE.read()?;
         let mut pasta = PASTA.write()?;
-        *pasta = Shiori::load(&os_dir);
+        *pasta = Shiori::load(&*module, &os_dir);
         match *pasta {
             Some(_) => Ok(()),
             _ => Err(AppError::NotLoad),
@@ -113,7 +113,7 @@ const DLL_THREAD_DETACH: DWORD = 3;
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "stdcall" fn DllMain(hModule: size_t,
+pub extern "stdcall" fn DllMain(hModule: usize,
                                 ul_reason_for_call: DWORD,
                                 lpReserved: LPVOID)
                                 -> bool {
