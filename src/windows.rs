@@ -1,56 +1,66 @@
 use winapi::{HGLOBAL, UINT, size_t};
 
 mod app {
-    use std::sync::{RwLock, TryLockError};
+    use std::sync::{RwLock, PoisonError, TryLockError};
     use std::ffi::{OsStr, OsString};
     use shiori3::api::*;
     use winapi::{HGLOBAL, UINT, size_t};
     use gstr::*;
+    use std::str::Utf8Error;
 
     // http://rust-lang-ja.org/rust-by-example/error/reenter_try.html
     #[derive(Debug)]
-    pub enum AppError<T> {
-        TryLock(TryLockError<T>),
+    pub enum AppError {
+        PoisonError,
+        NotLoad,
+        Utf8Error(Utf8Error),
         Others,
     }
 
-    impl<T> From<TryLockError<T>> for AppError<T> {
-        fn from(err: TryLockError<T>) -> AppError<T> {
-            AppError::TryLock(err)
+    impl<T> From<PoisonError<T>> for AppError {
+        fn from(err: PoisonError<T>) -> AppError {
+            AppError::PoisonError
         }
     }
+    impl From<Utf8Error> for AppError {
+        fn from(err: Utf8Error) -> AppError {
+            AppError::Utf8Error(err)
+        }
+    }
+
 
     lazy_static! {
          static ref PASTA: RwLock<Option<Shiori>>=RwLock::new(Option::None);
     }
 
     #[inline]
-    pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), String> {
+    pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), AppError> {
         let g = GStr::new(hdir, len);
         let os_dir = g.to_os_str().unwrap();
-        let mut pasta = match PASTA.write() {
-            Ok(a) => a,
-            _ => return Err("rw_lock_poison".to_string()),
-        };
+        let mut pasta = PASTA.write()?;
         *pasta = Shiori::load(&os_dir);
         match *pasta {
             Some(_) => Ok(()),
-            _ => Err("load_error".to_string()),
+            _ => Err(AppError::NotLoad),
         }
     }
 
     #[inline]
-    pub fn unload() -> Result<(), String> {
-        Ok(())
+    pub fn unload() -> Result<(), AppError> {
+        let mut pasta = PASTA.write()?;
+        match *pasta {
+            Some(_) => {
+                *pasta = None;
+                Ok(())
+            }
+            _ => Err(AppError::NotLoad),
+        }
     }
 
     #[inline]
-    pub fn request(h: &mut HGLOBAL, len: &mut size_t) -> Result<(), String> {
+    pub fn request(h: &mut HGLOBAL, len: &mut size_t) -> Result<(), AppError> {
         let g = GStr::new(*h, *len);
-        let req = match g.to_str() {
-            Ok(a) => a,
-            _ => return Err("not utf-8".to_string()),
-        };
+        let req = g.to_str()?;
         Ok(())
     }
 
