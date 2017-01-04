@@ -61,6 +61,7 @@ impl GStr {
         GStr::clone_from_slice_impl(bytes, false)
     }
 
+    /// 要素を&[u8]として取り出します。
     pub fn to_bytes(&self) -> &[u8] {
         unsafe {
             let p = transmute::<HGLOBAL, *mut u8>(self.h);
@@ -68,10 +69,12 @@ impl GStr {
         }
     }
 
+    /// HGLOBALハンドルを取得します。
     pub fn handle(&self) -> HGLOBAL {
         self.h
     }
 
+    /// 領域サイズを取得します。
     pub fn len(&self) -> size_t {
         self.len as size_t
     }
