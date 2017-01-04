@@ -1,9 +1,10 @@
-use winapi::{HGLOBAL, size_t};
+use winapi::{HGLOBAL, HINSTANCE, DWORD, LPVOID, size_t};
 
 mod app {
     use std::sync::{RwLock, PoisonError};
     use shiori3::api::*;
-    use winapi::{HGLOBAL, size_t};
+    use std::*;
+    use winapi::{LPVOID, HGLOBAL, HINSTANCE, HINSTANCE__, size_t};
     use gstr::*;
     use std::str::Utf8Error;
 
@@ -26,9 +27,19 @@ mod app {
         }
     }
 
+    static mut H_MODULE: size_t = 0 as size_t;
+
     lazy_static! {
-         static ref PASTA: RwLock<Option<Shiori>>=RwLock::new(Option::None);
+        //static ref H_MODULE: RwLock<HINSTANCE> = RwLock::new(ptr::null_mut::<HINSTANCE__>());
+        static ref PASTA: RwLock<Option<Shiori>> = RwLock::new(Option::None);
     }
+
+    #[inline]
+    pub fn set_module(hModule: HINSTANCE) -> Result<(), AppError> {
+
+        Ok(())
+    }
+
 
     #[inline]
     pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), AppError> {
@@ -93,6 +104,30 @@ pub extern "C" fn unload() -> bool {
 #[no_mangle]
 pub extern "C" fn request(h: &mut HGLOBAL, len: &mut size_t) -> bool {
     app::request(h, len).is_ok()
+}
+
+const DLL_PROCESS_DETACH: DWORD = 0;
+const DLL_PROCESS_ATTACH: DWORD = 1;
+const DLL_THREAD_ATTACH: DWORD = 2;
+const DLL_THREAD_DETACH: DWORD = 3;
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "stdcall" fn DllMain(hModule: size_t,
+                                ul_reason_for_call: DWORD,
+                                lpReserved: LPVOID)
+                                -> bool {
+    match ul_reason_for_call {
+        DLL_PROCESS_ATTACH => {
+            //
+        }
+        DLL_PROCESS_DETACH => {
+            app::unload();
+        }
+        _ => {}
+    }
+
+    true
 }
 
 

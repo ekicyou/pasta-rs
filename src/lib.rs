@@ -31,4 +31,4 @@ mod gstr;
 mod windows;
 
 #[cfg(any(windows))]
-pub use windows::{load, unload, request};
+pub use windows::{DllMain, load, unload, request};
