@@ -11,6 +11,9 @@ const GMEM_FIXED: UINT = 0;
 
 #[no_mangle]
 pub extern "C" fn load(hdir: HGLOBAL, len: size_t) -> bool {
+    let g = GStr::new(hdir, len);
+    let os_dir = g.to_os_str().unwrap();
+
     true
 }
 
@@ -21,6 +24,12 @@ pub extern "C" fn unload() -> bool {
 
 #[no_mangle]
 pub extern "C" fn request(hreq: HGLOBAL, len: &mut size_t) -> bool {
+    let g = GStr::new(hreq, *len);
+    let req = match g.to_str() {
+        Ok(s) => s,
+        _ => "",
+    };
+
     true
 }
 
@@ -29,8 +38,7 @@ pub extern "C" fn request(hreq: HGLOBAL, len: &mut size_t) -> bool {
 fn ffi_test() {
     {
         let dir = "dir/dir";
-        let g_dir = GStr::clone_from_slice_free(dir.as_bytes());
-        let os_dir = g_dir.to_os_str().unwrap();
+        let g_dir = GStr::clone_from_slice_nofree(dir.as_bytes());
         let h = g_dir.handle();
         let len = g_dir.len();
         assert_eq!(7, len);

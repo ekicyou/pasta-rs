@@ -1,7 +1,9 @@
 use std::mem::transmute;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
 use std::ffi::OsString;
-use std::io::Result;
+use std::str;
+use std::str::Utf8Error;
+use std::io::Error;
 use libc::c_void;
 use winapi::{HGLOBAL, UINT, size_t};
 use kernel32::{GlobalFree, GlobalAlloc};
@@ -55,7 +57,7 @@ impl GStr {
     pub fn clone_from_slice_free(bytes: &[u8]) -> GStr {
         GStr::clone_from_slice_impl(bytes, true)
     }
-    pub fn clone_from_slice_non_free(bytes: &[u8]) -> GStr {
+    pub fn clone_from_slice_nofree(bytes: &[u8]) -> GStr {
         GStr::clone_from_slice_impl(bytes, false)
     }
 
@@ -74,12 +76,18 @@ impl GStr {
         self.len as size_t
     }
 
-    /// 格納文字列を「ANSI STRING」とみなして、OsStrに変換する。
+    /// 格納データを「ANSI STRING」とみなして、OsStrに変換する。
     /// MultiByteToWideCharを経由する。
-    pub fn to_os_str(&self) -> Result<OsString> {
+    pub fn to_os_str(&self) -> Result<OsString, Error> {
         let bytes = self.to_bytes();
         let s = Encoding::ANSI.to_string(bytes)?;
         let os_str = OsString::from(s);
         Ok(os_str)
+    }
+
+    /// 格納データを「UTF-8」とみなして、strに変換する。
+    pub fn to_str(&self) -> Result<&str, Utf8Error> {
+        let bytes = self.to_bytes();
+        str::from_utf8(bytes)
     }
 }
