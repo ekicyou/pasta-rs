@@ -7,6 +7,12 @@ mod app {
     use winapi::{HGLOBAL, UINT, size_t};
     use gstr::*;
 
+    // http://rust-lang-ja.org/rust-by-example/error/reenter_try.html
+    #[derive(Debug)]
+    enum AppError {
+        EmptyVec,
+    }
+
     lazy_static! {
          static ref PASTA: RwLock<Option<Shiori>>=RwLock::new(Option::None);
     }
