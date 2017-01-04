@@ -53,10 +53,12 @@ impl GStr {
             }
         }
     }
-
+    /// drop時に解放されるHGLOBALを持つGStrを作成します。
     pub fn clone_from_slice_free(bytes: &[u8]) -> GStr {
         GStr::clone_from_slice_impl(bytes, true)
     }
+
+    /// drop時に解放されないHGLOBALを持つGStrを作成します。
     pub fn clone_from_slice_nofree(bytes: &[u8]) -> GStr {
         GStr::clone_from_slice_impl(bytes, false)
     }

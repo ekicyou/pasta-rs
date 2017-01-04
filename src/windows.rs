@@ -1,24 +1,24 @@
 use winapi::{HGLOBAL, UINT, size_t};
 
 mod app {
-    use std::sync::{RwLock, PoisonError, TryLockError};
+    use std::sync::{RwLock, PoisonError};
     use std::ffi::{OsStr, OsString};
     use shiori3::api::*;
     use winapi::{HGLOBAL, UINT, size_t};
     use gstr::*;
     use std::str::Utf8Error;
 
-    // http://rust-lang-ja.org/rust-by-example/error/reenter_try.html
     #[derive(Debug)]
     pub enum AppError {
         PoisonError,
         NotLoad,
+        NotRequest,
         Utf8Error(Utf8Error),
         Others,
     }
 
     impl<T> From<PoisonError<T>> for AppError {
-        fn from(err: PoisonError<T>) -> AppError {
+        fn from(_: PoisonError<T>) -> AppError {
             AppError::PoisonError
         }
     }
@@ -27,7 +27,6 @@ mod app {
             AppError::Utf8Error(err)
         }
     }
-
 
     lazy_static! {
          static ref PASTA: RwLock<Option<Shiori>>=RwLock::new(Option::None);
@@ -49,48 +48,53 @@ mod app {
     pub fn unload() -> Result<(), AppError> {
         let mut pasta = PASTA.write()?;
         match *pasta {
-            Some(_) => {
-                *pasta = None;
-                Ok(())
+            None => return Err(AppError::NotLoad),
+            Some(ref mut api) => {
+                api.unload();
             }
-            _ => Err(AppError::NotLoad),
         }
+        *pasta = None;
+        Ok(())
     }
 
     #[inline]
     pub fn request(h: &mut HGLOBAL, len: &mut size_t) -> Result<(), AppError> {
         let g = GStr::new(*h, *len);
         let req = g.to_str()?;
-        Ok(())
+        let mut pasta = PASTA.write()?;
+        match *pasta {
+            None => return Err(AppError::NotLoad),
+            Some(ref mut api) => {
+                match api.request(req) {
+                    None => Err(AppError::NotRequest),
+                    Some(res) => {
+                        let b_res = res.as_bytes();
+                        let g_res = GStr::clone_from_slice_nofree(b_res);
+                        *h = g_res.handle();
+                        *len = g_res.len();
+                        Ok(())
+                    }
+                }
+            }
+        }
     }
-
-
 }
 
 
 
 #[no_mangle]
 pub extern "C" fn load(hdir: HGLOBAL, len: size_t) -> bool {
-    match app::load(hdir, len) {
-        Ok(_) => true,
-        _ => false,
-    }
+    app::load(hdir, len).is_ok()
 }
 
 #[no_mangle]
 pub extern "C" fn unload() -> bool {
-    match app::unload() {
-        Ok(_) => true,
-        _ => false,
-    }
+    app::unload().is_ok()
 }
 
 #[no_mangle]
 pub extern "C" fn request(h: &mut HGLOBAL, len: &mut size_t) -> bool {
-    match app::request(h, len) {
-        Ok(_) => true,
-        _ => false,
-    }
+    app::request(h, len).is_ok()
 }
 
 
