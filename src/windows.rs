@@ -1,7 +1,7 @@
 use winapi::{HGLOBAL, UINT, size_t};
 
 mod app {
-    use std::sync::RwLock;
+    use std::sync::{RwLock, TryLockError};
     use std::ffi::{OsStr, OsString};
     use shiori3::api::*;
     use winapi::{HGLOBAL, UINT, size_t};
@@ -9,14 +9,22 @@ mod app {
 
     // http://rust-lang-ja.org/rust-by-example/error/reenter_try.html
     #[derive(Debug)]
-    enum AppError {
-        EmptyVec,
+    pub enum AppError<T> {
+        TryLock(TryLockError<T>),
+        Others,
+    }
+
+    impl<T> From<TryLockError<T>> for AppError<T> {
+        fn from(err: TryLockError<T>) -> AppError<T> {
+            AppError::TryLock(err)
+        }
     }
 
     lazy_static! {
          static ref PASTA: RwLock<Option<Shiori>>=RwLock::new(Option::None);
     }
 
+    #[inline]
     pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), String> {
         let g = GStr::new(hdir, len);
         let os_dir = g.to_os_str().unwrap();
@@ -31,10 +39,12 @@ mod app {
         }
     }
 
+    #[inline]
     pub fn unload() -> Result<(), String> {
         Ok(())
     }
 
+    #[inline]
     pub fn request(h: &mut HGLOBAL, len: &mut size_t) -> Result<(), String> {
         let g = GStr::new(*h, *len);
         let req = match g.to_str() {
