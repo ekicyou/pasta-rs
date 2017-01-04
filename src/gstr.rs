@@ -4,14 +4,13 @@ use std::ffi::OsString;
 use std::str;
 use std::str::Utf8Error;
 use std::io::Error;
-use libc::c_void;
 use winapi::{HGLOBAL, UINT, size_t};
 use kernel32::{GlobalFree, GlobalAlloc};
 use local_encoding::{Encoding, Encoder};
 
 const GMEM_FIXED: UINT = 0;
 
-/// HGLOBALとして送受信される文字列
+/// HGLOBALを文字列にキャプチャーします。
 pub struct GStr {
     h: HGLOBAL,
     len: usize,
@@ -30,6 +29,8 @@ impl Drop for GStr {
 }
 
 impl GStr {
+    /// HGLOBALをGStrにキャプチャーします。
+    /// drop時にHGLOBALを開放します。
     pub fn new(h: HGLOBAL, len: size_t) -> GStr {
         GStr {
             h: h,
@@ -43,7 +44,7 @@ impl GStr {
         let len = bytes.len();
         unsafe {
             let h = GlobalAlloc(GMEM_FIXED, len as size_t);
-            let mut p = transmute::<HGLOBAL, *mut u8>(h);
+            let p = transmute::<HGLOBAL, *mut u8>(h);
             let mut dst = from_raw_parts_mut::<u8>(p, len);
             dst[..].clone_from_slice(bytes);
             GStr {
@@ -53,12 +54,9 @@ impl GStr {
             }
         }
     }
-    /// drop時に解放されるHGLOBALを持つGStrを作成します。
-    pub fn clone_from_slice_free(bytes: &[u8]) -> GStr {
-        GStr::clone_from_slice_impl(bytes, true)
-    }
 
-    /// drop時に解放されないHGLOBALを持つGStrを作成します。
+    /// &[u8]をGStrにキャプチャーします。
+    /// drop時にHGLOBALを開放しません。
     pub fn clone_from_slice_nofree(bytes: &[u8]) -> GStr {
         GStr::clone_from_slice_impl(bytes, false)
     }

@@ -1,10 +1,9 @@
-use winapi::{HGLOBAL, UINT, size_t};
+use winapi::{HGLOBAL, size_t};
 
 mod app {
     use std::sync::{RwLock, PoisonError};
-    use std::ffi::{OsStr, OsString};
     use shiori3::api::*;
-    use winapi::{HGLOBAL, UINT, size_t};
+    use winapi::{HGLOBAL, size_t};
     use gstr::*;
     use std::str::Utf8Error;
 
@@ -14,7 +13,6 @@ mod app {
         NotLoad,
         NotRequest,
         Utf8Error(Utf8Error),
-        Others,
     }
 
     impl<T> From<PoisonError<T>> for AppError {
@@ -108,6 +106,53 @@ fn ffi_test() {
         let len = g_dir.len();
         assert_eq!(7, len);
         assert!(load(h, len));
+    }
+    {
+        let req = concat!(
+            "NOTIFY SHIORI/3.0\r\n",
+            "Charset: UTF-8\r\n",
+            "Sender: SSP\r\n",
+            "SecurityLevel: local\r\n",
+            "ID: OnInitialize\r\n",
+            "Reference0: \r\n",
+            "\r\n",
+        );
+        let check = concat!(
+            "SHIORI/3.0 204 No Content\r\n",
+            "Charset: UTF-8\r\n",
+            "\r\n",
+        );
+        let g = GStr::clone_from_slice_nofree(req.as_bytes());
+        let mut h = g.handle();
+        let mut len = g.len();
+        assert!(request(&mut h, &mut len));
+        let gres = GStr::new(h, len);
+        let res = gres.to_str().unwrap();
+        assert_eq!(check, res);
+    }
+    {
+        let req = concat!(
+            "GET SHIORI/3.0\r\n",
+            "Charset: UTF-8\r\n",
+            "Sender: SSP\r\n",
+            "SecurityLevel: local\r\n",
+            "ID: OnBoot\r\n",
+            "Reference0: マスターシェル\r\n",
+            "\r\n",
+        );
+        let check = concat!(
+            "SHIORI/3.0 200 OK\r\n",
+            "Charset: UTF-8\r\n",
+            "Value: ", r"\1\s[10]\0\s[0]やあ、元気？\e", "\r\n",
+            "\r\n",
+        );
+        let g = GStr::clone_from_slice_nofree(req.as_bytes());
+        let mut h = g.handle();
+        let mut len = g.len();
+        assert!(request(&mut h, &mut len));
+        let gres = GStr::new(h, len);
+        let res = gres.to_str().unwrap();
+        assert_eq!(check, res);
     }
     {
         assert!(unload());
