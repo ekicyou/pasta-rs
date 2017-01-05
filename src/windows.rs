@@ -1,10 +1,10 @@
-use winapi::{HGLOBAL, HINSTANCE, DWORD, LPVOID, size_t};
+use winapi::{HGLOBAL, DWORD, LPVOID, size_t};
 
 mod app {
     use std::sync::{RwLock, PoisonError};
     use shiori3::api::*;
     use std::*;
-    use winapi::{LPVOID, HGLOBAL, HINSTANCE, HINSTANCE__, size_t};
+    use winapi::{HGLOBAL, size_t};
     use gstr::*;
     use std::str::Utf8Error;
 
@@ -12,7 +12,6 @@ mod app {
     pub enum AppError {
         PoisonError,
         NotLoad,
-        NotRequest,
         ShioriError(ShioriError),
         Utf8Error(Utf8Error),
     }
@@ -109,12 +108,17 @@ pub extern "C" fn request(h: &mut HGLOBAL, len: &mut size_t) -> bool {
     app::request(h, len).is_ok()
 }
 
+#[allow(dead_code)]
 const DLL_PROCESS_DETACH: DWORD = 0;
+#[allow(dead_code)]
 const DLL_PROCESS_ATTACH: DWORD = 1;
+#[allow(dead_code)]
 const DLL_THREAD_ATTACH: DWORD = 2;
+#[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
 
 #[no_mangle]
+#[allow(dead_code,unused_must_use,unused_variables)]
 #[allow(non_snake_case)]
 pub extern "stdcall" fn DllMain(hInst: usize,
                                 ul_reason_for_call: DWORD,

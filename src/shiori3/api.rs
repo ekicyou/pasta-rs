@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
-use std::sync::RwLock;
-use winapi::HINSTANCE;
 use shiori3::enums::Token;
 use shiori3::req::ShioriRequest;
 use shiori3::res::ShioriResponse;
