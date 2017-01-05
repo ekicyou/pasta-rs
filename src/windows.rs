@@ -73,8 +73,8 @@ mod app {
     }
 
     #[inline]
-    pub fn request(h: &mut HGLOBAL, len: &mut size_t) -> Result<(), AppError> {
-        let g = GStr::new(*h, *len);
+    pub fn request(h: HGLOBAL, len: &mut size_t) -> Result<HGLOBAL, AppError> {
+        let g = GStr::new(h, *len);
         let req = g.to_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
@@ -83,9 +83,8 @@ mod app {
                 let res = api.request(req)?;
                 let b_res = res.as_bytes();
                 let g_res = GStr::clone_from_slice_nofree(b_res);
-                *h = g_res.handle();
                 *len = g_res.len();
-                Ok(())
+                Ok(g_res.handle())
             }
         }
     }
@@ -104,8 +103,11 @@ pub extern "C" fn unload() -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn request(h: &mut HGLOBAL, len: &mut size_t) -> bool {
-    app::request(h, len).is_ok()
+pub extern "C" fn request(h: HGLOBAL, len: &mut size_t) -> HGLOBAL {
+    match app::request(h, len) {
+        Ok(res) => res,
+        Err(_) => ::std::ptr::null_mut(),
+    }
 }
 
 #[allow(dead_code)]
@@ -174,8 +176,8 @@ fn ffi_test() {
         let g = GStr::clone_from_slice_nofree(req.as_bytes());
         let mut h = g.handle();
         let mut len = g.len();
-        assert!(request(&mut h, &mut len));
-        let gres = GStr::new(h, len);
+        let hres = request(h, &mut len);
+        let gres = GStr::new(hres, len);
         let res = gres.to_str().unwrap();
         assert_eq!(check, res);
     }
@@ -198,8 +200,8 @@ fn ffi_test() {
         let g = GStr::clone_from_slice_nofree(req.as_bytes());
         let mut h = g.handle();
         let mut len = g.len();
-        assert!(request(&mut h, &mut len));
-        let gres = GStr::new(h, len);
+        let hres = request(h, &mut len);
+        let gres = GStr::new(hres, len);
         let res = gres.to_str().unwrap();
         assert_eq!(check, res);
     }

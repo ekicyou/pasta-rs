@@ -80,7 +80,7 @@ impl GStr {
     }
 
     /// 格納データを「ANSI STRING」とみなして、OsStrに変換する。
-    /// MultiByteToWideCharを経由する。
+    /// MultiByteToWideChar()を利用する。
     pub fn to_os_str(&self) -> Result<OsString, Error> {
         let bytes = self.to_bytes();
         let s = Encoding::ANSI.to_string(bytes)?;
