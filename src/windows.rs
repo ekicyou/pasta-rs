@@ -140,6 +140,8 @@ pub extern "stdcall" fn DllMain(hInst: usize,
 #[test]
 fn ffi_test() {
     use gstr::*;
+    ::std::env::set_var("RUST_LOG", "trace");
+    ::env_logger::init();
     {
         assert_eq!(unload(), false);
         assert!(app::init(0).is_ok());
@@ -200,7 +202,9 @@ fn ffi_test() {
         assert_eq!(check, res);
     }
     {
+        trace!("unload start");
         assert_eq!(unload(), true);
+        trace!("unload end");
         assert_eq!(unload(), false);
     }
 }

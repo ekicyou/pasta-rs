@@ -27,10 +27,6 @@ pub struct Shiori {
     load_dir: PathBuf,
 }
 
-impl Drop for Shiori {
-    fn drop(&mut self) {}
-}
-
 impl Shiori {
     fn request_impl<'b, 'c>(&mut self, req_text: &'b str) -> Result<Cow<'c, str>, &'c str> {
         match ShioriRequest::from_str(req_text) {
@@ -46,24 +42,34 @@ impl Shiori {
     }
 }
 
+impl Drop for Shiori {
+    fn drop(&mut self) {
+        trace!("Shiori::drop\n{:?}", self);
+    }
+}
+
 
 impl ShioriAPI<Shiori> for Shiori {
     fn new(hinst: usize) -> Shiori {
+        trace!("Shiori::new");
         Shiori {
             hinst: hinst,
             load_dir: PathBuf::new(),
         }
     }
     fn load<STR: AsRef<OsStr> + ?Sized>(&mut self, dir: &STR) -> Result<(), ShioriError> {
+        trace!("Shiori::load");
         self.load_dir = Path::new(dir).to_path_buf();
         Ok(())
     }
 
     fn unload(&mut self) -> Result<(), ShioriError> {
+        trace!("Shiori::unload");
         Ok(())
     }
 
     fn request(&mut self, req_text: &str) -> Result<Cow<str>, ShioriError> {
+        trace!("Shiori::request");
         let res = self.request_impl(req_text);
         let rc = match res {
             Ok(value) => value,
