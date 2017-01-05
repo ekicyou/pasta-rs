@@ -10,6 +10,11 @@ use local_encoding::{Encoding, Encoder};
 
 const GMEM_FIXED: UINT = 0;
 
+#[derive(Copy, Eq, PartialEq, Clone, Debug)]
+pub enum GStrError {
+    AnsiEncode,
+}
+
 /// HGLOBALを文字列にキャプチャーします。
 pub struct GStr {
     h: HGLOBAL,
@@ -81,9 +86,9 @@ impl GStr {
 
     /// 格納データを「ANSI STRING」とみなして、OsStrに変換する。
     /// MultiByteToWideChar()を利用する。
-    pub fn to_os_str(&self) -> Result<OsString, Error> {
+    pub fn to_os_str(&self) -> Result<OsString, GStrError> {
         let bytes = self.to_bytes();
-        let s = Encoding::ANSI.to_string(bytes)?;
+        let s = Encoding::ANSI.to_string(bytes).map_err(|e| GStrError::AnsiEncode)?;
         let os_str = OsString::from(s);
         Ok(os_str)
     }

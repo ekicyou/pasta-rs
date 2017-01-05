@@ -14,6 +14,7 @@ mod app {
         NotLoad,
         ShioriError(ShioriError),
         Utf8Error(Utf8Error),
+        GStrError(GStrError),
     }
 
     impl<T> From<PoisonError<T>> for AppError {
@@ -29,6 +30,11 @@ mod app {
     impl From<ShioriError> for AppError {
         fn from(err: ShioriError) -> AppError {
             AppError::ShioriError(err)
+        }
+    }
+    impl From<GStrError> for AppError {
+        fn from(err: GStrError) -> AppError {
+            AppError::GStrError(err)
         }
     }
 
@@ -48,7 +54,7 @@ mod app {
     #[inline]
     pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), AppError> {
         let g = GStr::new(hdir, len);
-        let os_dir = g.to_os_str().unwrap();
+        let os_dir = g.to_os_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
             Err(e) => Err(e),
