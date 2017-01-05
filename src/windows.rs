@@ -35,14 +35,14 @@ mod app {
 
 
     lazy_static! {
-        static ref PASTA: RwLock<Option<Shiori>> = RwLock::new(None);
+        static ref PASTA: RwLock<Result<Shiori,AppError>> = RwLock::new(Err(AppError::NotLoad));
     }
 
 
     #[inline]
     pub fn init(hInst: usize) -> Result<(), AppError> {
         let mut pasta = PASTA.write()?;
-        *pasta = Some(Shiori::new(hInst));
+        *pasta = Ok(Shiori::new(hInst));
         Ok(())
     }
 
@@ -52,8 +52,8 @@ mod app {
         let os_dir = g.to_os_str().unwrap();
         let mut pasta = PASTA.write()?;
         match *pasta {
-            None => return Err(AppError::NotLoad),
-            Some(ref mut api) => {
+            Err(_) => return Err(AppError::NotLoad),
+            Ok(ref mut api) => {
                 api.load(&os_dir)?;
             }
         }
@@ -64,12 +64,12 @@ mod app {
     pub fn unload() -> Result<(), AppError> {
         let mut pasta = PASTA.write()?;
         match *pasta {
-            None => return Err(AppError::NotLoad),
-            Some(ref mut api) => {
+            Err(_) => return Err(AppError::NotLoad),
+            Ok(ref mut api) => {
                 api.unload()?;
             }
         }
-        *pasta = None;
+        *pasta = Err(AppError::NotLoad);
         Ok(())
     }
 
@@ -79,8 +79,8 @@ mod app {
         let req = g.to_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
-            None => return Err(AppError::NotLoad),
-            Some(ref mut api) => {
+            Err(_) => return Err(AppError::NotLoad),
+            Ok(ref mut api) => {
                 let res = api.request(req)?;
                 let b_res = res.as_bytes();
                 let g_res = GStr::clone_from_slice_nofree(b_res);
