@@ -52,12 +52,12 @@ mod app {
         let os_dir = g.to_os_str().unwrap();
         let mut pasta = PASTA.write()?;
         match *pasta {
-            Err(e) => return Err(e),
+            Err(e) => Err(e),
             Ok(ref mut api) => {
                 api.load(&os_dir)?;
+                Ok(())
             }
         }
-        Ok(())
     }
 
     #[inline]
@@ -79,7 +79,7 @@ mod app {
         let req = g.to_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
-            Err(e) => return Err(e),
+            Err(e) => Err(e),
             Ok(ref mut api) => {
                 let res = api.request(req)?;
                 let b_res = res.as_bytes();
