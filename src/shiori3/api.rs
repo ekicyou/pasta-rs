@@ -1,21 +1,30 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
+use winapi::HINSTANCE;
 use shiori3::enums::Token;
 use shiori3::req::ShioriRequest;
 use shiori3::res::ShioriResponse;
 
+#[derive(Debug)]
+pub enum ShioriError {
+    NotLoad,
+}
+
+
+
 /// SHIORI manage API
-pub trait ShioriAPI {
-    fn load<STR: AsRef<OsStr> + ?Sized>(module: &usize, dir: &STR) -> Option<Shiori>;
-    fn unload(&mut self) -> bool;
-    fn request(&mut self, req_text: &str) -> Option<Cow<str>>;
+pub trait ShioriAPI<TSHIORI> {
+    fn new(hinst: HINSTANCE) -> TSHIORI;
+    fn load<STR: AsRef<OsStr> + ?Sized>(&mut self, dir: &STR) -> Result<(), ShioriError>;
+    fn unload(&mut self) -> Result<(), ShioriError>;
+    fn request(&mut self, req_text: &str) -> Result<Cow<str>, ShioriError>;
 }
 
 /// SHIORI構造体
 #[derive(Debug)]
 pub struct Shiori {
-    module: usize,
+    hinst: HINSTANCE,
     load_dir: PathBuf,
 }
 
@@ -26,48 +35,57 @@ impl Drop for Shiori {
 impl Shiori {
     fn request_impl<'b, 'c>(&mut self, req_text: &'b str) -> Result<Cow<'c, str>, &'c str> {
         match ShioriRequest::from_str(req_text) {
-            Err(reason) => return Result::Ok(ShioriResponse::bad_request(reason)),
+            Err(reason) => return Ok(ShioriResponse::bad_request(reason)),
             Ok(req) => {
                 if req.id == "OnBoot" {
                     let talk = r"\1\s[10]\0\s[0]やあ、元気？\e";
-                    return Result::Ok(ShioriResponse::talk(talk));
+                    return Ok(ShioriResponse::talk(talk));
                 }
             }
         }
-        Result::Ok(ShioriResponse::no_content())
+        Ok(ShioriResponse::no_content())
     }
 }
 
 
-impl ShioriAPI for Shiori {
-    fn load<STR: AsRef<OsStr> + ?Sized>(module: &usize, dir: &STR) -> Option<Shiori> {
-        let shiori = Shiori {
-            module: *module,
-            load_dir: Path::new(dir).to_path_buf(),
-        };
-        Option::Some(shiori)
+impl ShioriAPI<Shiori> for Shiori {
+    fn new(hinst: HINSTANCE) -> Shiori {
+        Shiori {
+            hinst: hinst,
+            load_dir: PathBuf::new(),
+        }
+    }
+    fn load<STR: AsRef<OsStr> + ?Sized>(&mut self, dir: &STR) -> Result<(), ShioriError> {
+        self.load_dir = Path::new(dir).to_path_buf();
+        Ok(())
     }
 
-    fn unload(&mut self) -> bool {
-        true
+    fn unload(&mut self) -> Result<(), ShioriError> {
+        Ok(())
     }
 
-    fn request(&mut self, req_text: &str) -> Option<Cow<str>> {
+    fn request(&mut self, req_text: &str) -> Result<Cow<str>, ShioriError> {
         let res = self.request_impl(req_text);
         let rc = match res {
             Ok(value) => value,
             Err(reason) => ShioriResponse::internal_server_error(reason),
         };
-        Option::Some(rc)
+        Ok(rc)
     }
 }
 
 #[test]
 fn shiori_test() {
-    let dir_data = "LOAD_DIR";
-    let rc = Shiori::load(&0, dir_data);
-    let mut shiori = rc.unwrap();
-    assert!(shiori.load_dir.to_str().unwrap() == dir_data);
+    let mut shiori = {
+        use kernel32::GetModuleHandleW;
+        use std::ptr;
+        let hinst = unsafe { GetModuleHandleW(ptr::null()) };
+        Shiori::new(hinst)
+    };
+    {
+        let dir_data = "LOAD_DIR";
+        assert!(shiori.load(dir_data).is_ok());
+    }
     {
         let req = "REQ";
         let check = concat!(
@@ -117,6 +135,6 @@ fn shiori_test() {
         assert_eq!(check, res);
     }
     {
-        assert!(shiori.unload() == true);
+        assert!(shiori.unload().is_ok());
     }
 }

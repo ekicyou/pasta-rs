@@ -30,7 +30,7 @@ mod app {
 
     lazy_static! {
         static ref H_MODULE: RwLock<usize> = RwLock::new(0);
-        static ref PASTA: RwLock<Option<Shiori>> = RwLock::new(Option::None);
+        static ref PASTA: RwLock<Result<Shiori,AppError>> = RwLock::new(AppError::NotLoad);
     }
 
     #[inline]

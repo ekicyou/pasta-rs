@@ -27,8 +27,8 @@ extern crate kernel32;
 #[cfg(any(windows))]
 mod gstr;
 
-#[cfg(any(windows))]
-mod windows;
+//#[cfg(any(windows))]
+//#mod windows;
 
-#[cfg(any(windows))]
-pub use windows::{DllMain, load, unload, request};
+//#[cfg(any(windows))]
+//#pub use windows::{DllMain, load, unload, request};
