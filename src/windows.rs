@@ -8,11 +8,12 @@ mod app {
     use gstr::*;
     use std::str::Utf8Error;
 
-    #[derive(Debug)]
+    #[derive(Copy, Eq, PartialEq, Clone, Debug)]
     pub enum AppError {
         PoisonError,
         NotLoad,
         NotRequest,
+        ShioriError(ShioriError),
         Utf8Error(Utf8Error),
     }
 
@@ -26,31 +27,37 @@ mod app {
             AppError::Utf8Error(err)
         }
     }
+    impl From<ShioriError> for AppError {
+        fn from(err: ShioriError) -> AppError {
+            AppError::ShioriError(err)
+        }
+    }
 
 
     lazy_static! {
-        static ref H_MODULE: RwLock<usize> = RwLock::new(0);
-        static ref PASTA: RwLock<Result<Shiori,AppError>> = RwLock::new(AppError::NotLoad);
+        static ref PASTA: RwLock<Option<Shiori>> = RwLock::new(None);
     }
+
 
     #[inline]
-    pub fn set_module(hModule: HINSTANCE) -> Result<(), AppError> {
-
+    pub fn init(hInst: usize) -> Result<(), AppError> {
+        let mut pasta = PASTA.write()?;
+        *pasta = Some(Shiori::new(hInst));
         Ok(())
     }
-
 
     #[inline]
     pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), AppError> {
         let g = GStr::new(hdir, len);
         let os_dir = g.to_os_str().unwrap();
-        let module = H_MODULE.read()?;
         let mut pasta = PASTA.write()?;
-        *pasta = Shiori::load(&*module, &os_dir);
         match *pasta {
-            Some(_) => Ok(()),
-            _ => Err(AppError::NotLoad),
+            None => return Err(AppError::NotLoad),
+            Some(ref mut api) => {
+                api.load(&os_dir)?;
+            }
         }
+        Ok(())
     }
 
     #[inline]
@@ -59,7 +66,7 @@ mod app {
         match *pasta {
             None => return Err(AppError::NotLoad),
             Some(ref mut api) => {
-                api.unload();
+                api.unload()?;
             }
         }
         *pasta = None;
@@ -74,16 +81,12 @@ mod app {
         match *pasta {
             None => return Err(AppError::NotLoad),
             Some(ref mut api) => {
-                match api.request(req) {
-                    None => Err(AppError::NotRequest),
-                    Some(res) => {
-                        let b_res = res.as_bytes();
-                        let g_res = GStr::clone_from_slice_nofree(b_res);
-                        *h = g_res.handle();
-                        *len = g_res.len();
-                        Ok(())
-                    }
-                }
+                let res = api.request(req)?;
+                let b_res = res.as_bytes();
+                let g_res = GStr::clone_from_slice_nofree(b_res);
+                *h = g_res.handle();
+                *len = g_res.len();
+                Ok(())
             }
         }
     }
@@ -113,20 +116,19 @@ const DLL_THREAD_DETACH: DWORD = 3;
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "stdcall" fn DllMain(hModule: usize,
+pub extern "stdcall" fn DllMain(hInst: usize,
                                 ul_reason_for_call: DWORD,
                                 lpReserved: LPVOID)
                                 -> bool {
     match ul_reason_for_call {
         DLL_PROCESS_ATTACH => {
-            //
+            return app::init(hInst).is_ok();
         }
         DLL_PROCESS_DETACH => {
             app::unload();
         }
         _ => {}
     }
-
     true
 }
 
@@ -134,6 +136,10 @@ pub extern "stdcall" fn DllMain(hModule: usize,
 #[test]
 fn ffi_test() {
     use gstr::*;
+    {
+        assert_eq!(unload(), false);
+        assert!(app::init(0).is_ok());
+    }
     {
         let dir = "dir/dir";
         let g_dir = GStr::clone_from_slice_nofree(dir.as_bytes());
@@ -190,6 +196,7 @@ fn ffi_test() {
         assert_eq!(check, res);
     }
     {
-        assert!(unload());
+        assert_eq!(unload(), true);
+        assert_eq!(unload(), false);
     }
 }

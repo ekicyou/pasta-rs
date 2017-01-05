@@ -1,12 +1,13 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
+use std::sync::RwLock;
 use winapi::HINSTANCE;
 use shiori3::enums::Token;
 use shiori3::req::ShioriRequest;
 use shiori3::res::ShioriResponse;
 
-#[derive(Debug)]
+#[derive(Copy, Eq, PartialEq, Clone, Debug)]
 pub enum ShioriError {
     NotLoad,
 }
@@ -15,7 +16,7 @@ pub enum ShioriError {
 
 /// SHIORI manage API
 pub trait ShioriAPI<TSHIORI> {
-    fn new(hinst: HINSTANCE) -> TSHIORI;
+    fn new(hinst: usize) -> TSHIORI;
     fn load<STR: AsRef<OsStr> + ?Sized>(&mut self, dir: &STR) -> Result<(), ShioriError>;
     fn unload(&mut self) -> Result<(), ShioriError>;
     fn request(&mut self, req_text: &str) -> Result<Cow<str>, ShioriError>;
@@ -24,7 +25,7 @@ pub trait ShioriAPI<TSHIORI> {
 /// SHIORI構造体
 #[derive(Debug)]
 pub struct Shiori {
-    hinst: HINSTANCE,
+    hinst: usize,
     load_dir: PathBuf,
 }
 
@@ -49,7 +50,7 @@ impl Shiori {
 
 
 impl ShioriAPI<Shiori> for Shiori {
-    fn new(hinst: HINSTANCE) -> Shiori {
+    fn new(hinst: usize) -> Shiori {
         Shiori {
             hinst: hinst,
             load_dir: PathBuf::new(),
@@ -76,12 +77,7 @@ impl ShioriAPI<Shiori> for Shiori {
 
 #[test]
 fn shiori_test() {
-    let mut shiori = {
-        use kernel32::GetModuleHandleW;
-        use std::ptr;
-        let hinst = unsafe { GetModuleHandleW(ptr::null()) };
-        Shiori::new(hinst)
-    };
+    let mut shiori = Shiori::new(0);
     {
         let dir_data = "LOAD_DIR";
         assert!(shiori.load(dir_data).is_ok());
