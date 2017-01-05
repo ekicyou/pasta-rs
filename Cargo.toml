@@ -1,9 +1,9 @@
 [package]
-authors = ["えちょ <dot.station@gmail.com>"]
+authors = ["ekicyou <dot.station@gmail.com>"]
 name = "pasta"
 version = "0.1.0"
 repository = "https://github.com/ekicyou/pasta-rs"
-keywords = ["shiori", "ukagaka","伺か"]
+keywords = ["shiori", "ukagaka"]
 license-file = "LICENSE"
 readme = "README.md"
 description = "impl shiori for rust{...}"
