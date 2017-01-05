@@ -52,7 +52,7 @@ mod app {
         let os_dir = g.to_os_str().unwrap();
         let mut pasta = PASTA.write()?;
         match *pasta {
-            Err(_) => return Err(AppError::NotLoad),
+            Err(e) => return Err(e),
             Ok(ref mut api) => {
                 api.load(&os_dir)?;
             }
