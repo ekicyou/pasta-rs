@@ -64,7 +64,7 @@ mod app {
     pub fn unload() -> Result<(), AppError> {
         let mut pasta = PASTA.write()?;
         match *pasta {
-            Err(_) => return Err(AppError::NotLoad),
+            Err(e) => return Err(e),
             Ok(ref mut api) => {
                 api.unload()?;
             }
@@ -79,7 +79,7 @@ mod app {
         let req = g.to_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
-            Err(_) => return Err(AppError::NotLoad),
+            Err(e) => return Err(e),
             Ok(ref mut api) => {
                 let res = api.request(req)?;
                 let b_res = res.as_bytes();
