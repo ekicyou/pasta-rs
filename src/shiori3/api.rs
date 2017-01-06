@@ -30,7 +30,10 @@ pub struct Shiori {
 impl Shiori {
     fn request_impl<'b, 'c>(&mut self, req_text: &'b str) -> Result<Cow<'c, str>, &'c str> {
         match ShioriRequest::from_str(req_text) {
-            Err(reason) => return Ok(ShioriResponse::bad_request(reason)),
+            Err(reason) => {
+                let text = format!("{:?}", reason);
+                return Ok(ShioriResponse::bad_request(&text));
+            } 
             Ok(req) => {
                 if req.id == "OnBoot" {
                     let talk = r"\1\s[10]\0\s[0]やあ、元気？\e";
@@ -91,7 +94,7 @@ fn shiori_test() {
         let check = concat!(
             "SHIORI/3.0 400 Bad Request\r\n",
             "Charset: UTF-8\r\n",
-            "X-PASTA-ERROR-REASON: unknown header\r\n",
+            "X-PASTA-ERROR-REASON: UnknownHeader\r\n",
             "\r\n",
         );
         let res = shiori.request(req).unwrap();

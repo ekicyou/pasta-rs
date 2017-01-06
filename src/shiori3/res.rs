@@ -66,24 +66,26 @@ static INTERNAL_SERVER_ERROR_STRING: &'static str = concat!(
     "Charset: UTF-8\r\n",
 );
 
-
 impl ShioriResponse {
     /// 204 No Content
     pub fn no_content<'a>() -> Cow<'a, str> {
         Cow::Borrowed(NO_CONTENT_STRING)
     }
 
+    /// 200 OK
     pub fn ok<'a>(value: &str, refs: &[&str], kv: &[(&str, &str)]) -> Cow<'a, str> {
         let res = make_response(OK_STRING, value, refs, kv);
         Cow::Owned(res)
     }
 
+    /// 200 OK, talk出力
     pub fn talk<'a>(value: &str) -> Cow<'a, str> {
         let kv = [];
         let refs = [];
         ShioriResponse::ok(value, &refs[..], &kv[..])
     }
 
+    /// 400 Bad Request
     pub fn bad_request<'a>(reason: &str) -> Cow<'a, str> {
         let kv = [("X-PASTA-ERROR-REASON", reason)];
         let refs = [];
@@ -91,6 +93,7 @@ impl ShioriResponse {
         Cow::Owned(res)
     }
 
+    /// 500 Internal Server Error
     pub fn internal_server_error<'a>(reason: &str) -> Cow<'a, str> {
         let kv = [("X-PASTA-ERROR-REASON", reason)];
         let refs = [];

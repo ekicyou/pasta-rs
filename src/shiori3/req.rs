@@ -3,6 +3,11 @@ use shiori3::enums::Token;
 use shiori3::parsers::{header2, header3, kv};
 use std::collections::HashMap;
 
+#[derive(Copy, Eq, PartialEq, Clone, Debug)]
+pub enum ReqParseError {
+    UnknownHeader,
+}
+
 
 /// SHIORI3リクエストの解析結果を格納します。
 #[derive(PartialEq,Eq,Debug)]
@@ -20,7 +25,7 @@ pub struct ShioriRequest<'a> {
 }
 
 impl<'a> ShioriRequest<'a> {
-    pub fn from_str<'b>(text: &'a str) -> Result<ShioriRequest<'a>, &'b str> {
+    pub fn from_str(text: &'a str) -> Result<ShioriRequest<'a>, ReqParseError> {
         let mut target = &text[..];
         let mut rc = ShioriRequest {
             version: Token::NONE,
@@ -48,7 +53,7 @@ impl<'a> ShioriRequest<'a> {
                         rc.method = m;
                         rc.id = id;
                     }
-                    _ => return Result::Err("unknown header"),
+                    _ => return Err(ReqParseError::UnknownHeader),
                 }
             }
         }
