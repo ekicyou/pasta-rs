@@ -3,7 +3,6 @@ authors = ["ekicyou <dot.station@gmail.com>"]
 description = "impl shiori for rust{...}"
 keywords = ["shiori", "ukagaka"]
 license = "MIT"
-license-file = "LICENSE"
 name = "pasta"
 readme = "README.md"
 repository = "https://github.com/ekicyou/pasta-rs"
