@@ -88,7 +88,7 @@ impl GStr {
     /// MultiByteToWideChar()を利用する。
     pub fn to_os_str(&self) -> Result<OsString, GStrError> {
         let bytes = self.to_bytes();
-        let s = Encoding::ANSI.to_string(bytes).map_err(|e| GStrError::AnsiEncode)?;
+        let s = Encoding::ANSI.to_string(bytes).map_err(|_| GStrError::AnsiEncode)?;
         let os_str = OsString::from(s);
         Ok(os_str)
     }

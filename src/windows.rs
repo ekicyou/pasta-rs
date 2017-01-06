@@ -180,7 +180,7 @@ fn ffi_test() {
             "\r\n",
         );
         let g = GStr::clone_from_slice_nofree(req.as_bytes());
-        let mut h = g.handle();
+        let h = g.handle();
         let mut len = g.len();
         let hres = request(h, &mut len);
         let gres = GStr::new(hres, len);
@@ -204,7 +204,7 @@ fn ffi_test() {
             "\r\n",
         );
         let g = GStr::clone_from_slice_nofree(req.as_bytes());
-        let mut h = g.handle();
+        let h = g.handle();
         let mut len = g.len();
         let hres = request(h, &mut len);
         let gres = GStr::new(hres, len);
