@@ -1,12 +1,12 @@
-use winapi::{HGLOBAL, DWORD, LPVOID, size_t};
+use winapi::{HGLOBAL, DWORD, LPVOID};
 
 mod app {
     use std::sync::{RwLock, PoisonError};
     use shiori3::api::*;
     use std::*;
-    use winapi::{HGLOBAL, size_t};
-    use gstr::*;
+    use winapi::HGLOBAL;
     use std::str::Utf8Error;
+    use shiori_hglobal::*;
 
     #[derive(Copy, Eq, PartialEq, Clone, Debug)]
     pub enum AppError {
@@ -52,9 +52,9 @@ mod app {
     }
 
     #[inline]
-    pub fn load(hdir: HGLOBAL, len: size_t) -> Result<(), AppError> {
-        let g = GStr::new(hdir, len);
-        let os_dir = g.to_os_str()?;
+    pub fn load(hdir: HGLOBAL, len: usize) -> Result<(), AppError> {
+        let g = GStr::capture(hdir, len);
+        let os_dir = g.to_load_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
             Err(e) => Err(e),
@@ -79,9 +79,9 @@ mod app {
     }
 
     #[inline]
-    pub fn request(h: HGLOBAL, len: &mut size_t) -> Result<HGLOBAL, AppError> {
-        let g = GStr::new(h, *len);
-        let req = g.to_str()?;
+    pub fn request(h: HGLOBAL, len: &mut usize) -> Result<HGLOBAL, AppError> {
+        let g = GStr::capture(h, *len);
+        let req = g.to_req_str()?;
         let mut pasta = PASTA.write()?;
         match *pasta {
             Err(e) => Err(e),
@@ -99,7 +99,7 @@ mod app {
 
 
 #[no_mangle]
-pub extern "C" fn load(hdir: HGLOBAL, len: size_t) -> bool {
+pub extern "C" fn load(hdir: HGLOBAL, len: usize) -> bool {
     app::load(hdir, len).is_ok()
 }
 
@@ -109,7 +109,7 @@ pub extern "C" fn unload() -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn request(h: HGLOBAL, len: &mut size_t) -> HGLOBAL {
+pub extern "C" fn request(h: HGLOBAL, len: &mut usize) -> HGLOBAL {
     match app::request(h, len) {
         Ok(res) => res,
         Err(_) => ::std::ptr::null_mut(),
@@ -147,7 +147,7 @@ pub extern "stdcall" fn DllMain(hInst: usize,
 
 #[test]
 fn ffi_test() {
-    use gstr::*;
+    use shiori_hglobal::*;
     {
         ::std::env::set_var("RUST_LOG", "trace");
         let _ = ::env_logger::init();
@@ -183,8 +183,8 @@ fn ffi_test() {
         let h = g.handle();
         let mut len = g.len();
         let hres = request(h, &mut len);
-        let gres = GStr::new(hres, len);
-        let res = gres.to_str().unwrap();
+        let gres = GStr::capture(hres, len);
+        let res = gres.to_req_str().unwrap();
         assert_eq!(check, res);
     }
     {
@@ -207,8 +207,8 @@ fn ffi_test() {
         let h = g.handle();
         let mut len = g.len();
         let hres = request(h, &mut len);
-        let gres = GStr::new(hres, len);
-        let res = gres.to_str().unwrap();
+        let gres = GStr::capture(hres, len);
+        let res = gres.to_req_str().unwrap();
         assert_eq!(check, res);
     }
     {

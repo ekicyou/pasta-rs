@@ -12,7 +12,7 @@ extern crate libc;
 extern crate log;
 extern crate env_logger;
 
-extern crate local_encoding;
+extern crate shiori_hglobal;
 
 mod shiori3;
 
@@ -26,9 +26,6 @@ extern crate winapi;
 #[macro_use]
 extern crate kernel32;
 
-
-#[cfg(any(windows))]
-mod gstr;
 
 #[cfg(any(windows))]
 mod windows;
