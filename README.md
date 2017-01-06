@@ -115,6 +115,16 @@ cargo update
 9. rust+vscodeでニヤニヤする
  * これでrust+vscodeの素晴らしいエコシステムの恩恵を受けられます。
  * 存分にコードを作ってニヤニヤしてください！
+ * 環境のアップグレードは下記コマンドで可能です。バッチファイルを作っておくと便利ですよ。
+
+ ```update.bat
+rustup update
+cargo update
+pushd path/to/rust/src
+  git pull
+  popd
+```
+
 
 
 [rustup]: https://www.rustup.rs/ "rustup"
