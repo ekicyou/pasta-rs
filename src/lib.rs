@@ -12,8 +12,6 @@ extern crate libc;
 extern crate log;
 extern crate env_logger;
 
-extern crate shiori_hglobal;
-
 mod shiori3;
 
 // windows モジュール登録
@@ -26,6 +24,8 @@ extern crate winapi;
 #[macro_use]
 extern crate kernel32;
 
+#[cfg(any(windows))]
+extern crate shiori_hglobal;
 
 #[cfg(any(windows))]
 mod windows;

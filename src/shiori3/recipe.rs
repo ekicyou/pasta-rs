@@ -1,5 +1,6 @@
 use nom::IResult;
 
+
 // chars
 named!(identifier<&str,&str>, re_find_static!(
     concat!(
@@ -43,10 +44,11 @@ fn chars_test() {
     }
 }
 
+
 // mark
 named!(at   <&str,&str>, re_find_static!(r"^[@＠]"));
 named!(sharp<&str,&str>, re_find_static!(r"^[#＃]"));
-named!(line <&str,&str>, re_find_static!(r"^[－ー-]"));
+named!(dash <&str,&str>, re_find_static!(r"^[-‐–—―−－ー]"));
 named!(coron<&str,&str>, re_find_static!(r"^[：:]"));
 
 #[test]
@@ -66,5 +68,13 @@ fn mark_test() {
     {
         let text = "＃";
         assert_eq!(sharp(text), IResult::Done("",text));
+    }
+    {
+        let text = "-";
+        assert_eq!(dash(text), IResult::Done("",text));
+    }
+    {
+        let text = ":";
+        assert_eq!(coron(text), IResult::Done("",text));
     }
 }
