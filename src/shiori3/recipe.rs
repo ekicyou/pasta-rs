@@ -10,7 +10,7 @@ named!(identifier<&str,&str>, re_find_static!(
     )
 ));
 named!(sp  <&str,&str>, re_find_static!(r"^[\t\v\f \xA0\x{FEFF}\p{Zs}]+"));
-named!(crlf<&str,&str>, re_find_static!(r"^((\r?\n)|[\r\x{2028}\x{2029}])"));
+named!(eol <&str,&str>, re_find_static!(r"^((\r?\n)|[\r\x{2028}\x{2029}]|\z)"));
 
 #[test]
 fn chars_test() {
@@ -24,23 +24,27 @@ fn chars_test() {
     }
     {
         let text = "\r\n";
-        assert_eq!(crlf(text), IResult::Done("",text));
+        assert_eq!(eol(text), IResult::Done("",text));
     }
     {
         let text = "\r";
-        assert_eq!(crlf(text), IResult::Done("",text));
+        assert_eq!(eol(text), IResult::Done("",text));
     }
     {
         let text = "\n";
-        assert_eq!(crlf(text), IResult::Done("",text));
+        assert_eq!(eol(text), IResult::Done("",text));
     }
     {
         let text = "\u{2028}";
-        assert_eq!(crlf(text), IResult::Done("",text));
+        assert_eq!(eol(text), IResult::Done("",text));
     }
     {
         let text = "\u{2029}";
-        assert_eq!(crlf(text), IResult::Done("",text));
+        assert_eq!(eol(text), IResult::Done("",text));
+    }
+    {
+        let text = "";
+        assert_eq!(eol(text), IResult::Done("",text));
     }
 }
 

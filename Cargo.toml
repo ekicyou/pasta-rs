@@ -18,7 +18,7 @@ toml = "^0.2.1"
 
 [dependencies.nom]
 features = ["verbose-errors", "regexp_macros"]
-version = "^2.0"
+version = "^2.0.1"
 
 [lib]
 crate-type = ["lib", "staticlib", "cdylib"]
