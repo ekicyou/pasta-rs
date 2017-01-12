@@ -10,6 +10,8 @@ extern crate nom;
 extern crate libc;
 #[macro_use]
 extern crate log;
+
+#[cfg(test)]
 extern crate env_logger;
 
 mod shiori3;
