@@ -32,5 +32,6 @@ extern crate shiori_hglobal;
 #[cfg(any(windows))]
 mod windows;
 
+// api
 #[cfg(any(windows))]
 pub use windows::{DllMain, load, unload, request};
