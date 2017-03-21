@@ -8,15 +8,21 @@ init:
 
 environment:
   matrix:
-    - TARGET: i686-pc-windows-msvc
-    - TARGET: x86_64-pc-windows-msvc
+  - TARGET: nightly-x86_64-pc-windows-msvc
+  - TARGET: nightly-i686-pc-windows-msvc
+  - TARGET: nightly-x86_64-pc-windows-gnu
+  - TARGET: nightly-i686-pc-windows-gnu
 
 install:
   - chcp
-  - curl -sSf -o rustup-init.exe https://win.rustup.rs
-  - rustup-init.exe -y
-  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
-  - if NOT "%TARGET%" == "x86_64-pc-windows-msvc" rustup target add %TARGET%
+  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-${env:TARGET}.exe" -FileName "rust-install.exe"
+  - ps: .\rust-install.exe /VERYSILENT /NORESTART /DIR="C:\rust" | Out-Null
+  - ps: $env:PATH="$env:PATH;C:\rust\bin"
+  - rustc -vV
+  - cargo -vV
 
 build_script:
-  - cmd: cargo test --release --target=%TARGET%
+  - cargo build
+
+test_script:
+  - cargo test --features everything
