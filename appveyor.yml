@@ -25,4 +25,4 @@ build_script:
   - cargo build
 
 test_script:
-  - cargo test --features everything
+  - cargo test
