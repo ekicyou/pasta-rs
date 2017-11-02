@@ -1,0 +1,10 @@
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\CSUtil.dll
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\CSUtil.pdb
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\Livet.dll
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\Microsoft.Expression.Interactions.dll
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\StatefulModel.dll
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\System.Windows.Interactivity.dll
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\bin\Release\Livet.xml
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\obj\Release\CSUtil.dll
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\obj\Release\CSUtil.pdb
+C:\home\maz\work\ChipFormPress\dev\src\CSUtil\obj\Release\CSUtil.csprojResolveAssemblyReference.cache
