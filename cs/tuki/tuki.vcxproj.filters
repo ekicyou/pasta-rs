@@ -6,10 +6,15 @@
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="tuki.h" />
+    <ClInclude Include="ishiori.h" />
+    <ClInclude Include="assembly_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="shiori.cpp" />
+    <ClCompile Include="tuki.cpp" />
+    <ClCompile Include="ishiori.cpp" />
+    <ClCompile Include="assembly_utils.cpp" />
   </ItemGroup>
 </Project>
