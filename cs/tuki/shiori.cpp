@@ -18,12 +18,16 @@ static gcroot< Setugekka::Tuki^> tuki;
 * žx Method / unload
 */
 static BOOL unload_impl(void) {
-    if (tuki.operator ->() == nullptr)return FALSE;
-    auto rc = tuki->unload();
-    tuki = nullptr;
-    System::GC::Collect();
-    System::GC::WaitForPendingFinalizers();
-    return rc;
+    try {
+        if (tuki.operator ->() == nullptr)return FALSE;
+        auto rc = tuki->unload();
+        tuki = nullptr;
+        return rc;
+    }
+    finally{
+        System::GC::Collect();
+        System::GC::WaitForPendingFinalizers();
+    }
 }
 
 /* ----------------------------------------------------------------------------
@@ -40,7 +44,7 @@ SHIORI_API BOOL __cdecl load(HGLOBAL hGlobal_loaddir, long loaddir_len)
  */
 SHIORI_API BOOL __cdecl unload(void)
 {
-    return  unload_impl();
+    return unload_impl();
 }
 
 /* ----------------------------------------------------------------------------
