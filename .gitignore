@@ -20,5 +20,3 @@ obj
 bin
 *.db
 *.opendb
-*/Debug/*
-*/Release/*
