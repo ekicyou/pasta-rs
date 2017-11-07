@@ -6,13 +6,13 @@ using namespace System;
 using namespace System::Text;
 using namespace System::Runtime::InteropServices;
 
-Setugekka::Tuki::Tuki() {
+Setugekka::Tuki::Tuki::Tuki() {
 }
 
-Setugekka::Tuki::~Tuki() {
+Setugekka::Tuki::Tuki::~Tuki() {
 }
 
-void Setugekka::Tuki::CreateProxy(String^ load_dir) {
+void Setugekka::Tuki::Tuki::CreateProxy(String^ load_dir) {
     auto bin_dir = System::IO::Path::Combine(load_dir, "bin");
     auto tmp_dir = System::IO::Path::Combine(load_dir, "temp");
 
@@ -35,7 +35,7 @@ void Setugekka::Tuki::CreateProxy(String^ load_dir) {
     return;
 }
 
-BOOL Setugekka::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddir_len) {
+BOOL Setugekka::Tuki::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddir_len) {
     // ƒvƒƒLƒV‚Ìì¬
     auto load_dir = Marshal::PtrToStringAnsi(IntPtr((void*)hGlobal_loaddir), loaddir_len);
     CreateProxy(load_dir);
@@ -43,7 +43,7 @@ BOOL Setugekka::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddi
     return proxy->load(hinst, hGlobal_loaddir, loaddir_len);
 }
 
-BOOL Setugekka::Tuki::unload(void)
+BOOL Setugekka::Tuki::Tuki::unload(void)
 {
     auto rc = proxy != nullptr ? TRUE : FALSE;
     delete proxy;
@@ -53,7 +53,7 @@ BOOL Setugekka::Tuki::unload(void)
     return rc;
 }
 
-HGLOBAL Setugekka::Tuki::request(HGLOBAL hGlobal_request, long & len)
+HGLOBAL Setugekka::Tuki::Tuki::request(HGLOBAL hGlobal_request, long & len)
 {
     return HGLOBAL();
 }

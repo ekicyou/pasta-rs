@@ -12,7 +12,7 @@
  * グローバルインスタンス
  */
 static HINSTANCE hinst;
-static gcroot< Setugekka::Tuki^> tuki;
+static gcroot< Setugekka::IShioriUnsafe^> tuki;
 
 /* ----------------------------------------------------------------------------
 * 栞 Method / unload
@@ -35,7 +35,7 @@ static BOOL unload_impl(void) {
  */
 SHIORI_API BOOL __cdecl load(HGLOBAL hGlobal_loaddir, long loaddir_len)
 {
-    tuki = gcnew Setugekka::Tuki();
+    tuki = gcnew Setugekka::Tuki::Tuki();
     return tuki->load(hinst, hGlobal_loaddir, loaddir_len);
 }
 
