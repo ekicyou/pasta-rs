@@ -4,8 +4,8 @@ namespace Setugekka {
     public interface class IShioriUnsafe
     {
     public:
-        BOOL load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddir_len);
+        BOOL load(void* hinst, void* hGlobal_loaddir, long loaddir_len);
         BOOL unload(void);
-        HGLOBAL request(HGLOBAL hGlobal_request, long& len);
+        void* request(void* hGlobal_request, long& len);
     };
 }

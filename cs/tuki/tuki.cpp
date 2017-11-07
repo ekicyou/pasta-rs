@@ -35,9 +35,9 @@ void Setugekka::Tuki::Tuki::CreateProxy(String^ load_dir) {
     return;
 }
 
-BOOL Setugekka::Tuki::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddir_len) {
+BOOL Setugekka::Tuki::Tuki::load(void* hinst, void* hGlobal_loaddir, long loaddir_len) {
     // ƒvƒƒLƒV‚Ìì¬
-    auto load_dir = Marshal::PtrToStringAnsi(IntPtr((void*)hGlobal_loaddir), loaddir_len);
+    auto load_dir = Marshal::PtrToStringAnsi(IntPtr(hGlobal_loaddir), loaddir_len);
     CreateProxy(load_dir);
     if (proxy == nullptr) return FALSE;
     return proxy->load(hinst, hGlobal_loaddir, loaddir_len);
@@ -53,7 +53,7 @@ BOOL Setugekka::Tuki::Tuki::unload(void)
     return rc;
 }
 
-HGLOBAL Setugekka::Tuki::Tuki::request(HGLOBAL hGlobal_request, long & len)
+HGLOBAL Setugekka::Tuki::Tuki::request(void* hGlobal_request, long & len)
 {
     return HGLOBAL();
 }
