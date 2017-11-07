@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Setugekka;
+using System.IO;
 
 namespace Setugekka.Yuki
 {
@@ -24,10 +25,19 @@ namespace Setugekka.Yuki
             try
             {
                 LoadDir = Marshal.PtrToStringAnsi(pload, loaddir_len);
+
+                // despript.txtの確認
+                var despript_path = Path.Combine(LoadDir, "despript.txt");
+                var despript = DescriptExt.Read(despript_path);
+                var assembly_name = despript.GetOrDefault("setugekka.hana.assembly", "hana");
+                var type_name = despript.GetOrDefault("setugekka.hana.type", "Setugekka.Hana.Hana");
+
                 // SHIORIのロード
+                Shiori = AppDomain.CurrentDomain.CreateInstanceAndUnwrap(assembly_name, type_name);
 
                 // Load実行
-                return Shiori.Load(HInst, LoadDir) == true ? 1 : 0;
+                bool rc = Shiori.Load(HInst, LoadDir);
+                return rc == true ? 1 : 0;
             }
             catch (Exception ex)
             {
@@ -44,7 +54,8 @@ namespace Setugekka.Yuki
         {
             try
             {
-                return Shiori.Unload() == true ? 1 : 0;
+                bool rc = Shiori.Unload();
+                return rc == true ? 1 : 0;
             }
             catch (Exception ex)
             {
@@ -58,12 +69,11 @@ namespace Setugekka.Yuki
             var preq = new IntPtr(hGlobal_request);
             try
             {
-                // Request実行
-                var req = "";
-                var res = Shiori.Request(req);
-
-                var pres = IntPtr.Zero;
-                *len = 0;
+                var req = preq.ToUtf8String(*len);
+                String res = Shiori.Request(req);
+                var t = res.ToHGlobal();
+                var pres = t.Item1;
+                *len = t.Item2;
                 return pres.ToPointer();
             }
             catch (Exception ex)
