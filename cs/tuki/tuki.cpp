@@ -12,18 +12,16 @@ Setugekka::Tuki::Tuki() {
 Setugekka::Tuki::~Tuki() {
 }
 
-BOOL Setugekka::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddir_len) {
-    // loaddirを解決
-    auto loaddir = Marshal::PtrToStringAnsi(IntPtr((void*)hGlobal_loaddir), loaddir_len);
-    auto bin_dir = System::IO::Path::Combine(loaddir, "bin");
-    auto tmp_dir = System::IO::Path::Combine(loaddir, "temp");
+void Setugekka::Tuki::CreateProxy(String^ load_dir) {
+    auto bin_dir = System::IO::Path::Combine(load_dir, "bin");
+    auto tmp_dir = System::IO::Path::Combine(load_dir, "temp");
 
     // 自分のディレクトリをパス解決に含める
-    auto di(AssemblyUtil::AddCurrentAssemblyResolvePath(loaddir));
+    auto di(AssemblyUtil::AddCurrentAssemblyResolvePath(load_dir));
 
     // アプリケーションドメインの作成
     auto info = gcnew AppDomainSetup();
-    info->ApplicationBase = loaddir;
+    info->ApplicationBase = load_dir;
     info->PrivateBinPath = bin_dir;
     info->DynamicBase = tmp_dir;
     info->ShadowCopyFiles = "true";
@@ -34,17 +32,25 @@ BOOL Setugekka::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddi
 
     // プロキシを読み込む
 
-    return FALSE;
+    return;
+}
+
+BOOL Setugekka::Tuki::load(HINSTANCE hinst, HGLOBAL hGlobal_loaddir, long loaddir_len) {
+    // プロキシの作成
+    auto load_dir = Marshal::PtrToStringAnsi(IntPtr((void*)hGlobal_loaddir), loaddir_len);
+    CreateProxy(load_dir);
+    if (proxy == nullptr) return FALSE;
+    return proxy->load(hinst, hGlobal_loaddir, loaddir_len);
 }
 
 BOOL Setugekka::Tuki::unload(void)
 {
-    if (proxy == nullptr) return FALSE;
+    auto rc = proxy != nullptr ? TRUE : FALSE;
     delete proxy;
     delete proxy_domain;
     proxy = nullptr;
     proxy_domain = nullptr;
-    return TRUE;
+    return rc;
 }
 
 HGLOBAL Setugekka::Tuki::request(HGLOBAL hGlobal_request, long & len)

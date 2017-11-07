@@ -26,7 +26,7 @@ namespace Setugekka {
         void RemoveEvent();
     };
 
-    static ref class AssemblyUtil
+    public ref class AssemblyUtil
     {
     public:
         /// <summary>
@@ -55,7 +55,7 @@ namespace Setugekka {
         /// 返すPathはシャドーコピーではなく、本体のPathです。
         /// </summary>
         /// <returns></returns>
-        static  String^ GetCallingAssemblyPath();
+        static String^ GetCallingAssemblyPath();
 
         /// <summary>
         /// 指定されたアセンブリのDirecryPathを返します。
@@ -63,7 +63,7 @@ namespace Setugekka {
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        static  String^ GetAssemblyDirctory(Assembly^ assembly);
+        static String^ GetAssemblyDirctory(Assembly^ assembly);
 
         /// <summary>
         /// 呼び出し元のアセンブリの DirecryPathを返します。
