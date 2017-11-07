@@ -14,6 +14,9 @@ namespace Setugekka.Yuki
         public IntPtr HInst { get; private set; }
         public string LoadDir { get; private set; }
 
+        /// <summary>SHIORI実体</summary>
+        public dynamic Shiori { get; private set; }
+
         public unsafe int load(void* hinst, void* hGlobal_loaddir, int loaddir_len)
         {
             HInst = new IntPtr(hinst);

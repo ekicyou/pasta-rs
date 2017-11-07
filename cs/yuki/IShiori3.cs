@@ -11,7 +11,10 @@ namespace Setugekka
     /// </summary>
     public interface IShiori3
     {
-        bool Load(string load_str);
+        IntPtr HInst { get; }
+        string LoadDir { get; }
+
+        bool Load(IntPtr hinst, string load_str);
 
         bool Unload();
 
