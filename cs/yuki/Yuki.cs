@@ -24,7 +24,10 @@ namespace Setugekka.Yuki
             try
             {
                 LoadDir = Marshal.PtrToStringAnsi(pload, loaddir_len);
-                return 1;
+                // SHIORIのロード
+
+                // Load実行
+                return Shiori.Load(HInst, LoadDir) == true ? 1 : 0;
             }
             catch (Exception ex)
             {
@@ -41,7 +44,7 @@ namespace Setugekka.Yuki
         {
             try
             {
-                return 1;
+                return Shiori.Unload() == true ? 1 : 0;
             }
             catch (Exception ex)
             {
@@ -55,6 +58,10 @@ namespace Setugekka.Yuki
             var preq = new IntPtr(hGlobal_request);
             try
             {
+                // Request実行
+                var req = "";
+                var res = Shiori.Request(req);
+
                 var pres = IntPtr.Zero;
                 *len = 0;
                 return pres.ToPointer();
