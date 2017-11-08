@@ -2,7 +2,6 @@
 // 参照回数が多く、かつあまり変更されない、プロジェクト専用のインクルード ファイル
 // を記述します。
 //
-
 #pragma once
 
 #include "targetver.h"
@@ -11,12 +10,11 @@
 // Windows ヘッダー ファイル:
 #include <windows.h>
 
-
-
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // 一部の CString コンストラクタは明示的です。
-#include <atlbase.h>
-#include <atlstr.h>
-#include <atlpath.h>
-#include <atlcoll.h>
+#include <vcclr.h> 
+//#include <atlbase.h>
+//#include <atlstr.h>
+//#include <atlpath.h>
+//#include <atlcoll.h>
 #define SHIORI_API_IMPLEMENTS
