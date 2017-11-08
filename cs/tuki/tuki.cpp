@@ -3,6 +3,7 @@
 #include "assembly_utils.h"
 
 using namespace System;
+using namespace System::IO;
 using namespace System::Text;
 using namespace System::Runtime::InteropServices;
 
@@ -13,10 +14,13 @@ Setugekka::Tuki::Tuki::~Tuki() {
 }
 
 void Setugekka::Tuki::Tuki::CreateProxy(String^ load_dir) {
-    auto bin_dir = System::IO::Path::Combine(load_dir, "bin");
-    auto tmp_dir = System::IO::Path::Combine(load_dir, "temp");
-    auto dyn_dir = System::IO::Path::Combine(tmp_dir, "dyn");
-    auto sha_dir = System::IO::Path::Combine(tmp_dir, "shadow");
+    auto base_dir = Path::GetDirectoryName(
+        Path::GetDirectoryName(load_dir));
+    auto bin_dir = Path::Combine(load_dir, "bin");
+    auto tmp_dir = Path::Combine(load_dir, "temp");
+    auto dyn_dir = Path::Combine(tmp_dir, "dyn");
+    auto sha_dir = Path::Combine(tmp_dir, "shadow");
+    auto bin_dirs = load_dir + ";" + bin_dir;
 
     // 自分のディレクトリをパス解決に含める
     auto di(AssemblyUtil::AddCurrentAssemblyResolvePath(load_dir));
@@ -25,8 +29,9 @@ void Setugekka::Tuki::Tuki::CreateProxy(String^ load_dir) {
     auto name = "TukiProxy_" + Guid::NewGuid().ToString();
     auto info = gcnew AppDomainSetup();
     info->ApplicationName = name;
-    info->ApplicationBase = load_dir;
-    info->PrivateBinPath = bin_dir;
+    info->ApplicationBase = base_dir;
+    info->PrivateBinPath = bin_dirs;
+    info->PrivateBinPathProbe = bin_dirs;
     info->DynamicBase = dyn_dir;
     info->ShadowCopyDirectories = sha_dir;
     info->ShadowCopyFiles = "true";
@@ -39,24 +44,44 @@ void Setugekka::Tuki::Tuki::CreateProxy(String^ load_dir) {
 }
 
 BOOL Setugekka::Tuki::Tuki::load(void* hinst, void* hGlobal_loaddir, long loaddir_len) {
-    // プロキシの作成
-    auto load_dir = Marshal::PtrToStringAnsi(IntPtr(hGlobal_loaddir), loaddir_len);
-    CreateProxy(load_dir);
-    if (proxy == nullptr) return FALSE;
-    return proxy->load(hinst, hGlobal_loaddir, loaddir_len);
+    try {
+        // プロキシの作成
+        auto load_dir = Path::GetFullPath(
+            Marshal::PtrToStringAnsi(IntPtr(hGlobal_loaddir), loaddir_len));
+        CreateProxy(load_dir);
+        if (proxy == nullptr) return FALSE;
+        return proxy->load(hinst, hGlobal_loaddir, loaddir_len);
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 BOOL Setugekka::Tuki::Tuki::unload(void)
 {
-    auto rc = proxy != nullptr ? TRUE : FALSE;
-    delete proxy;
-    delete proxy_domain;
-    proxy = nullptr;
-    proxy_domain = nullptr;
-    return rc;
+    try {
+        auto rc = proxy != nullptr ? proxy->unload() : FALSE;
+        delete proxy;
+        if (proxy_domain != nullptr) AppDomain::Unload(proxy_domain);
+        delete proxy_domain;
+        proxy = nullptr;
+        proxy_domain = nullptr;
+        return rc;
+    }
+    catch (...) {
+        return FALSE;
+    }
 }
 
 HGLOBAL Setugekka::Tuki::Tuki::request(void* hGlobal_request, long & len)
 {
-    return HGLOBAL();
+    try {
+        if (proxy != nullptr) return proxy->request(hGlobal_request, len);
+        len = 0;
+        return nullptr;
+    }
+    catch (...) {
+        len = 0;
+        return nullptr;
+    }
 }

@@ -12,11 +12,14 @@ namespace Setugekka.Yuki
 {
     public class Yuki : IShioriUnsafe
     {
+        /// <summary>shiori.dllのHInst。</summary>
         public IntPtr HInst { get; private set; }
+
+        /// <summary>shiori.dllが存在するディレクトリ。load apiで渡される。</summary>
         public string LoadDir { get; private set; }
 
-        /// <summary>SHIORI実体</summary>
-        public dynamic Shiori { get; private set; }
+        /// <summary>Hana(SHIORI)実体</summary>
+        public dynamic Hana { get; private set; }
 
         public unsafe int load(void* hinst, void* hGlobal_loaddir, int loaddir_len)
         {
@@ -32,11 +35,11 @@ namespace Setugekka.Yuki
                 var assembly_name = despript.GetOrDefault("setugekka.hana.assembly", "hana");
                 var type_name = despript.GetOrDefault("setugekka.hana.type", "Setugekka.Hana.Hana");
 
-                // SHIORIのロード
-                Shiori = AppDomain.CurrentDomain.CreateInstanceAndUnwrap(assembly_name, type_name);
+                // Hana のロード
+                Hana = AppDomain.CurrentDomain.CreateInstanceAndUnwrap(assembly_name, type_name);
 
                 // Load実行
-                bool rc = Shiori.Load(HInst, LoadDir);
+                bool rc = Hana.Load(HInst, LoadDir);
                 return rc == true ? 1 : 0;
             }
             catch (Exception ex)
@@ -54,7 +57,7 @@ namespace Setugekka.Yuki
         {
             try
             {
-                bool rc = Shiori.Unload();
+                bool rc = Hana.Unload();
                 return rc == true ? 1 : 0;
             }
             catch (Exception ex)
@@ -70,7 +73,7 @@ namespace Setugekka.Yuki
             try
             {
                 var req = preq.ToUtf8String(*len);
-                String res = Shiori.Request(req);
+                string res = Hana.Request(req);
                 var t = res.ToHGlobal();
                 var pres = t.Item1;
                 *len = t.Item2;
