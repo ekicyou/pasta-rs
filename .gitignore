@@ -20,3 +20,4 @@ obj
 bin
 *.db
 *.opendb
+.vs
