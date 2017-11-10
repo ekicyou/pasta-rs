@@ -13,8 +13,4 @@
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // 一部の CString コンストラクタは明示的です。
 #include <vcclr.h> 
-//#include <atlbase.h>
-//#include <atlstr.h>
-//#include <atlpath.h>
-//#include <atlcoll.h>
 #define SHIORI_API_IMPLEMENTS
