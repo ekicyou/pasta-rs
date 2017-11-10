@@ -83,12 +83,38 @@
   <ItemGroup>
     <Compile Include="Hana.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources\Const.cs" />
     <Compile Include="Visuals\CompositionStage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Shell\_0.png" />
+    <EmbeddedResource Include="Resources\Shell\_1.png" />
+    <EmbeddedResource Include="Resources\Shell\_2.png" />
+    <EmbeddedResource Include="Resources\Shell\_3.png" />
+    <EmbeddedResource Include="Resources\Shell\_4.png" />
+    <EmbeddedResource Include="Resources\Shell\_5.png" />
+    <EmbeddedResource Include="Resources\Shell\_6.png" />
+    <EmbeddedResource Include="Resources\Shell\_base.png" />
+    <EmbeddedResource Include="Resources\Shell\_icon.png" />
+    <EmbeddedResource Include="Resources\Shell\x1.png" />
+    <EmbeddedResource Include="Resources\Shell\x2.png" />
+    <EmbeddedResource Include="Resources\Shell\x3.png" />
+    <EmbeddedResource Include="Resources\Shell\x4.png" />
+    <EmbeddedResource Include="Resources\Shell\x5.png" />
+    <EmbeddedResource Include="Resources\Shell\xyz.png" />
+    <EmbeddedResource Include="Resources\Shell\y1.png" />
+    <EmbeddedResource Include="Resources\Shell\y2.png" />
+    <EmbeddedResource Include="Resources\Shell\y3.png" />
+    <EmbeddedResource Include="Resources\Shell\y4.png" />
+    <EmbeddedResource Include="Resources\Shell\y5.png" />
+    <EmbeddedResource Include="Resources\Shell\y6.png" />
+    <EmbeddedResource Include="Resources\Shell\z1.png" />
+    <EmbeddedResource Include="Resources\Shell\z2.png" />
+  </ItemGroup>
   <Import Project="..\CSUtil\CSUtil.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

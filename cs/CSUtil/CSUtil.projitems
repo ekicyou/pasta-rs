@@ -9,6 +9,9 @@
     <Import_RootNamespace>CSUtil</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Reflection\AssemblyUtil.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Reflection\AssemblyUtil40.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Reflection\AssemblyVersionInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threading\CancellationTokenEventExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threading\CancellationTokenExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threading\ICTSCancelDisposable.cs" />
