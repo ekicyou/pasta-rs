@@ -33,6 +33,11 @@ namespace test_ui
         {
             DisposeStage();
             Stage = new CompositionStage();
+            ResizeStage();
+        }
+
+        private void ResizeStage()
+        {
             Stage.CreateWindowResources(Handle, ClientSize.Width, ClientSize.Height, this.DeviceDpi);
         }
 
@@ -44,6 +49,16 @@ namespace test_ui
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             DisposeStage();
+        }
+
+        private void MainForm_DpiChanged(object sender, DpiChangedEventArgs e)
+        {
+            ResizeStage();
+        }
+
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            ResizeStage();
         }
     }
 }

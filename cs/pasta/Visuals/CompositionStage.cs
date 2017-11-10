@@ -22,6 +22,8 @@ namespace Pasta.Visuals
 {
     public class CompositionStage : IDisposable
     {
+        private static NLog.Logger Log { get; } = NLog.LogManager.GetCurrentClassLogger();
+
         public void Dispose()
         {
             DisposeDeviceResources();
@@ -31,6 +33,7 @@ namespace Pasta.Visuals
         public D3D.Device DevD3D { get; private set; }
         public DXGI.Device DevDXGI { get; private set; }
         public D2D.Device DevD2D { get; private set; }
+        public DCOMP.DesktopDevice DevDCOMP { get; private set; }
         public bool IsDeviceCreated => DeviceCTS != null;
 
         public void DisposeDeviceResources()
@@ -51,6 +54,7 @@ namespace Pasta.Visuals
             DevD3D = new D3D.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport).RegisterBy(ct);
             DevDXGI = DevD3D.QueryInterface<DXGI.Device>();
             DevD2D = new D2D.Device(DevDXGI).RegisterBy(ct);
+            DevDCOMP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
 
             // 最後にWindowリソースの開放を登録する。
             ct.Register(DisposeWindowResources);
@@ -61,13 +65,6 @@ namespace Pasta.Visuals
         public int Width { get; private set; }
         public int Height { get; private set; }
         public double DPI { get; private set; }
-
-        /// <summary>ウィンドウ前面のデバイス</summary>
-        public DCOMP.DesktopDevice DevTOP { get; private set; }
-
-        /// <summary>ウィンドウ背面のデバイス</summary>
-        public DCOMP.DesktopDevice DevBACK { get; private set; }
-
         public DCOMP.Target Top { get; private set; }
         public DCOMP.Target Back { get; private set; }
 
@@ -89,6 +86,7 @@ namespace Pasta.Visuals
         /// <param name="dbi">クライアント領域のDPI</param>
         public void CreateWindowResources(IntPtr hwnd, int width, int height, double dbi)
         {
+            Log.Trace("CreateWindowResources");
             HWND = hwnd;
             Width = width;
             Height = height;
@@ -98,10 +96,8 @@ namespace Pasta.Visuals
             CreateDeviceResources();
             WindowCTS = new CancellationTokenSource().Begin();
             var ct = WindowCTS.Token;
-            DevTOP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
-            Top = DCOMP.Target.FromHwnd(DevTOP, hwnd, true);
-            DevBACK = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
-            Back = DCOMP.Target.FromHwnd(DevBACK, hwnd, false);
+            Top = DCOMP.Target.FromHwnd(DevDCOMP, hwnd, true).RegisterBy(ct);
+            Back = DCOMP.Target.FromHwnd(DevDCOMP, hwnd, false).RegisterBy(ct);
         }
     }
 }
