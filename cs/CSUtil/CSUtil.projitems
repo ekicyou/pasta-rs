@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>f36bb108-efc1-47d3-bc65-d506d3e73c90</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>CSUtil</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Threading\CancellationTokenEventExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threading\CancellationTokenExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threading\ICTSCancelDisposable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threading\PrioritySemaphoreSlim.cs" />
+  </ItemGroup>
+</Project>
