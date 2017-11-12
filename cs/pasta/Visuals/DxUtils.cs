@@ -11,7 +11,7 @@ namespace Pasta.Visuals
     public static   class DxUtils
     {
         /// <summary>
-        /// ファイルからビットマップを作成します。
+        /// ファイルからD2Dビットマップを作成します。
         /// </summary>
         /// <param name="target"></param>
         /// <param name="filename"></param>
@@ -23,7 +23,7 @@ namespace Pasta.Visuals
             return CreateBitmapImpl(target, decoder);
         }
         /// <summary>
-        /// 画像ストリームからビットマップを作成します。
+        /// 画像ストリームからD2Dビットマップを作成します。
         /// </summary>
         /// <param name="target"></param>
         /// <param name="pic_stream"></param>
@@ -40,14 +40,20 @@ namespace Pasta.Visuals
             int stride = 4 * size.Width;
             byte[] data = new byte[stride * size.Height];
             source.CopyPixels(data, stride, 0);
-            var data_handle = GCHandle.Alloc(data);
-            var data_ptr = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
-            var stream = new DataStream(data_ptr, data.LongLength, true, false);
-            var properties = new BitmapProperties
+            var data_handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
             {
-                PixelFormat = new PixelFormat(DXGI.Format.B8G8R8A8_UNorm, AlphaMode.Premultiplied),
-            };
-            return new Bitmap(target, size, stream, stride, properties);
+                var stream = new DataStream(data_handle.AddrOfPinnedObject(), data.LongLength, true, false);
+                var properties = new BitmapProperties
+                {
+                    PixelFormat = new PixelFormat(DXGI.Format.B8G8R8A8_UNorm, AlphaMode.Premultiplied),
+                };
+                return new Bitmap(target, size, stream, stride, properties);
+            }
+            finally
+            {
+                data_handle.Free();
+            }
         }
     }
 }
