@@ -87,6 +87,7 @@
     <Compile Include="Resources\Const.cs" />
     <Compile Include="Visuals\CompositionStage.cs" />
     <Compile Include="Visuals\DxUtils.cs" />
+    <Compile Include="Visuals\WicUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
