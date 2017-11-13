@@ -2,7 +2,9 @@
 using SharpDX.Direct3D11;
 using SharpDX.WIC;
 using System;
+using System.Linq;
 using System.Threading;
+using System.Collections.Generic;
 using D2D = SharpDX.Direct2D1;
 
 using D3D = SharpDX.Direct3D11;
@@ -25,10 +27,12 @@ namespace Pasta.Visuals
         public D3D.Device DevD3D { get; private set; }
         public DXGI.Device DevDXGI { get; private set; }
         public D2D.Device DevD2D { get; private set; }
+        public D2D.RenderTarget D2DTarget { get; private set; }
 
         public DCOMP.DesktopDevice DevDCOMP { get; private set; }
 
-        public D2D.Bitmap BaseImage { get; private set; }
+        public Dictionary<string, D2D.Bitmap> ImageDic { get; private set; }
+
 
         public bool IsDeviceCreated => DeviceCTS != null;
 
@@ -53,6 +57,8 @@ namespace Pasta.Visuals
             DevDCOMP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
 
             // ビットマップの読み込み
+
+
             using (var factory = new ImagingFactory())
             using (var dec = new BitmapDecoder(factory, Pasta.Resources.Const.Shell._base, DecodeOptions.CacheOnDemand))
             using (var frame = dec.GetFrame(0))
