@@ -33,7 +33,6 @@ namespace Pasta.Visuals
 
         public Dictionary<string, D2D.Bitmap> ImageDic { get; private set; }
 
-
         public bool IsDeviceCreated => DeviceCTS != null;
 
         public void DisposeDeviceResources()
@@ -57,7 +56,24 @@ namespace Pasta.Visuals
             DevDCOMP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
 
             // ビットマップの読み込み
-
+            Func<int, int, Texture2D> CreateTexture2D = (width, height) =>
+            {
+                var desc = new Texture2DDescription
+                {
+                    ArraySize = 1,
+                    BindFlags = BindFlags.ShaderResource,
+                    CpuAccessFlags = CpuAccessFlags.None,
+                    Format = DXGI.Format.B8G8R8A8_UNorm,
+                    Height = width,
+                    Width = height,
+                    MipLevels = 1,
+                    OptionFlags = ResourceOptionFlags.None,
+                    SampleDescription = new DXGI.SampleDescription(1, 0),
+                    Usage = ResourceUsage.Default,
+                };
+                var tx = new Texture2D(DevD3D, desc).RegisterBy(ct);
+                return tx;
+            };
 
             using (var factory = new ImagingFactory())
             using (var dec = new BitmapDecoder(factory, Pasta.Resources.Const.Shell._base, DecodeOptions.CacheOnDemand))
