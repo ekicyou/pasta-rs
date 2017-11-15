@@ -85,8 +85,10 @@
     <Compile Include="Hana.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\Const.cs" />
+    <Compile Include="Visuals\BitmapLoader.cs" />
     <Compile Include="Visuals\CompositionStage.cs" />
     <Compile Include="Visuals\DxUtils.cs" />
+    <Compile Include="Visuals\DxFactry.cs" />
     <Compile Include="Visuals\WicUtils.cs" />
   </ItemGroup>
   <ItemGroup>

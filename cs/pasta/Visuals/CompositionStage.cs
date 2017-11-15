@@ -55,34 +55,37 @@ namespace Pasta.Visuals
             DevD2D = new D2D.Device(DevDXGI).RegisterBy(ct);
             DevDCOMP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
 
-            // ビットマップの読み込み
-            Func<int, int, Texture2D> CreateTexture2D = (width, height) =>
+            using (var funcCTS = new CancellationTokenSource().Begin())
             {
-                var desc = new Texture2DDescription
+                var funcCT = funcCTS.Token;
+                // ビットマップの読み込み
+                Func<int, int, Texture2D> CreateTexture2D = (width, height) =>
                 {
-                    ArraySize = 1,
-                    BindFlags = BindFlags.ShaderResource,
-                    CpuAccessFlags = CpuAccessFlags.None,
-                    Format = DXGI.Format.B8G8R8A8_UNorm,
-                    Height = width,
-                    Width = height,
-                    MipLevels = 1,
-                    OptionFlags = ResourceOptionFlags.None,
-                    SampleDescription = new DXGI.SampleDescription(1, 0),
-                    Usage = ResourceUsage.Default,
+                    var desc = new Texture2DDescription
+                    {
+                        ArraySize = 1,
+                        BindFlags = BindFlags.ShaderResource,
+                        CpuAccessFlags = CpuAccessFlags.None,
+                        Format = DXGI.Format.B8G8R8A8_UNorm,
+                        Height = width,
+                        Width = height,
+                        MipLevels = 1,
+                        OptionFlags = ResourceOptionFlags.None,
+                        SampleDescription = new DXGI.SampleDescription(1, 0),
+                        Usage = ResourceUsage.Default,
+                    };
+                    var tx = new Texture2D(DevD3D, desc).RegisterBy(ct);
+                    return tx;
                 };
-                var tx = new Texture2D(DevD3D, desc).RegisterBy(ct);
-                return tx;
-            };
-
-            using (var factory = new ImagingFactory())
-            using (var dec = new BitmapDecoder(factory, Pasta.Resources.Const.Shell._base, DecodeOptions.CacheOnDemand))
-            using (var frame = dec.GetFrame(0))
-            using (var cnv = new FormatConverter(factory))
-            {
-                cnv.Initialize(frame, PixelFormat.Format32bppPBGRA, BitmapDitherType.None, null, 0, BitmapPaletteType.Custom);
+                var qBmp = from item in Resources.Const.Shell.AllItems
+                           let name = item.Item1
+                           let pic_stream = item.Item2
+                           let loader = new BitmapLoader(pic_stream, funcCT)
+                           let size = loader.Size
+                           let tx = CreateTexture2D(size.Width, size.Height)
+                           let target = new D2D.RenderTarget()
+                           let bmp = loader.CreateBitmap(tx)
             }
-
             // 最後にWindowリソースの開放を登録する。
             ct.Register(DisposeWindowResources);
         }

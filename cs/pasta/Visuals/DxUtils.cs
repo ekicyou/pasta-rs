@@ -8,7 +8,7 @@ using DXGI = SharpDX.DXGI;
 
 namespace Pasta.Visuals
 {
-    public static   class DxUtils
+    public static class DxUtils
     {
         /// <summary>
         /// ファイルからD2Dビットマップを作成します。
@@ -22,6 +22,7 @@ namespace Pasta.Visuals
             var decoder = BitmapDecoder.Create(uri, BitmapCreateOptions.None, BitmapCacheOption.Default);
             return CreateBitmapImpl(target, decoder);
         }
+
         /// <summary>
         /// 画像ストリームからD2Dビットマップを作成します。
         /// </summary>
@@ -33,6 +34,7 @@ namespace Pasta.Visuals
             var decoder = BitmapDecoder.Create(pic_stream, BitmapCreateOptions.None, BitmapCacheOption.Default);
             return CreateBitmapImpl(target, decoder);
         }
+
         private static Bitmap CreateBitmapImpl(RenderTarget target, BitmapDecoder decoder)
         {
             var source = new FormatConvertedBitmap(decoder.Frames[0], System.Windows.Media.PixelFormats.Pbgra32, null, 0.0);
@@ -55,6 +57,5 @@ namespace Pasta.Visuals
                 data_handle.Free();
             }
         }
-
     }
 }
