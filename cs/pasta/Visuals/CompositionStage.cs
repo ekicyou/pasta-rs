@@ -55,6 +55,10 @@ namespace Pasta.Visuals
             DevD2D = new D2D.Device(DevDXGI).RegisterBy(ct);
             DevDCOMP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
 
+            // ビットマップはこのあたりの記事を参考にDCVisualに確保したい
+            // https://msdn.microsoft.com/ja-jp/magazine/dn781354.aspx
+            // https://msdn.microsoft.com/magazine/dn759437
+
             using (var funcCTS = new CancellationTokenSource().Begin())
             {
                 var funcCT = funcCTS.Token;
