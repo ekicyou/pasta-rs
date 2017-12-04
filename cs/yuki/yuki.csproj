@@ -48,7 +48,6 @@
     <Compile Include="Const.cs" />
     <Compile Include="DescriptExt.cs" />
     <Compile Include="IntPtrExt.cs" />
-    <Compile Include="IShiori3.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Yuki.cs" />
   </ItemGroup>
