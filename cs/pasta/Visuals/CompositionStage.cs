@@ -55,6 +55,7 @@ namespace Pasta.Visuals
             DevD2D = new D2D.Device(DevDXGI).RegisterBy(ct);
             DevDCOMP = new DCOMP.DesktopDevice(DevDXGI).RegisterBy(ct);
 
+#if false
             // ビットマップはこのあたりの記事を参考にDCVisualに確保したい
             // https://msdn.microsoft.com/ja-jp/magazine/dn781354.aspx
             // https://msdn.microsoft.com/magazine/dn759437
@@ -90,6 +91,7 @@ namespace Pasta.Visuals
                            let target = new D2D.RenderTarget()
                            let bmp = loader.CreateBitmap(tx)
             }
+#endif
             // 最後にWindowリソースの開放を登録する。
             ct.Register(DisposeWindowResources);
         }
