@@ -52,7 +52,7 @@ namespace Setugekka.Hana
         {
             using (var fn_cts = Log.TraceEnter())
             {
-                return "SHIORI/3.0 204 No Content\r\nCharset: UTF-8\r\n\r\n";
+                return "SHIORI/3.0 204 No Content\r\nCharset: UTF-8\r\nX-Kanji-Test: 漢字の応答\r\n\r\n";
             }
         }
     }

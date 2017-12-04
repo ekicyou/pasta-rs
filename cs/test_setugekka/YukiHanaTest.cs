@@ -20,11 +20,6 @@ namespace test_setugekka
             try
             {
                 var ct = cts.Token;
-                ct.Register(() =>
-                {
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                });
                 ct.Register(() => Log.Trace("finally"));
 
                 // create
@@ -64,7 +59,7 @@ namespace test_setugekka
                     var res_p = new IntPtr(res_h);
                     ct.Register(() => Marshal.FreeHGlobal(res_p));
                     var res_str = res_p.ToUtf8String(req_l);
-                    res_str.Is("SHIORI/3.0 204 No Content\r\nCharset: UTF-8\r\n\r\n");
+                    res_str.Is("SHIORI/3.0 204 No Content\r\nCharset: UTF-8\r\nX-Kanji-Test: 漢字の応答\r\n\r\n");
                 }
                 // unload
                 {
