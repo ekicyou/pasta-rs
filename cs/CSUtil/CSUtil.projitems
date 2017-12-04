@@ -9,6 +9,7 @@
     <Import_RootNamespace>CSUtil</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)NLog\LoggerExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Reflection\AssemblyUtil.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Reflection\AssemblyUtil40.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Reflection\AssemblyVersionInfo.cs" />

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2008
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tuki", "tuki\tuki.vcxproj", "{8BA55FD8-8663-4910-8F7B-B0F437DB6678}"
 EndProject
@@ -21,8 +21,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "その他", "その他", "{
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "CSUtil", "CSUtil\CSUtil.shproj", "{F36BB108-EFC1-47D3-BC65-D506D3E73C90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hana", "hana\hana.csproj", "{92B75FAD-51F1-4F4C-9A5B-92196F099DED}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		CSUtil\CSUtil.projitems*{92b75fad-51f1-4f4c-9a5b-92196f099ded}*SharedItemsImports = 4
 		CSUtil\CSUtil.projitems*{bf55551f-22c1-453a-99e5-8a34b30c2cdf}*SharedItemsImports = 4
 		CSUtil\CSUtil.projitems*{f36bb108-efc1-47d3-bc65-d506d3e73c90}*SharedItemsImports = 13
 	EndGlobalSection
@@ -73,6 +76,14 @@ Global
 		{BF55551F-22C1-453A-99E5-8A34B30C2CDF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BF55551F-22C1-453A-99E5-8A34B30C2CDF}.Release|x86.ActiveCfg = Release|Any CPU
 		{BF55551F-22C1-453A-99E5-8A34B30C2CDF}.Release|x86.Build.0 = Release|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Debug|x86.Build.0 = Debug|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Release|x86.ActiveCfg = Release|Any CPU
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,6 +95,7 @@ Global
 		{12DA7B62-116A-4A11-8B20-DA2E3A9AFDE9} = {51969B1A-5F87-400B-96CE-2768ADDD94A1}
 		{BF55551F-22C1-453A-99E5-8A34B30C2CDF} = {51969B1A-5F87-400B-96CE-2768ADDD94A1}
 		{F36BB108-EFC1-47D3-BC65-D506D3E73C90} = {763BF375-156E-4B60-BCC3-29074639E8BA}
+		{92B75FAD-51F1-4F4C-9A5B-92196F099DED} = {5C55A9C1-4B56-4F20-83B7-1D6DE4921837}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2F9DCF04-8879-438E-9C27-38C46212EBFC}

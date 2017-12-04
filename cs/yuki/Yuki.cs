@@ -27,8 +27,8 @@ namespace Setugekka.Yuki
                 // despript.txtの確認
                 var despript_path = Path.Combine(LoadDir, "despript.txt");
                 var despript = DescriptExt.Read(despript_path);
-                var assembly_name = despript.GetOrDefault("setugekka.hana.assembly", "hana");
-                var type_name = despript.GetOrDefault("setugekka.hana.type", "Setugekka.Hana.Hana");
+                var assembly_name = despript.GetOrDefault("setugekka.hana.assembly", Const.Default.Assembly);
+                var type_name = despript.GetOrDefault("setugekka.hana.type", Const.Default.Type);
 
                 // Hana のロード
                 Hana = AppDomain.CurrentDomain.CreateInstanceAndUnwrap(assembly_name, type_name);
