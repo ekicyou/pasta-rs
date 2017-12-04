@@ -1,0 +1,2 @@
+﻿setugekka.hana.assembly,hana
+setugekka.hana.type,Setugekka.Hana.Hana
