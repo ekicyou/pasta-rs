@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Collections.Generic;
+using SharpDX.Mathematics.Interop;
 using D2D = SharpDX.Direct2D1;
 
 using D3D = SharpDX.Direct3D11;
@@ -126,7 +127,7 @@ namespace Pasta.Visuals
             HWND = hwnd;
             Width = width;
             Height = height;
-            DPI = DPI;
+            DPI = dbi;
 
             DisposeWindowResources();
             CreateDeviceResources();
@@ -134,6 +135,28 @@ namespace Pasta.Visuals
             var ct = WindowCTS.Token;
             Top = DCOMP.Target.FromHwnd(DevDCOMP, hwnd, true).RegisterBy(ct);
             Back = DCOMP.Target.FromHwnd(DevDCOMP, hwnd, false).RegisterBy(ct);
+
+            {
+                var root = new DCOMP.Visual2(DevDCOMP).RegisterBy(ct);
+                var v1_surface = new DCOMP.Surface(DevDCOMP, Width, Height, DXGI.Format.B8G8R8A8_UNorm, DXGI.AlphaMode.Premultiplied).RegisterBy(ct);
+                DrawGeometry(v1_surface);
+                var v1 = new DCOMP.Visual2(DevDCOMP).RegisterBy(ct);
+                v1.Content = v1_surface;
+                root.AddVisual(v1);
+                Top.Root = root;
+            }
+            DevDCOMP.Commit();
+        }
+
+        private static void DrawGeometry(DCOMP.Surface comp_surface)
+        {
+            using (var cts = new CancellationTokenSource().Begin())
+            {
+                var ct = cts.Token;
+                var row_point = default(RawPoint);
+                var dc = comp_surface.BeginDraw<D2D.DeviceContext>(null, out row_point).RegisterBy(ct);
+                ct.Register(() => comp_surface.EndDraw());
+            }
         }
     }
 }

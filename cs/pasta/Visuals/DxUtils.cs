@@ -4,7 +4,9 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Media.Imaging;
+using SharpDX.Mathematics.Interop;
 using DXGI = SharpDX.DXGI;
+using DCOMP = SharpDX.DirectComposition;
 
 namespace Pasta.Visuals
 {
@@ -57,5 +59,8 @@ namespace Pasta.Visuals
                 data_handle.Free();
             }
         }
+
+        public static void AddVisual(this DCOMP.Visual src, DCOMP.Visual target)
+            => src.AddVisual(target, new RawBool(false), null);
     }
 }
