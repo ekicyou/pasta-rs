@@ -1,0 +1,19 @@
+[package]
+name = "pasta_stage"
+authors = ["ekicyou <dot.station@gmail.com>"]
+description = "show pasta actor with dcomp"
+keywords = ["pasta", "ghost", "shiori", "ukagaka"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/ekicyou/pasta-rs"
+version = "0.2.0"
+
+[dependencies]
+pasta_di = "../pasta_di"
+log = "0.4"
+
+[dev-dependencies]
+env_logger = "0.5"
+
+[target."cfg(windows)".dependencies]
+winapi = {version = "0.3", features = ["winerror", "d3d11", "dcomp"]}
