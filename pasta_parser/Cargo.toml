@@ -7,3 +7,7 @@ repository = "https://github.com/ekicyou/shiori_hglobal_rs"
 keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
+
+[dependencies.nom]
+features = ["verbose-errors", "regexp_macros"]
+version = "4"

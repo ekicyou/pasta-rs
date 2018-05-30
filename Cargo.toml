@@ -12,4 +12,4 @@ members = [
 ]
 
 [replace]
-"winapi:0.3" =  {version = "0.3", features = ["winerror", "d3d11", "dcomp"]}
+# "winapi:0.3" =  {version = "0.3", features = ["winerror", "d3d11", "dcomp"]}
