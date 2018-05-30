@@ -1,18 +1,16 @@
 #![cfg(any(windows))]
 
-extern crate winapi;
-extern crate kernel32;
 extern crate local_encoding;
+extern crate winapi;
 
-
-use std::mem::transmute;
-use std::slice::{from_raw_parts, from_raw_parts_mut};
 use std::ffi::OsString;
-use std::str;
-use std::str::Utf8Error;
-use winapi::{HGLOBAL, UINT, size_t};
-use kernel32::{GlobalFree, GlobalAlloc};
-use local_encoding::{Encoding, Encoder};
+use local_encoding::{Encoding,Encoder};
+use winapi::_core::mem::transmute;
+use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
+use winapi::_core::str::Utf8Error;
+use winapi::shared::minwindef::{HGLOBAL, UINT};
+use winapi::um::winbase::{GlobalAlloc, GlobalFree};
+use winapi::vc::vcruntime::size_t;
 
 const GMEM_FIXED: UINT = 0;
 
@@ -103,7 +101,9 @@ impl GStr {
     /// SHIORI::load()文字列の取り出しに利用する。
     pub fn to_load_str(&self) -> Result<OsString, GStrError> {
         let bytes = self.to_bytes();
-        let s = Encoding::ANSI.to_string(bytes).map_err(|_| GStrError::AnsiEncode)?;
+        let s = Encoding::ANSI
+            .to_string(bytes)
+            .map_err(|_| GStrError::AnsiEncode)?;
         let os_str = OsString::from(s);
         Ok(os_str)
     }

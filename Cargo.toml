@@ -6,7 +6,7 @@ members = [
 #    "pasta_recipe",
 #    "pasta_stage",
 #    "pasta_viewer",
-#    "shiori_hglobal",
+    "shiori_hglobal",
 #    "shiori3",
 #    "pasta",
 ]

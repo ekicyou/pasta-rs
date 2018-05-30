@@ -16,6 +16,6 @@ pub trait ShioriAPI {
 
 /// have SHIORI
 pub trait HaveShioriAPI {
-  type ShioriAPI: ShioriAPI;
-  fn shiori(&self) -> Self::ShioriAPI;
+    type ShioriAPI: ShioriAPI;
+    fn shiori(&self) -> Self::ShioriAPI;
 }
