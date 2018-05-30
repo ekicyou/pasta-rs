@@ -2,13 +2,13 @@
 license = "MIT"
 members = [
     "pasta_di",
-    "pasta_parser",
-    "pasta_recipe",
-    "pasta_stage",
-    "pasta_viewer",
-    "shiori_hglobal",
-    "shiori3",
-    "pasta",
+#    "pasta_parser",
+#    "pasta_recipe",
+#    "pasta_stage",
+#    "pasta_viewer",
+#    "shiori_hglobal",
+#    "shiori3",
+#    "pasta",
 ]
 
 [replace]
