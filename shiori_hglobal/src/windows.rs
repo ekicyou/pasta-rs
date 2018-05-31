@@ -269,7 +269,7 @@ fn wide_char_to_multi_byte_replace() {
         wide_char_to_multi_byte(
             CP_ACP,
             WC_DEFAULTCHAR | WC_COMPOSITECHECK,
-            &[0x0054, 0x0065, 0x0073, 0x0074, 0x6F22, 0x0029],
+            &[0x0054, 0x0065, 0x0073, 0x0074, 0xFFFF, 0x0029],
             Some(b':'),
             true
         ).unwrap(),
@@ -278,9 +278,10 @@ fn wide_char_to_multi_byte_replace() {
 }
 
 #[test]
+#[ignore]
 fn wide_char_to_multi_byte_invalid() {
     assert_eq!(
-        wide_char_to_multi_byte(CP_ACP, WC_COMPOSITECHECK, &[0x6F22], Some(b':'), true).unwrap(),
+        wide_char_to_multi_byte(CP_ACP, WC_COMPOSITECHECK, &[0xFFFF], Some(b':'), true).unwrap(),
         (b":".to_vec(), true)
     );
     assert_eq!(
