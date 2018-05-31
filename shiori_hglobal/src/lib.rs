@@ -1,10 +1,11 @@
 #![cfg(any(windows))]
 
-extern crate local_encoding;
 extern crate winapi;
 
+mod enc;
+
 use std::ffi::OsString;
-use local_encoding::{Encoding,Encoder};
+use enc::{Encoding,Encoder};
 use winapi::_core::mem::transmute;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
 use winapi::_core::str::Utf8Error;
@@ -78,7 +79,7 @@ impl GStr {
         GStr::clone_from_slice_impl(bytes, false)
     }
 
-    /// 要素を&[u8]として取り出します。
+    /// 要素を&[u8]として参照します。
     pub fn to_bytes(&self) -> &[u8] {
         unsafe {
             let p = transmute::<HGLOBAL, *mut u8>(self.h);
@@ -96,7 +97,7 @@ impl GStr {
         self.len
     }
 
-    /// 格納データを「ANSI STRING(JP環境ではSJIS)」とみなして、OsStrに変換する。
+    /// 格納データを「ANSI STRING(JP環境ではSJIS)」とみなして、OsStrに変換します。
     /// MultiByteToWideChar()を利用する。
     /// SHIORI::load()文字列の取り出しに利用する。
     pub fn to_load_str(&self) -> Result<OsString, GStrError> {
