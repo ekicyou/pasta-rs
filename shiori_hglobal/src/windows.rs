@@ -278,7 +278,6 @@ fn wide_char_to_multi_byte_replace() {
 }
 
 #[test]
-#[ignore]
 fn wide_char_to_multi_byte_invalid() {
     assert_eq!(
         wide_char_to_multi_byte(CP_ACP, WC_COMPOSITECHECK, &[0xFFFF], Some(b':'), true).unwrap(),
