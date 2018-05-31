@@ -4,21 +4,8 @@ use std::ffi::OsStr;
 use shiori3::enums::Token;
 use shiori3::req::ShioriRequest;
 use shiori3::res::ShioriResponse;
+use pasta_di::shiori::*;
 
-#[derive(Copy, Eq, PartialEq, Clone, Debug)]
-pub enum ShioriError {
-    NotLoad,
-}
-
-
-
-/// SHIORI manage API
-pub trait ShioriAPI<TSHIORI> {
-    fn new(hinst: usize) -> TSHIORI;
-    fn load<STR: AsRef<OsStr> + ?Sized>(&mut self, dir: &STR) -> Result<(), ShioriError>;
-    fn unload(&mut self) -> Result<(), ShioriError>;
-    fn request(&mut self, req_text: &str) -> Result<Cow<str>, ShioriError>;
-}
 
 /// SHIORI構造体
 #[derive(Debug)]
@@ -28,6 +15,13 @@ pub struct Shiori {
 }
 
 impl Shiori {
+    fn new(hinst: usize) -> Shiori {
+        trace!("Shiori::new");
+        Shiori {
+            hinst: hinst,
+            load_dir: PathBuf::new(),
+        }
+    }
     fn request_impl<'b, 'c>(&mut self, req_text: &'b str) -> Result<Cow<'c, str>, &'c str> {
         match ShioriRequest::from_str(req_text) {
             Err(reason) => {

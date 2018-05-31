@@ -1,9 +1,15 @@
 [package]
-name = "pasta_di"
+name = "shiori3"
 version = "0.2.0"
-description = "pasta di trait"
+description = "shiori3 api"
 authors = ["ekicyou <dot.station@gmail.com>"]
 repository = "https://github.com/ekicyou/shiori_hglobal_rs"
 keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
+
+[dependencies]
+pasta_di = "../pasta_di"
+shiori_hglobal = "../shiori_hglobal"
+nom = { version = "4", features = [ "regexp_macros", "verbose-errors", ] }
+regex = { version = "1" }
