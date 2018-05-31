@@ -11,4 +11,4 @@ description = "impl str for HGLOBAL{...}"
 [dependencies]
 
 [target."cfg(windows)".dependencies]
-winapi = { version = "0.3", features = ["winuser"] }
+winapi = { version = "0.3", features = ["winnls","winbase","winuser","stringapiset"] }

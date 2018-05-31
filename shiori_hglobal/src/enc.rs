@@ -17,9 +17,11 @@
 //! UTF-8 used as 8-bit codepage for non-Windows system.
 //!
 //! original: https://github.com/bozaro/local-encoding-rs/blob/master/src/lib.rs
+#![allow(dead_code)]
 
-mod windows;
 use std::io::Result;
+use winapi::um::winnls::{CP_ACP,CP_OEMCP};
+use windows;
 
 /// Converter between string and multibyte encoding.
 pub trait Encoder {
@@ -47,8 +49,8 @@ impl CodePage for Encoding {
         extern crate winapi;
 
         match self {
-            &Encoding::ANSI => winapi::CP_ACP,
-            &Encoding::OEM => winapi::CP_OEMCP,
+            &Encoding::ANSI => CP_ACP,
+            &Encoding::OEM => CP_OEMCP,
         }
     }
 }
@@ -57,7 +59,6 @@ impl Encoder for Encoding {
     /// Convert from bytes to string.
     fn to_string(self: &Self, data: &[u8]) -> Result<String> {
         windows::EncoderCodePage(self.codepage()).to_string(data)
-
     }
     /// Convert from bytes to string.
     fn to_bytes(self: &Self, data: &str) -> Result<Vec<u8>> {

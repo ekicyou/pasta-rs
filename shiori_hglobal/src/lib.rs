@@ -1,11 +1,12 @@
 #![cfg(any(windows))]
 
 extern crate winapi;
-
 mod enc;
+mod windows;
 
+use enc::{Encoder, Encoding};
 use std::ffi::OsString;
-use enc::{Encoding,Encoder};
+use std::str;
 use winapi::_core::mem::transmute;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
 use winapi::_core::str::Utf8Error;
