@@ -20,7 +20,7 @@
 #![allow(dead_code)]
 
 use std::io::Result;
-use winapi::um::winnls::{CP_ACP,CP_OEMCP};
+use winapi::um::winnls::{CP_ACP, CP_OEMCP};
 use windows;
 
 /// Converter between string and multibyte encoding.

@@ -13,7 +13,7 @@ use winapi::_core::ptr::null_mut;
 use winapi::shared::minwindef::BOOL;
 use winapi::shared::minwindef::DWORD;
 use winapi::shared::ntdef::LPSTR;
-use winapi::um::stringapiset::{MultiByteToWideChar,WideCharToMultiByte};
+use winapi::um::stringapiset::{MultiByteToWideChar, WideCharToMultiByte};
 
 /// Always use precomposed characters, that is, characters having a single character value for
 /// a base or nonspacing character combination.
@@ -197,10 +197,13 @@ pub fn wide_char_to_multi_byte(
     }
 }
 
+#[cfg(test)]
+use winapi::um::winnls::*;
+
 #[test]
 fn multi_byte_to_wide_char_empty() {
     assert_eq!(
-        multi_byte_to_wide_char(winapi::CP_ACP, MB_ERR_INVALID_CHARS, b"").unwrap(),
+        multi_byte_to_wide_char(CP_ACP, MB_ERR_INVALID_CHARS, b"").unwrap(),
         ""
     );
 }
@@ -208,7 +211,7 @@ fn multi_byte_to_wide_char_empty() {
 #[test]
 fn multi_byte_to_wide_char_ascii() {
     assert_eq!(
-        multi_byte_to_wide_char(winapi::CP_ACP, MB_ERR_INVALID_CHARS, b"Test").unwrap(),
+        multi_byte_to_wide_char(CP_ACP, MB_ERR_INVALID_CHARS, b"Test").unwrap(),
         "Test"
     );
 }
