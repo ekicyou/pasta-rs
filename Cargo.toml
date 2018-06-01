@@ -7,7 +7,7 @@ members = [
 #    "pasta_stage",
 #    "pasta_viewer",
     "shiori_hglobal",
-    "shiori3",
+#    "shiori3",
 #    "pasta",
 ]
 
