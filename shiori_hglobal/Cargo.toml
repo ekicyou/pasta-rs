@@ -1,12 +1,12 @@
 [package]
 name = "shiori_hglobal"
+description = "impl str for HGLOBAL{...}"
 version = "0.2.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
-repository = "https://github.com/ekicyou/shiori_hglobal_rs"
+repository = "https://github.com/ekicyou/pasta-rs"
 keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
-description = "impl str for HGLOBAL{...}"
 
 [dependencies]
 

@@ -1,12 +1,13 @@
 [package]
 name = "pasta_stage"
-authors = ["ekicyou <dot.station@gmail.com>"]
 description = "show pasta actor with dcomp"
+version = "0.2.0"
+authors = ["ekicyou <dot.station@gmail.com>"]
+repository = "https://github.com/ekicyou/pasta-rs"
 keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/ekicyou/pasta-rs"
-version = "0.2.0"
+
 
 [dependencies]
 pasta_di = "../pasta_di"
