@@ -1,3 +1,1 @@
-mod shiori;
-
-pub use shiori::*;
+pub mod shiori;

@@ -1,5 +1,5 @@
 use nom::IResult;
-use shiori3::enums::Token;
+use super::enums::Token;
 
 // chars
 named!(sp  <&str,&str>, tag_s!(" "));

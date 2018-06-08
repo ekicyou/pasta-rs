@@ -1,6 +1,6 @@
 use nom::IResult;
-use shiori3::enums::Token;
-use shiori3::parsers::{header2, header3, kv};
+use super::enums::Token;
+use super::parsers::{header2, header3, kv};
 use std::collections::HashMap;
 
 #[derive(Copy, Eq, PartialEq, Clone, Debug)]

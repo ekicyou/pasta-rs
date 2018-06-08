@@ -1,8 +1,10 @@
 extern crate pasta_di;
 extern crate shiori_hglobal;
 
+#[macro_use] extern crate log;
+#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate nom;
-#[macro_use] extern crate regex;
+extern crate regex;
 
 mod enums;
 mod parsers;

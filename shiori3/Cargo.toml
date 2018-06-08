@@ -9,7 +9,9 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-pasta_di        = "../pasta_di"
-shiori_hglobal  = "../shiori_hglobal"
-nom             = { version = "4.0.0", features = [ "regexp_macros", "verbose-errors", ] }
-regex           = { version = "1.0.0" }
+pasta_di        = { path = "../pasta_di" }
+shiori_hglobal  = { path = "../shiori_hglobal" }
+log = "0.4.2"
+lazy_static     = "1"
+nom             = { version = "4", features = [ "regexp_macros", "verbose-errors", ] }
+regex           = { version = "1" }

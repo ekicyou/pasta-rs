@@ -1,23 +1,26 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
-use shiori3::enums::Token;
-use shiori3::req::ShioriRequest;
-use shiori3::res::ShioriResponse;
+use std::sync::{Arc, Mutex};
+use super::enums::Token;
+use super::req::ShioriRequest;
+use super::res::ShioriResponse;
 use pasta_di::shiori::*;
 
 
 /// SHIORI構造体
 #[derive(Debug)]
 pub struct Shiori {
+    dao: Arc<Mutex<HaveShioriAPI>>,
     hinst: usize,
     load_dir: PathBuf,
 }
 
 impl Shiori {
-    fn new(hinst: usize) -> Shiori {
+    fn new(hinst: usize, dao: Arc<Mutex<HaveShioriAPI>>) -> Shiori {
         trace!("Shiori::new");
         Shiori {
+            dao: dao,
             hinst: hinst,
             load_dir: PathBuf::new(),
         }
@@ -46,14 +49,7 @@ impl Drop for Shiori {
 }
 
 
-impl ShioriAPI<Shiori> for Shiori {
-    fn new(hinst: usize) -> Shiori {
-        trace!("Shiori::new");
-        Shiori {
-            hinst: hinst,
-            load_dir: PathBuf::new(),
-        }
-    }
+impl ShioriAPI for Shiori {
     fn load<STR: AsRef<OsStr> + ?Sized>(&mut self, dir: &STR) -> Result<(), ShioriError> {
         trace!("Shiori::load");
         self.load_dir = Path::new(dir).to_path_buf();
