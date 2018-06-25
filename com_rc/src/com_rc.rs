@@ -60,15 +60,6 @@ pub struct ComRc<T: Interface> {
     raw: *const T,
 }
 
-pub trait ComSafe<T: Interface> {
-    fn unknown(&self) -> &IUnknown;
-    fn set(&mut self, com: *const T) -> &mut ComRc<T>;
-    fn add_ref(&mut self) -> ULONG;
-    fn release(&mut self) -> ULONG;
-    fn as_ptr(&self) -> *const T;
-    fn as_ref(&self) -> &T;
-}
-
 impl<T: Interface> ComRc<T> {
     #[inline]
     pub fn new(com: *const T) -> ComRc<T> {
@@ -94,16 +85,29 @@ impl<T: Interface> ComRc<T> {
             }
         }
     }
-}
-
-impl<T: Interface> ComSafe<T> for ComRc<T> {
+    
     #[inline]
-    fn unknown(&self) -> &IUnknown {
+    pub fn unknown(&self) -> &IUnknown {
         unsafe {
             let p_unknown = self.raw as *const IUnknown;
             &*p_unknown
         }
     }
+
+    #[inline]
+    pub fn as_ref(&self) -> &T {
+        self
+    }
+}
+
+trait ComUnsafe<T: Interface> {
+    fn set(&mut self, com: *const T) -> &mut ComRc<T>;
+    fn add_ref(&mut self) -> ULONG;
+    fn release(&mut self) -> ULONG;
+    fn as_ptr(&self) -> *const T;
+}
+
+impl<T: Interface> ComUnsafe<T> for ComRc<T> {
     #[inline]
     fn set(&mut self, com: *const T) -> &mut ComRc<T> {
         let _ = ComRc { raw: self.raw };
@@ -128,10 +132,6 @@ impl<T: Interface> ComSafe<T> for ComRc<T> {
     #[inline]
     fn as_ptr(&self) -> *const T {
         self.raw
-    }
-    #[inline]
-    fn as_ref(&self) -> &T {
-        self
     }
 }
 
