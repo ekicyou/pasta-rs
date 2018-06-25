@@ -35,12 +35,12 @@ pub fn to_mut_ptr<T>(p: *const T) -> *mut T {
 }
 
 pub trait QueryInterface {
-    fn query_interface<U: Interface>(&self) -> ComResult<U>;
+    fn cast<U: Interface>(&self) -> ComResult<U>;
 }
 
 impl<T: Interface> QueryInterface for T {
     #[inline]
-    fn query_interface<U: Interface>(&self) -> ComResult<U> {
+    fn cast<U: Interface>(&self) -> ComResult<U> {
         let unknown = unsafe {
             let p = self as *const T;
             let p_unknown = p as *const IUnknown;
@@ -85,7 +85,7 @@ impl<T: Interface> ComRc<T> {
             }
         }
     }
-    
+
     #[inline]
     pub fn unknown(&self) -> &IUnknown {
         unsafe {
