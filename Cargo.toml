@@ -4,10 +4,11 @@ members = [
     "pasta_di",
 #    "pasta_parser",
 #    "pasta_recipe",
+     "com_rc",
 #    "pasta_stage",
 #    "pasta_viewer",
     "shiori_hglobal",
-    "shiori3",
+#    "shiori3",
 #    "pasta",
 ]
 
