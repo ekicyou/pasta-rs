@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use winapi::Interface;
+use winapi::_core::fmt;
 use winapi::_core::ops::Deref;
 use winapi::_core::ptr::{self, null_mut};
 use winapi::ctypes::c_void;
@@ -7,26 +8,48 @@ use winapi::shared::winerror::{HRESULT, S_OK};
 use winapi::shared::wtypesbase::ULONG;
 use winapi::um::unknwnbase::IUnknown;
 
-pub type ComResult<U> = Result<ComRc<U>, HRESULT>;
+pub struct WinResultValue {
+    hr: HRESULT,
+}
+
+impl WinResultValue {
+    fn new(hresult: HRESULT) -> WinResultValue {
+        WinResultValue { hr: hresult }
+    }
+    pub fn hresult(&self) -> HRESULT {
+        self.hr
+    }
+}
+
+impl fmt::Display for WinResultValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "COM error 0x{:08X}", self.hr)
+    }
+}
+
+impl fmt::Debug for WinResultValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+pub type WinResult<T> = Result<T, WinResultValue>;
+pub type ComResult<T> = WinResult<ComRc<T>>;
 
 pub trait HresultMapping {
     /// HRESULT値をResult型に変換する。
-    fn hr(self) -> Result<(), HRESULT>;
+    fn hr(self) -> WinResult<()>;
 }
 
 impl HresultMapping for HRESULT {
     #[inline]
     /// HRESULT値をResult型に変換する。
-    fn hr(self) -> Result<(), HRESULT> {
+    fn hr(self) -> WinResult<()> {
         match self {
             S_OK => Ok(()),
-            _ => Err(self),
+            _ => Err(WinResultValue::new(self)),
         }
     }
-}
-
-fn panic_com(hresult: HRESULT) -> ! {
-    panic!("COM error 0x{:08X}", hresult as u32)
 }
 
 #[inline]
@@ -64,7 +87,7 @@ impl<T: Interface> ComRc<T> {
     #[inline]
     pub fn new(com: *const T) -> ComRc<T> {
         let mut rc = ComRc { raw: com };
-        rc.add_ref();
+        unsafe { rc.add_ref() };
         rc
     }
 
@@ -101,33 +124,33 @@ impl<T: Interface> ComRc<T> {
 }
 
 trait ComUnsafe<T: Interface> {
-    fn set(&mut self, com: *const T) -> &mut ComRc<T>;
-    fn add_ref(&mut self) -> ULONG;
-    fn release(&mut self) -> ULONG;
+    unsafe fn set(&mut self, com: *const T) -> &mut ComRc<T>;
+    unsafe fn add_ref(&mut self) -> ULONG;
+    unsafe fn release(&mut self) -> ULONG;
     fn as_ptr(&self) -> *const T;
 }
 
 impl<T: Interface> ComUnsafe<T> for ComRc<T> {
     #[inline]
-    fn set(&mut self, com: *const T) -> &mut ComRc<T> {
+    unsafe fn set(&mut self, com: *const T) -> &mut ComRc<T> {
         let _ = ComRc { raw: self.raw };
         self.raw = com;
         self.add_ref();
         self
     }
     #[inline]
-    fn add_ref(&mut self) -> ULONG {
+    unsafe fn add_ref(&mut self) -> ULONG {
         if self.raw.is_null() {
             return 0;
         }
-        unsafe { self.unknown().AddRef() }
+        self.unknown().AddRef()
     }
     #[inline]
-    fn release(&mut self) -> ULONG {
+    unsafe fn release(&mut self) -> ULONG {
         if self.raw.is_null() {
             return 0;
         }
-        unsafe { self.unknown().Release() }
+        self.unknown().Release()
     }
     #[inline]
     fn as_ptr(&self) -> *const T {
@@ -138,7 +161,9 @@ impl<T: Interface> ComUnsafe<T> for ComRc<T> {
 impl<T: Interface> Drop for ComRc<T> {
     #[inline]
     fn drop(&mut self) {
-        self.release();
+        unsafe {
+            self.release();
+        }
     }
 }
 
@@ -254,13 +279,13 @@ mod tests {
             assert_eq!(1, test.ref_count);
 
             {
-                let com2 = com.query_interface::<IUnknown>().unwrap();
+                let com2 = com.cast::<IUnknown>().unwrap();
                 assert_eq!(2, test.ref_count);
 
-                let com3 = com.query_interface::<ISequentialStream>().unwrap();
+                let com3 = com.cast::<ISequentialStream>().unwrap();
                 assert_eq!(3, test.ref_count);
 
-                let com4 = com3.query_interface::<IUnknown>().unwrap();
+                let com4 = com3.cast::<IUnknown>().unwrap();
                 assert_eq!(4, test.ref_count);
             }
             assert_eq!(1, test.ref_count);
@@ -269,10 +294,10 @@ mod tests {
                 let com_ref = &com;
                 assert_eq!(1, test.ref_count);
 
-                let com2 = com_ref.query_interface::<IUnknown>().unwrap();
+                let com2 = com_ref.cast::<IUnknown>().unwrap();
                 assert_eq!(2, test.ref_count);
 
-                let com3 = com_ref.query_interface::<ISequentialStream>().unwrap();
+                let com3 = com_ref.cast::<ISequentialStream>().unwrap();
                 assert_eq!(3, test.ref_count);
             }
             assert_eq!(1, test.ref_count);
