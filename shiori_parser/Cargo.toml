@@ -1,0 +1,14 @@
+[package]
+name = "shiori_parser"
+description = "shiori parser"
+version = "0.2.0"
+authors = ["ekicyou <dot.station@gmail.com>"]
+repository = "https://github.com/ekicyou/pasta-rs"
+keywords = ["ghost", "shiori", "ukagaka"]
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+log = "0.4.2"
+pest = { git = "https://github.com/pest-parser/pest", branch = "master" }
+pest_derive = { git = "https://github.com/pest-parser/pest", branch = "master" }
