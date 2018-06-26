@@ -36,12 +36,12 @@ impl fmt::Debug for WinResultValue {
 pub type WinResult<T> = Result<T, WinResultValue>;
 pub type ComResult<T> = WinResult<ComRc<T>>;
 
-pub trait HresultMapping {
+pub trait WinResultMapping {
     /// HRESULT値をResult型に変換する。
     fn hr(self) -> WinResult<()>;
 }
 
-impl HresultMapping for HRESULT {
+impl WinResultMapping for HRESULT {
     #[inline]
     /// HRESULT値をResult型に変換する。
     fn hr(self) -> WinResult<()> {
