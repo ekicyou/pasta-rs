@@ -1,20 +1,31 @@
 // SHIORI 3.0, 2.0 parser
 
+kv          = ${ key ~ tag ~ value ~ _crlf }
+value       = @{ remain }
+key         = @{ id }
 
+header2     = ${ method ~ _sp ~ id ~ shiori2 ~ _crlf }
 
+header3     = ${ method ~ header3_suf }
+header3_suf = _{ sp ~ shiori3 ~ crlf }
+method      = ${ get | notify }
 
-method  = ${ get | notify }
 id      = @{ id1 ~ idn* }
 
 // tokens
-shiori2 = @{ "SHIORI/2." ~ ASCII_DIGIT }
+shiori2 = !{ "SHIORI/2." ~ number }
 shiori3 =  { "SHIORI/3.0" }
 get     =  { "GET" }
 notify  =  { "NOTIFY" }
+tag     = _{ ": " }
+remain  = @{ !_crlf }
 
 // chars
-sp = { " " }
-crlf = { "\r\n" }
+number  =  { ASCII_DIGIT }
+_sp     = _{ sp }
+_crlf   = _{ crlf }
+sp      =  { " " }
+crlf    =  { "\r\n" }
 
 id1 = { UPPERCASE_LETTER | LOWERCASE_LETTER | TITLECASE_LETTER | MODIFIER_LETTER | OTHER_LETTER | LETTER_NUMBER }
 idn = { id1 | NONSPACING_MARK | SPACING_MARK | DECIMAL_NUMBER | CONNECTOR_PUNCTUATION | FORMAT }

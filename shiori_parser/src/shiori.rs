@@ -56,6 +56,8 @@ mod tests {
             assert_eq!(span.end(), 3);
             let items = pair.clone().into_inner().collect::<Vec<_>>();
             assert_eq!(items.len(), 1);
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::get);
         }
     }
 
@@ -72,6 +74,12 @@ mod tests {
             assert_eq!(span.as_str(), "NOTIFY");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 6);
+            let items = pair.clone().into_inner().collect::<Vec<_>>();
+            assert_eq!(items.len(), 1);
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::notify);
         }
     }
+
+
 }
