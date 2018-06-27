@@ -1,0 +1,16 @@
+// SHIORI 3.0, 2.0 parser
+
+
+
+
+id  = @{ id1 ~ idn* }
+
+
+// chars
+sp = { " " }
+crlf = { "\r\n" }
+
+id1 = { UPPERCASE_LETTER | LOWERCASE_LETTER | TITLECASE_LETTER | MODIFIER_LETTER | OTHER_LETTER | LETTER_NUMBER }
+idn = { id1 | NONSPACING_MARK | SPACING_MARK | DECIMAL_NUMBER | CONNECTOR_PUNCTUATION | FORMAT }
+
+key_sep = { "-" | "." }
