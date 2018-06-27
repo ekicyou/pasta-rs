@@ -12,3 +12,6 @@ readme = "README.md"
 log = "0.4.2"
 pest = { git = "https://github.com/pest-parser/pest", branch = "master" }
 pest_derive = { git = "https://github.com/pest-parser/pest", branch = "master" }
+
+[dev-dependencies]
+env_logger = "0.5"

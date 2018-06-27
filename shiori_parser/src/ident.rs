@@ -5,6 +5,7 @@ use pest::Parser;
 struct IdentParser;
 
 #[test]
+#[ignore]
 fn test_ident() {
     let pairs = IdentParser::parse(Rule::ident_list, "a1 b2").unwrap_or_else(|e| panic!("{}", e));
 

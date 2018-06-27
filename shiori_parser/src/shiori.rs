@@ -5,14 +5,33 @@ use pest::Parser;
 pub struct ShioriParser;
 
 #[test]
-fn test_shiori_parser() {
-    let pairs = ShioriParser::parse(Rule::id, "a1").unwrap_or_else(|e| panic!("{}", e));
-
-    // Because ident_list is silent, the iterator will contain idents
-    for pair in pairs {
-        // A pair is a combination of the rule which matched and a span of input
-        println!("Rule:    {:?}", pair.as_rule());
-        println!("Span:    {:?}", pair.clone().into_span());
-        println!("Text:    {}", pair.clone().into_span().as_str());
+fn test_id() {
+    {
+        let items = ShioriParser::parse(Rule::id, "a1")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::id);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "a1");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 2);
+        }
+    }
+    {
+        let items = ShioriParser::parse(Rule::id, "感じの良いID")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::id);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "感じの良いID");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 17);
+        }
     }
 }

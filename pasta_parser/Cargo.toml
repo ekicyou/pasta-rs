@@ -8,6 +8,9 @@ keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
 
-[dependencies.nom]
-features = ["verbose-errors", "regexp_macros"]
-version = "4"
+[dependencies]
+log = "0.4.2"
+nom = {version = "4",features = ["verbose-errors", "regexp_macros",] }
+
+[dev-dependencies]
+env_logger = "0.5"
