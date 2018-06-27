@@ -3,8 +3,14 @@
 
 
 
+method = @{ get | notify }
 id  = @{ id1 ~ idn* }
 
+// tokens
+shiori2 = @{ "SHIORI/2." ~ ASCII_DIGIT }
+shiori3 = @{ "SHIORI/3.0" }
+get = @{ "GET" }
+notify = @{ "NOTIFY" }
 
 // chars
 sp = { " " }
@@ -14,3 +20,4 @@ id1 = { UPPERCASE_LETTER | LOWERCASE_LETTER | TITLECASE_LETTER | MODIFIER_LETTER
 idn = { id1 | NONSPACING_MARK | SPACING_MARK | DECIMAL_NUMBER | CONNECTOR_PUNCTUATION | FORMAT }
 
 key_sep = { "-" | "." }
+
