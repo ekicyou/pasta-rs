@@ -1,3 +1,6 @@
+#[cfg(debug_assertions)]
+const _GRAMMAR: &'static str = include_str!("shiori.pest");
+
 #[derive(Parser)]
 #[grammar = "shiori.pest"]
 pub struct ShioriParser;
