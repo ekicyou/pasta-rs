@@ -3,14 +3,14 @@
 
 
 
-method = @{ get | notify }
-id  = @{ id1 ~ idn* }
+method  = ${ get | notify }
+id      = @{ id1 ~ idn* }
 
 // tokens
 shiori2 = @{ "SHIORI/2." ~ ASCII_DIGIT }
-shiori3 = @{ "SHIORI/3.0" }
-get = @{ "GET" }
-notify = @{ "NOTIFY" }
+shiori3 =  { "SHIORI/3.0" }
+get     =  { "GET" }
+notify  =  { "NOTIFY" }
 
 // chars
 sp = { " " }
