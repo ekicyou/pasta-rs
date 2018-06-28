@@ -3,7 +3,7 @@
 req         = ${ SOI ~ header ~ key_values ~ _eol ~ EOI }
 key_values  = ${ key_value* }
 
-key_value   = ${ key ~ tag ~ value ~ _eol }
+key_value   = ${ key ~ _tag ~ value ~ _eol }
 value       = @{ remain }
 key         = @{ id }
 
@@ -22,7 +22,7 @@ _shiori3    = _{ "SHIORI/3.0" }
 ver         = @{ ASCII_DIGIT }
 get         =  { "GET" }
 notify      =  { "NOTIFY" }
-tag         = _{ ": " }
+_tag        = _{ ": " }
 remain      = @{ ( !eol ~ ANY )* }
 
 // chars
