@@ -42,6 +42,38 @@ mod tests {
     }
 
     #[test]
+    fn remain_1() {
+        let items = ShioriParser::parse(Rule::remain, "ABC\r\n")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::remain);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "ABC");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 3);
+        }
+    }
+
+    #[test]
+    fn remain_2() {
+        let items = ShioriParser::parse(Rule::remain, "ABC\rABCD\r\n")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::remain);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "ABC\rABCD");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 8);
+        }
+    }
+
+    #[test]
     fn method_1() {
         let items = ShioriParser::parse(Rule::method, "GET")
             .unwrap_or_else(|e| panic!("{}", e))
@@ -80,6 +112,5 @@ mod tests {
             assert_eq!(pair.as_rule(), Rule::notify);
         }
     }
-
 
 }
