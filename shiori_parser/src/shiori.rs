@@ -113,4 +113,71 @@ mod tests {
         }
     }
 
+    #[test]
+    fn header_1() {
+        let items = ShioriParser::parse(Rule::header, "GET OPEN SHIORI/2.6\r\n")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::header);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "GET OPEN SHIORI/2.6\r\n");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 21);
+            let items = pair.clone().into_inner().collect::<Vec<_>>();
+            assert_eq!(items.len(), 2);
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::method);
+            {
+                let items = pair.clone().into_inner().collect::<Vec<_>>();
+                assert_eq!(items.len(), 1);
+                let pair = &items[0];
+                assert_eq!(pair.as_rule(), Rule::get);
+            }
+            let pair = &items[1];
+            assert_eq!(pair.as_rule(), Rule::header2);
+            {
+                let items = pair.clone().into_inner().collect::<Vec<_>>();
+                assert_eq!(items.len(), 2);
+                let pair = &items[0];
+                assert_eq!(pair.as_rule(), Rule::id);
+                assert_eq!(pair.as_str(), "OPEN");
+                let pair = &items[1];
+                assert_eq!(pair.as_rule(), Rule::ver);
+                assert_eq!(pair.as_str(), "6");
+            }
+        }
+    }
+
+    #[test]
+    fn header_2() {
+        let items = ShioriParser::parse(Rule::header, "NOTIFY SHIORI/3.0\r\n")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::header);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "NOTIFY SHIORI/3.0\r\n");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 19);
+            let items = pair.clone().into_inner().collect::<Vec<_>>();
+            assert_eq!(items.len(), 2);
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::method);
+            {
+                let items = pair.clone().into_inner().collect::<Vec<_>>();
+                assert_eq!(items.len(), 1);
+                let pair = &items[0];
+                assert_eq!(pair.as_rule(), Rule::notify);
+            }
+            let pair = &items[1];
+            assert_eq!(pair.as_rule(), Rule::header3);
+        }
+    }
+
+
 }

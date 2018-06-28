@@ -1,33 +1,33 @@
 // SHIORI 3.0, 2.0 parser
 
 req         = ${ SOI ~ header ~ key_values ~ _eol ~ EOI }
-header      = _{ header2 | header3 }
 key_values  = ${ key_value* }
 
 key_value   = ${ key ~ tag ~ value ~ _eol }
 value       = @{ remain }
 key         = @{ id }
 
-header2     = ${ method ~ _sp ~ id ~ shiori2 ~ _eol }
+header      = ${ method ~ _sp ~ ( header3 | header2 ) }
 
-header3     = ${ method ~ header3_suf }
-header3_suf = _{ sp ~ shiori3 ~ eol }
+header2     = ${ id ~ _sp ~ _shiori2 ~ ver ~ _eol }
+
+header3     = ${ _shiori3 ~ _eol }
 method      = ${ get | notify }
 
 id          = @{ XID_START ~ XID_CONTINUE* }
 
 // tokens
-shiori2 = !{ "SHIORI/2." ~ num1 }
-shiori3 =  { "SHIORI/3.0" }
-get     =  { "GET" }
-notify  =  { "NOTIFY" }
-tag     = _{ ": " }
-remain  = @{ ( !eol ~ ANY )* }
+_shiori2    = _{ "SHIORI/2." }
+_shiori3    = _{ "SHIORI/3.0" }
+ver         = @{ ASCII_DIGIT }
+get         =  { "GET" }
+notify      =  { "NOTIFY" }
+tag         = _{ ": " }
+remain      = @{ ( !eol ~ ANY )* }
 
 // chars
-num1    =  { ASCII_DIGIT }
-_sp     = _{ sp }
-_eol    = _{ eol }
+_sp     = _{ " " }
+_eol    = _{ "\r\n" }
 sp      =  { " " }
 eol     =  { "\r\n" }
 key_sep = { "-" | "." }
