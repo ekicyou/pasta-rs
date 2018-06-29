@@ -8,10 +8,10 @@ init:
 
 environment:
   matrix:
-  - TARGET: nightly-x86_64-pc-windows-msvc
-  - TARGET: nightly-i686-pc-windows-msvc
-  - TARGET: nightly-x86_64-pc-windows-gnu
-  - TARGET: nightly-i686-pc-windows-gnu
+  - TARGET: beta-x86_64-pc-windows-msvc
+  - TARGET: beta-i686-pc-windows-msvc
+  - TARGET: beta-x86_64-pc-windows-gnu
+  - TARGET: beta-i686-pc-windows-gnu
 
 install:
   - chcp
