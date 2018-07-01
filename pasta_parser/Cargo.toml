@@ -1,6 +1,6 @@
 [package]
-name = "pasta_di"
-description = "pasta di trait"
+name = "pasta_parser"
+description = "pasta parser"
 version = "0.2.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
 repository = "https://github.com/ekicyou/pasta-rs"
@@ -10,7 +10,8 @@ readme = "README.md"
 
 [dependencies]
 log = "0.4.2"
-nom = {version = "4",features = ["verbose-errors", "regexp_macros",] }
+pest = { git = "https://github.com/pest-parser/pest", branch = "master" }
+pest_derive = { git = "https://github.com/pest-parser/pest", branch = "master" }
 
 [dev-dependencies]
 env_logger = "0.5"

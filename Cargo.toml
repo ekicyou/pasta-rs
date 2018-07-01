@@ -2,7 +2,7 @@
 license = "MIT"
 members = [
     "pasta_di",
-#    "pasta_parser",
+    "pasta_parser",
 #    "pasta_recipe",
      "com_rc",
 #    "pasta_stage",
