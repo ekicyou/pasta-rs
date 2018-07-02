@@ -8,9 +8,6 @@ keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
 
-[target."cfg(windows)"]
-rustflags = ["-C target-feature=+crt-static"]
-
 [dependencies]
 
 [target."cfg(windows)".dependencies]
