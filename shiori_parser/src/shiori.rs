@@ -245,6 +245,9 @@ mod tests {
             assert_eq!(pair.as_rule(), Rule::key_value);
             assert_eq!(pair.as_str(), "Sender: SSP\r\n");
         }
+
+        let pair = &items[2];
+        assert_eq!(pair.as_rule(), Rule::EOI);
     }
 
 }

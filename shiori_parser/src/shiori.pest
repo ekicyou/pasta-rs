@@ -26,9 +26,10 @@ _tag        = _{ ": " }
 remain      = @{ ( !eol ~ ANY )* }
 
 // chars
-_sp     = _{ " " }
-_eol    = _{ "\r\n" }
-sp      =  { " " }
-eol     =  { "\r\n" }
-key_sep = { "-" | "." }
+sp          = @{ _sp }
+eol         = @{ _eol }
+key_sep     = @{ _key_sep }
+_sp         = _{ " " }
+_eol        = _{ "\r\n" }
+_key_sep    = _{ "-" | "." }
 
