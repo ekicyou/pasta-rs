@@ -9,5 +9,6 @@ extern crate pest_derive;
 extern crate pest;
 
 mod shiori;
+mod req;
 
-pub use shiori::ShioriParser;
+pub use req::{ReqParseError,ShioriRequest,};
