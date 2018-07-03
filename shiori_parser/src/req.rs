@@ -1,23 +1,16 @@
-use std::collections::HashMap;
 use super::shiori::*;
-use pest::Parser;
+use pest;
+use std::collections::HashMap;
 
-#[derive(Copy, Eq, PartialEq, Clone, Debug)]
-pub enum ReqParseError {
-    UnknownHeader,
-}
+pub use super::shiori::Rule;
 
-#[derive(Copy, Eq, PartialEq, Clone, Debug)]
-pub enum Method {
-    Get,
-    Notify,
-}
+pub type Error<'a> = pest::Error<'a, Rule::req>;
 
 /// SHIORI3リクエストの解析結果を格納します。
-#[derive(PartialEq,Eq,Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct ShioriRequest<'a> {
     pub version: i32,
-    pub method: Method,
+    pub method: Rule,
     pub id: &'a str,
     pub sender: &'a str,
     pub security_level: &'a str,
@@ -29,9 +22,7 @@ pub struct ShioriRequest<'a> {
 }
 
 impl<'a> ShioriRequest<'a> {
-    pub fn from_str(text: &'a str) -> Result<ShioriRequest<'a>, ReqParseError> {
-        
-
-        Err(ReqParseError::UnknownHeader)
+    pub fn from_str(text: &'a str) -> Result<ShioriRequest<'a>, Error<'a>> {
+        Err(Error<'a>::cu ::UnknownHeader)
     }
 }

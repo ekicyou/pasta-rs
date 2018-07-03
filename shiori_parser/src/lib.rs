@@ -8,7 +8,7 @@ extern crate env_logger;
 extern crate pest_derive;
 extern crate pest;
 
-mod shiori;
 mod req;
+mod shiori;
 
-pub use req::{ReqParseError,ShioriRequest,};
+pub use req::{ReqParseError, ShioriRequest};
