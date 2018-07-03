@@ -21,18 +21,17 @@ pub struct ShioriRequest<'a> {
     pub dic: HashMap<String, &'a str>,
 }
 
-mod mes{
-    pub const NOT_IMPL:&str = "未実装です。";
+mod mes {
+    pub const NOT_IMPL: &str = "未実装です。";
 }
 
-
 impl<'a> ShioriRequest<'a> {
-    pub fn from_str(text: &'a str) -> Result<ShioriRequest<'a>, Error> {
+    pub fn parse(text: &'a str) -> Result<ShioriRequest<'a>, Error> {
         Err(Error::new_from_pos(
-            ErrorVariant::CustomError{
-                message: mes::NOT_IMPL.to_string(),
+            ErrorVariant::CustomError {
+                message: mes::NOT_IMPL.into(),
             },
-            pest::Position::from_start(text)
+            pest::Position::from_start(text),
         ))
     }
 }
