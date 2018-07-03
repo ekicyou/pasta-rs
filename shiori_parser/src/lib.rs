@@ -11,4 +11,3 @@ extern crate pest;
 mod req;
 mod shiori;
 
-pub use req::{ReqParseError, ShioriRequest};

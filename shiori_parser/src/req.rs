@@ -1,10 +1,10 @@
-use super::shiori::*;
 use pest;
 use std::collections::HashMap;
 
-pub use super::shiori::Rule;
+use shiori::*;
 
-pub type Error<'a> = pest::Error<'a, Rule::req>;
+pub type Error = pest::error::Error<Rule>;
+pub use pest::error::ErrorVariant;
 
 /// SHIORI3リクエストの解析結果を格納します。
 #[derive(PartialEq, Eq, Debug)]
@@ -21,8 +21,18 @@ pub struct ShioriRequest<'a> {
     pub dic: HashMap<String, &'a str>,
 }
 
+mod mes{
+    pub const NOT_IMPL:&str = "未実装です。";
+}
+
+
 impl<'a> ShioriRequest<'a> {
-    pub fn from_str(text: &'a str) -> Result<ShioriRequest<'a>, Error<'a>> {
-        Err(Error<'a>::cu ::UnknownHeader)
+    pub fn from_str(text: &'a str) -> Result<ShioriRequest<'a>, Error> {
+        Err(Error::new_from_pos(
+            ErrorVariant::CustomError{
+                message: mes::NOT_IMPL.to_string(),
+            },
+            pest::Position::from_start(text)
+        ))
     }
 }
