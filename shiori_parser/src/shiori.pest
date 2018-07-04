@@ -5,20 +5,38 @@ key_values  = ${ key_value* }
 
 key_value   = ${ key ~ _tag ~ value ~ _eol }
 value       = @{ remain }
-key         = @{ id }
+key         = _{ ( _key_item ~ !id2 ) | key_other } 
+_key_item   = _{      key_ref 
+                    | key_charset 
+                    | key_id
+                    | key_base_id
+                    | key_status
+                    | key_security_level 
+                    | key_sender 
+                    | key_other
+                }
+key_ref     = ${ "Reference" ~ nums }
+key_charset = @{ "Charset" }
+key_id      = @{ "ID" }
+key_base_id = @{ "BaseID" }
+key_status  = @{ "Status" }
+key_security_level = @{ "SecurityLevel" }
+key_sender  = @{ "Sender" }
+key_other   = @{ id }
 
 header      = ${ method ~ _sp ~ ( header3 | header2 ) }
 
-header2     = ${ id ~ _sp ~ _shiori2 ~ ver ~ _eol }
-
-header3     = ${ _shiori3 ~ _eol }
 method      = ${ get | notify }
+header2     = ${ id ~ _sp ~ _shiori2 ~ ver ~ _eol }
+header3     = ${ _shiori3 ~ _eol }
 
 id          = @{ XID_START ~ XID_CONTINUE* }
+id2         = @{ XID_CONTINUE }
 
 // tokens
 _shiori2    = _{ "SHIORI/2." }
 _shiori3    = _{ "SHIORI/3.0" }
+nums        = @{ ('1'..'9') ~ ('0'..'9')* }
 ver         = @{ ASCII_DIGIT }
 get         =  { "GET" }
 notify      =  { "NOTIFY" }

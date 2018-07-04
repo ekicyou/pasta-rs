@@ -25,6 +25,7 @@ mod tests {
             assert_eq!(span.end(), 2);
         }
     }
+
     #[test]
     fn id_2() {
         let items = ShioriParser::parse(Rule::id, "感じの良いID")
@@ -180,6 +181,77 @@ mod tests {
     }
 
     #[test]
+    fn key_1() {
+        let items = ShioriParser::parse(Rule::key, "感じの良いID")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::key_other);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "感じの良いID");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 17);
+        }
+    }
+
+    #[test]
+    fn key_2() {
+        let items = ShioriParser::parse(Rule::key, "IDの感じ")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::key_other);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "IDの感じ");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 11);
+        }
+    }
+
+    #[test]
+    fn key_3() {
+        let items = ShioriParser::parse(Rule::key, "Reference123")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::key_ref);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "Reference123");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 12);
+
+            let mut it = pair.clone().into_inner();
+            let pair = it.next().unwrap();
+            assert_eq!(pair.as_rule(), Rule::nums);
+            assert_eq!(pair.as_str(), "123");
+
+            assert_eq!(it.next(), None);
+        }
+    }
+
+    #[test]
+    fn key_4() {
+        let items = ShioriParser::parse(Rule::key, "Reference123の感じ")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+        {
+            let pair = &items[0];
+            assert_eq!(pair.as_rule(), Rule::key_other);
+            let span = pair.clone().into_span();
+            assert_eq!(span.as_str(), "Reference123の感じ");
+            assert_eq!(span.start(), 0);
+            assert_eq!(span.end(), 21);
+        }
+    }
+
+    #[test]
     fn key_value_1() {
         let items = ShioriParser::parse(Rule::key_value, "IDは: XYZですよ\r\n")
             .unwrap_or_else(|e| panic!("{}", e))
@@ -197,7 +269,7 @@ mod tests {
         assert_eq!(items.len(), 2);
 
         let pair = &items[0];
-        assert_eq!(pair.as_rule(), Rule::key);
+        assert_eq!(pair.as_rule(), Rule::key_other);
         assert_eq!(pair.as_str(), "IDは");
 
         let pair = &items[1];
