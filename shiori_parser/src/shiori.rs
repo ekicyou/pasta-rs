@@ -277,7 +277,11 @@ mod tests {
 
     #[test]
     fn req_1() {
-        let grammar = include_str!("test_data/shiori3-1.txt");
+        let src = include_str!("test_data/shiori3-1.txt")
+            .replace("\r\n","\n")
+            .replace("\r","\n")
+            .replace("\n","\r\n");
+        let grammar = src.as_str();
         let items = ShioriParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
@@ -322,7 +326,11 @@ mod tests {
 
     #[test]
     fn req_2() {
-        let grammar = include_str!("test_data/shiori3-2.txt");
+        let src = include_str!("test_data/shiori3-2.txt")
+            .replace("\r\n","\n")
+            .replace("\r","\n")
+            .replace("\n","\r\n");
+        let grammar = src.as_str();
         let mut items = ShioriParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
