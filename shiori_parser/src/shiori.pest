@@ -23,11 +23,11 @@ key_security_level = @{ "SecurityLevel" }
 key_sender  = @{ "Sender" }
 key_other   = @{ id }
 
-header      = ${ method ~ _sp ~ ( header3 | header2 ) }
+header      = ${ method ~ _sp ~ ( header3 | header2 ) ~ _eol }
 
 method      = ${ get | notify }
-header2     = ${ id ~ _sp ~ _shiori2 ~ ver ~ _eol }
-header3     = ${ _shiori3 ~ _eol }
+header2     = ${ id ~ _sp ~ _shiori2 ~ ver }
+header3     = ${ _shiori3 }
 
 id          = @{ XID_START ~ XID_CONTINUE* }
 id2         = @{ XID_CONTINUE }
@@ -47,6 +47,6 @@ sp          = @{ _sp }
 eol         = @{ _eol }
 key_sep     = @{ _key_sep }
 _sp         = _{ " " }
-_eol        = _{ "\r\n" }
+_eol        = _{ "\r\n" | "\n" | "\r" }
 _key_sep    = _{ "-" | "." }
 
