@@ -385,49 +385,51 @@ mod tests {
         assert_eq!(items.next(), None);
     }
 
-    //#[test]
+    #[test]
     fn req_3() {
-        let grammar = include_str!("test_data/shiori2-1.txt");
-        let items = ShioriParser::parse(Rule::req, grammar)
+        let src = include_str!("test_data/shiori2-1.txt")
+            .replace("\r\n","\n")
+            .replace("\r","\n")
+            .replace("\n","\r\n");
+        let grammar = src.as_str();
+        let mut items = ShioriParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
-            .collect::<Vec<_>>();
-        assert_eq!(items.len(), 1);
+            .flatten();
 
-        let pair = &items[0];
+        let pair = items.next().unwrap();
         assert_eq!(pair.as_rule(), Rule::req);
         let span = pair.clone().into_span();
         assert_eq!(span.as_str(), grammar);
-        assert_eq!(span.start(), 0);
-        assert_eq!(span.end(), 82);
 
-        let items = pair.clone().into_inner().collect::<Vec<_>>();
-        assert_eq!(items.len(), 3);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::header);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::method);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::get);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::header2);
 
-        let pair = &items[0];
-        assert_eq!(pair.as_rule(), Rule::header);
-        assert_eq!(pair.as_str(), "GET SHIORI/3.0\r\n");
+        let pair = items.next().unwrap();
+        assert_eq!(pair.as_rule(), Rule::id);
+        assert_eq!(pair.as_str(), "Version");
 
-        let pair = &items[1];
-        assert_eq!(pair.as_rule(), Rule::key_values);
-        {
-            let items = pair.clone().into_inner().collect::<Vec<_>>();
-            assert_eq!(items.len(), 4);
-            let pair = &items[0];
-            assert_eq!(pair.as_rule(), Rule::key_value);
-            assert_eq!(pair.as_str(), "Charset: UTF-8\r\n");
-            let pair = &items[1];
-            assert_eq!(pair.as_rule(), Rule::key_value);
-            assert_eq!(pair.as_str(), "ID: version\r\n");
-            let pair = &items[2];
-            assert_eq!(pair.as_rule(), Rule::key_value);
-            assert_eq!(pair.as_str(), "SecurityLevel: local\r\n");
-            let pair = &items[3];
-            assert_eq!(pair.as_rule(), Rule::key_value);
-            assert_eq!(pair.as_str(), "Sender: SSP\r\n");
-        }
+        let pair = items.next().unwrap();
+        assert_eq!(pair.as_rule(), Rule::ver);
+        assert_eq!(pair.as_str(), "6");
 
-        let pair = &items[2];
-        assert_eq!(pair.as_rule(), Rule::EOI);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::key_values);
+
+        assert_eq!(items.next().unwrap().as_rule(), Rule::key_value);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::key_charset);
+        let pair = items.next().unwrap();
+        assert_eq!(pair.as_rule(), Rule::value);
+        assert_eq!(pair.as_str(), "UTF-8");
+
+        assert_eq!(items.next().unwrap().as_rule(), Rule::key_value);
+        assert_eq!(items.next().unwrap().as_rule(), Rule::key_sender);
+        let pair = items.next().unwrap();
+        assert_eq!(pair.as_rule(), Rule::value);
+        assert_eq!(pair.as_str(), "SSP");
+
+        assert_eq!(items.next().unwrap().as_rule(), Rule::EOI);
+        assert_eq!(items.next(), None);
     }
 
 }
