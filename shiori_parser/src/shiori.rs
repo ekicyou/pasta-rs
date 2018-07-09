@@ -43,6 +43,19 @@ mod tests {
     }
 
     #[test]
+    fn id_3() {
+        let mut it = ShioriParser::parse(Rule::id, "Ref-123.a23")
+            .unwrap_or_else(|e| panic!("{}", e))
+            .flatten();
+
+        let pair = it.next().unwrap();
+        assert_eq!(pair.as_rule(), Rule::id);
+        assert_eq!(pair.as_str(), "Ref-123.a23");
+
+        assert_eq!(it.next(), None);
+    }
+
+    #[test]
     fn remain_1() {
         let mut items = ShioriParser::parse(Rule::remain, "ABC\r\n")
             .unwrap_or_else(|e| panic!("{}", e))

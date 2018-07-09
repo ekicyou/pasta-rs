@@ -5,13 +5,13 @@ key_values  = ${ key_value* }
 
 key_value   = ${ key ~ _tag ~ value ~ _eol }
 value       = @{ remain }
-key         = _{      ( key_ref ~ !XID_CONTINUE )
-                    | ( key_charset ~ !XID_CONTINUE )
-                    | ( key_id ~ !XID_CONTINUE )
-                    | ( key_base_id ~ !XID_CONTINUE )
-                    | ( key_status ~ !XID_CONTINUE )
-                    | ( key_security_level ~ !XID_CONTINUE )
-                    | ( key_sender ~ !XID_CONTINUE )
+key         = _{      ( key_ref ~ !_id2 )
+                    | ( key_charset ~ !_id2 )
+                    | ( key_id ~ !_id2 )
+                    | ( key_base_id ~ !_id2 )
+                    | ( key_status ~ !_id2 )
+                    | ( key_security_level ~ !_id2 )
+                    | ( key_sender ~ !_id2 )
                     | ( key_other )
                 }
 key_ref     = ${ "Reference" ~ nums }
@@ -29,8 +29,8 @@ method      = ${ get | notify }
 header2     = ${ id ~ _sp ~ _shiori2 ~ ver }
 header3     = ${ _shiori3 }
 
-id          = @{ XID_START ~ XID_CONTINUE* }
-id2         = @{ XID_CONTINUE }
+id          = @{ XID_START ~ _id2* }
+_id2        = _{ XID_CONTINUE | _key_sep }
 
 // tokens
 _shiori2    = _{ "SHIORI/2." }
