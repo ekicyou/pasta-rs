@@ -47,6 +47,6 @@ sp          = @{ _sp }
 eol         = @{ _eol }
 key_sep     = @{ _key_sep }
 _sp         = _{ " " }
-_eol        = _{ "\r\n" }
+_eol        = _{ "\r\n" | "\n" | "\r" }
 _key_sep    = _{ "-" | "." }
 
