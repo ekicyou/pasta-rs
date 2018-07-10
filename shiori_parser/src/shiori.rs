@@ -150,10 +150,10 @@ mod tests {
                 let items = pair.clone().into_inner().collect::<Vec<_>>();
                 assert_eq!(items.len(), 2);
                 let pair = &items[0];
-                assert_eq!(pair.as_rule(), Rule::id);
+                assert_eq!(pair.as_rule(), Rule::shiori2_id);
                 assert_eq!(pair.as_str(), "OPEN");
                 let pair = &items[1];
-                assert_eq!(pair.as_rule(), Rule::ver);
+                assert_eq!(pair.as_rule(), Rule::shiori2_ver);
                 assert_eq!(pair.as_str(), "6");
             }
         }
@@ -278,9 +278,9 @@ mod tests {
     #[test]
     fn req_1() {
         let src = include_str!("test_data/shiori3-1.txt")
-            .replace("\r\n","\n")
-            .replace("\r","\n")
-            .replace("\n","\r\n");
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
         let grammar = src.as_str();
         let items = ShioriParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
@@ -327,9 +327,9 @@ mod tests {
     #[test]
     fn req_2() {
         let src = include_str!("test_data/shiori3-2.txt")
-            .replace("\r\n","\n")
-            .replace("\r","\n")
-            .replace("\n","\r\n");
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
         let grammar = src.as_str();
         let mut items = ShioriParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
@@ -388,9 +388,9 @@ mod tests {
     #[test]
     fn req_3() {
         let src = include_str!("test_data/shiori2-1.txt")
-            .replace("\r\n","\n")
-            .replace("\r","\n")
-            .replace("\n","\r\n");
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
         let grammar = src.as_str();
         let mut items = ShioriParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
@@ -407,11 +407,11 @@ mod tests {
         assert_eq!(items.next().unwrap().as_rule(), Rule::header2);
 
         let pair = items.next().unwrap();
-        assert_eq!(pair.as_rule(), Rule::id);
+        assert_eq!(pair.as_rule(), Rule::shiori2_id);
         assert_eq!(pair.as_str(), "Version");
 
         let pair = items.next().unwrap();
-        assert_eq!(pair.as_rule(), Rule::ver);
+        assert_eq!(pair.as_rule(), Rule::shiori2_ver);
         assert_eq!(pair.as_str(), "6");
 
         assert_eq!(items.next().unwrap().as_rule(), Rule::key_values);

@@ -1,4 +1,6 @@
 use pest;
+use pest::iterators::FlatPairs;
+use pest::iterators::Pair;
 use pest::Parser;
 use std::collections::HashMap;
 
@@ -10,6 +12,7 @@ pub use pest::error::ErrorVariant;
 /// SHIORI3リクエストの解析結果を格納します。
 #[derive(PartialEq, Eq, Debug)]
 pub struct ShioriRequest<'a> {
+    pub text: &'a str,
     pub version: i32,
     pub method: Rule,
     pub id: Option<&'a str>,
@@ -23,84 +26,117 @@ pub struct ShioriRequest<'a> {
     pub key_values: Vec<(Rule, &'a str, &'a str)>,
 }
 
-mod mes {
-    pub const NOT_IMPL: &str = "未実装です。";
-}
-
 impl<'a> ShioriRequest<'a> {
     pub fn parse(text: &'a str) -> Result<ShioriRequest<'a>, Error> {
-        let req = ShioriParser::parse(Rule::req, text)?.next().unwrap();
-        let mut req_items = req.into_inner();
+        let rc = ShioriRequest::new(text);
+        let it = ShioriParser::parse(Rule::req, text)?.flatten();
+        rc.parse1(it)
+    }
 
-        let (version, method, mut id) = {
-            let header = req_items.next().unwrap();
-            let mut items = header.into_inner();
-            let method = items.next().unwrap().as_rule();
-            let h2_or_3 = items.next().unwrap();
-            let (version, id) = match h2_or_3.as_rule() {
-                Rule::header2 => {
-                    let mut items = h2_or_3.into_inner();
-                    let id = items.next().unwrap();
-                    (2, Some(id.as_str()))
-                }
-                Rule::header3 => (3, None),
-                _ => unimplemented!(),
-            };
-            (version, method, id)
-        };
-
-        {
-            let key_values = req_items.next().unwrap();
-
-            let mut sender = None;
-            let mut security_level = None;
-            let mut charset = None;
-            let mut status = None;
-            let mut base_id = None;
-            let mut dic = HashMap::new();
-            let mut reference = Vec::new();
-            let mut kv_items = Vec::new();
-
-            for kv in key_values.into_inner() {
-                let mut items = kv.into_inner();
-                let k = items.next().unwrap();
-                let v = items.next().unwrap();
-                let rule = k.as_rule();
-                let key = v.as_str();
-                let value = v.as_str();
-                kv_items.push((rule, key, value));
-                dic.entry(key.into()).or_insert(value);
-                match rule {
-                    Rule::key_id => id = Some(value),
-                    Rule::key_base_id => base_id = Some(value),
-                    Rule::key_status => status = Some(value),
-                    Rule::key_sender => sender = Some(value),
-                    Rule::key_security_level => security_level = Some(value),
-                    Rule::key_charset => charset = Some(value),
-                    Rule::key_ref => {
-                        let mut it = k.into_inner();
-                        let num = it.next().unwrap().as_str().parse().unwrap();
-                        reference.push((num, value));
-                    }
-                    _ => (),
-                }
-            }
-            let reference = reference.as_mut_slice();
-            reference.sort_by_key(|a| a.0);
-
-            Ok(ShioriRequest {
-                version: version,
-                method: method,
-                id: id,
-                sender: sender,
-                security_level: security_level,
-                charset: charset,
-                status: status,
-                base_id: base_id,
-                dic: dic,
-                key_values: kv_items,
-                reference: Vec::from(reference),
-            })
+    fn new(text: &'a str) -> ShioriRequest<'a> {
+        ShioriRequest {
+            text: text,
+            version: 0,
+            method: Rule::req,
+            id: None,
+            sender: None,
+            security_level: None,
+            charset: None,
+            status: None,
+            base_id: None,
+            dic: HashMap::new(),
+            key_values: Vec::new(),
+            reference: Vec::new(),
         }
     }
+
+    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> Result<ShioriRequest<'a>, Error> {
+        let pair = match it.next() {
+            Some(a) => a,
+            None => return Ok(self),
+        };
+        let rule = pair.as_rule();
+        match rule {
+            Rule::key_value => self.parse_key_value(&mut it)?,
+            Rule::get => self.method = rule,
+            Rule::notify => self.method = rule,
+            Rule::header3 => self.version = 30,
+            Rule::shiori2_id => self.id = Some(pair.as_str()),
+            Rule::shiori2_ver => {
+                self.version = {
+                    let nums: i32 = pair.as_str().parse().unwrap();
+                    if nums < 0 {
+                        20
+                    } else if nums > 9 {
+                        29
+                    } else {
+                        nums + 20
+                    }
+                };
+            }
+            _ => (),
+        };
+        self.parse1(it)
+    }
+
+    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> Result<(), Error> {
+        let pair = it.next().unwrap();
+        let rule = pair.as_rule();
+        let key = pair.as_str();
+        let value = match rule {
+            Rule::key_ref => {
+                let nums = it.next().unwrap().as_str().parse().unwrap();
+                let value = it.next().unwrap().as_str();
+                self.reference.push((nums, value));
+                value
+            }
+            _ => {
+                let value = it.next().unwrap().as_str();
+                match rule {
+                    Rule::key_charset => self.charset = Some(value),
+                    Rule::key_id => self.id = Some(value),
+                    Rule::key_base_id => self.base_id = Some(value),
+                    Rule::key_status => self.status = Some(value),
+                    Rule::key_security_level => self.security_level = Some(value),
+                    Rule::key_sender => self.sender = Some(value),
+                    Rule::key_other => (),
+                    _ => panic!(),
+                };
+                value
+            }
+        };
+        self.dic.entry(key.into()).or_insert(value);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn req_1() {
+        let src = include_str!("test_data/shiori3-1.txt")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
+        let grammar = src.as_str();
+
+        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
+        assert_eq!(req.version, 30);
+        assert_eq!(req.method, Rule::get);
+        assert_eq!(req.id.unwrap(), "version");
+        assert_eq!(req.sender.unwrap(), "SSP");
+        assert_eq!(req.security_level.unwrap(), "local");
+        assert_eq!(req.charset.unwrap(), "UTF-8");
+        assert_eq!(req.status, None);
+        assert_eq!(req.base_id, None);
+
+        assert_eq!(req.dic.len(), 4);
+
+        assert_eq!(req.key_values.len(), 0);
+
+        assert_eq!(req.reference.len(), 0);
+    }
+
 }

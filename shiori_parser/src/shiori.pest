@@ -26,7 +26,9 @@ key_other   = @{ id }
 header      = ${ method ~ _sp ~ ( header3 | header2 ) ~ _eol }
 
 method      = ${ get | notify }
-header2     = ${ id ~ _sp ~ _shiori2 ~ ver }
+header2     = ${ shiori2_id ~ _sp ~ _shiori2 ~ shiori2_ver }
+shiori2_id  = @{ id }
+shiori2_ver = @{ ver }
 header3     = ${ _shiori3 }
 
 id          = @{ XID_START ~ _id2* }
