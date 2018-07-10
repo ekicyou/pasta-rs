@@ -1,6 +1,5 @@
 use pest;
 use pest::iterators::FlatPairs;
-use pest::iterators::Pair;
 use pest::Parser;
 use std::collections::HashMap;
 
