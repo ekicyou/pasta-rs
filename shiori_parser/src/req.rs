@@ -124,11 +124,11 @@ mod tests {
 
         let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
         assert_eq!(req.version, 30);
-        assert_eq!(req.method, Rule::get);
-        assert_eq!(req.id.unwrap(), "version");
+        assert_eq!(req.charset.unwrap(), "UTF-8");
         assert_eq!(req.sender.unwrap(), "SSP");
         assert_eq!(req.security_level.unwrap(), "local");
-        assert_eq!(req.charset.unwrap(), "UTF-8");
+        assert_eq!(req.method, Rule::get);
+        assert_eq!(req.id.unwrap(), "version");
         assert_eq!(req.status, None);
         assert_eq!(req.base_id, None);
 
@@ -143,4 +143,57 @@ mod tests {
         assert_eq!(req.reference.len(), 0);
     }
 
+    #[test]
+    fn req_2() {
+        let src = include_str!("test_data/shiori3-2.txt")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
+        let grammar = src.as_str();
+
+        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
+
+        assert_eq!(req.version, 30);
+        assert_eq!(req.charset.unwrap(), "UTF-8");
+        assert_eq!(req.sender.unwrap(), "SSP");
+        assert_eq!(req.security_level.unwrap(), "local");
+        assert_eq!(req.method, Rule::notify);
+        assert_eq!(req.id.unwrap(), "ownerghostname");
+        assert_eq!(req.status, None);
+        assert_eq!(req.base_id, None);
+
+        assert_eq!(req.dic.len(), 5);
+        assert_eq!(req.dic["Reference0"], "セキュリティボール");
+
+        assert_eq!(req.key_values.len(), 0);
+
+        assert_eq!(req.reference.len(), 1);
+        let mut it = req.reference.into_iter();
+        assert_eq!(it.next().unwrap(), (0i32, "セキュリティボール"));
+        assert_eq!(it.next(), None);
+    }
+
+    #[test]
+    fn req_3() {
+        let src = include_str!("test_data/shiori2-1.txt")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
+        let grammar = src.as_str();
+
+        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
+
+        assert_eq!(req.version, 26);
+        assert_eq!(req.charset.unwrap(), "UTF-8");
+        assert_eq!(req.sender.unwrap(), "SSP");
+        assert_eq!(req.method, Rule::get);
+        assert_eq!(req.id.unwrap(), "Version");
+        assert_eq!(req.security_level, None);
+        assert_eq!(req.status, None);
+        assert_eq!(req.base_id, None);
+
+        assert_eq!(req.dic.len(), 2);
+        assert_eq!(req.key_values.len(), 0);
+        assert_eq!(req.reference.len(), 0);
+    }
 }
