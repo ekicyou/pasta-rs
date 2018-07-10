@@ -133,6 +133,10 @@ mod tests {
         assert_eq!(req.base_id, None);
 
         assert_eq!(req.dic.len(), 4);
+        assert_eq!(req.dic["Charset"], "UTF-8");
+        assert_eq!(req.dic["ID"], "version");
+        assert_eq!(req.dic["SecurityLevel"], "local");
+        assert_eq!(req.dic["Sender"], "SSP");
 
         assert_eq!(req.key_values.len(), 0);
 
