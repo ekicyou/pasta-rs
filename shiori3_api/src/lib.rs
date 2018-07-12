@@ -8,5 +8,6 @@ extern crate lazy_static;
 
 #[cfg(any(windows))]
 extern crate winapi;
+mod api;
 #[cfg(any(windows))]
 mod windows;

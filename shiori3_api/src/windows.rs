@@ -1,5 +1,4 @@
 use winapi::_core::ptr;
-use winapi::ctypes::c_void;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[allow(dead_code)]
@@ -11,7 +10,7 @@ const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
 
-pub trait Shiori3 {
+pub trait RawShiori3 {
     fn shiori3_load(hdir: HGLOBAL, len: usize) -> bool {
         false
     }
@@ -24,7 +23,7 @@ pub trait Shiori3 {
         ptr::null_mut()
     }
 
-    fn shiori3_dll_main(hInst: usize, ul_reason_for_call: DWORD, lpReserved: LPVOID) -> bool {
+    fn shiori3_dll_main(h_inst: usize, ul_reason_for_call: DWORD, lpReserved: LPVOID) -> bool {
         false
     }
 }
