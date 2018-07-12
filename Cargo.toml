@@ -8,8 +8,8 @@ members = [
 #    "pasta_stage",
 #    "pasta_viewer",
     "shiori_hglobal",
-#    "shiori3",
     "shiori_parser",
+    "shiori3_api",
 #    "pasta",
 ]
 
