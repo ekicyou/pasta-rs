@@ -101,7 +101,7 @@ impl GStr {
     /// 格納データを「ANSI STRING(JP環境ではSJIS)」とみなして、OsStrに変換します。
     /// MultiByteToWideChar()を利用する。
     /// SHIORI::load()文字列の取り出しに利用する。
-    pub fn to_load_str(&self) -> Result<OsString, GStrError> {
+    pub fn to_ansi_str(&self) -> Result<OsString, GStrError> {
         let bytes = self.to_bytes();
         let s = Encoding::ANSI
             .to_string(bytes)
@@ -112,7 +112,7 @@ impl GStr {
 
     /// 格納データを「UTF-8」とみなして、strに変換する。
     /// SHIORI::request()文字列の取り出しに利用する。
-    pub fn to_req_str(&self) -> Result<&str, GStrError> {
+    pub fn to_utf8_str(&self) -> Result<&str, GStrError> {
         let bytes = self.to_bytes();
         Ok(str::from_utf8(bytes)?)
     }
@@ -123,11 +123,11 @@ fn gstr_test() {
     {
         let text = "適当なGSTR";
         let src = GStr::clone_from_slice_nofree(text.as_bytes());
-        assert_eq!(src.to_req_str().unwrap(), text);
+        assert_eq!(src.to_utf8_str().unwrap(), text);
         assert_eq!(src.len(), 13);
 
         let dst = GStr::capture(src.handle(), src.len());
-        assert_eq!(dst.to_req_str().unwrap(), text);
+        assert_eq!(dst.to_utf8_str().unwrap(), text);
     }
     {
         let text = "適当なGSTR";
@@ -135,11 +135,11 @@ fn gstr_test() {
         assert_eq!(sjis.len(), 10);
         let src = GStr::clone_from_slice_nofree(&sjis[..]);
         assert_eq!(src.len(), 10);
-        let src_osstr = src.to_load_str().unwrap();
+        let src_osstr = src.to_ansi_str().unwrap();
         assert_eq!(src_osstr.len(), 13);
 
         let dst = GStr::capture(src.handle(), src.len());
-        assert_eq!(src_osstr, dst.to_load_str().unwrap());
+        assert_eq!(src_osstr, dst.to_ansi_str().unwrap());
 
         let src_str = src_osstr.to_str().unwrap();
         assert_eq!(src_str, text);

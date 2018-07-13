@@ -1,9 +1,12 @@
 use std::path::Path;
 
 pub trait Shiori3 {
-    type Item: Shiori3;
+    fn shiori3_get<'a, TS: Shiori3>() -> Option<&'a mut TS>;
+    fn shiori3_load<'a, TS: Shiori3, P: AsRef<Path>>(
+        h_inst: usize,
+        load_dir: P,
+    ) -> Option<&'a mut TS>;
+    fn shiori3_drop() -> bool;
 
-    fn get_shiori3() -> Option<&mut Item>;
-    fn load_shiori3<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> Option<&mut Item>;
-    fn drop_shiori3() -> bool;
+    fn shiori3_request<'a, S: Into<&'a str>>(&mut self, req: S) -> str;
 }
