@@ -1,26 +1,35 @@
 {
-    "name": "log-example",
-    "displayName": "log-example",
-    "description": "A simple extension for log syntax highlighting.",
+    "name": "pasta-script",
+    "displayName": "pasta-script",
+    "description": "pasta script syntax highlighting.",
     "version": "0.0.1",
-    "publisher": "gcroteau",
+    "publisher": "ekicyou",
     "engines": {
-        "vscode": "^1.5.0"
+        "vscode": "^1.25.0"
     },
     "categories": [
-        "Languages"
+        "Programming Languages"
     ],
     "contributes": {
-        "languages": [{
-            "id": "log",
-            "aliases": ["log", "log"],
-            "extensions": [".log"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "log",
-            "scopeName": "source.log",
-            "path": "./syntaxes/log.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "pasta",
+                "aliases": [
+                    "pasta",
+                    "pasta"
+                ],
+                "extensions": [
+                    ".pasta"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "pasta",
+                "scopeName": "source.pasta",
+                "path": "./syntaxes/pasta.tmLanguage.json"
+            }
+        ]
     }
 }

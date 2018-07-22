@@ -1,6 +1,8 @@
-# log-example README
+# ぱすたスクリプト README
 
 This is the README for your extension "log-example". After writing up a brief description, we recommend including the following sections.
+
+* https://code.visualstudio.com/docs/extensionAPI/extension-points#_contributeslanguages
 
 ## Features
 
