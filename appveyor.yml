@@ -15,6 +15,7 @@ environment:
     - TARGET: x86_64-pc-windows-gnu
       CHANNEL: nightly
     - TARGET: i686-pc-windows-gnu
+      CHANNEL: nightly
 
 matrix:
   fast_finish: true
