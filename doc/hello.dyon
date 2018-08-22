@@ -1,20 +1,20 @@
-fn log(a: f64) {}
+fn ログ(a: f64) {}
 
-fn finish() {}
+fn 終了() {}
 
 fn bar(id: f64, n: f64) -> bool {
     for i n {
         rc := (id + 1) * 1000 + i
-        log(rc)
+        ログ(rc)
         sleep(0.5)
     }
-    finish()
+    終了()
     return true
 }
 
 fn main() {
-    log := in log
-    finish := in finish
+    log := in ログ
+    finish := in 終了
     n := 10
     for i n {_ := go bar(i, 2)}
     loop {
