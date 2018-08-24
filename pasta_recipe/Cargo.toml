@@ -1,9 +1,16 @@
 [package]
-name = "pasta_recipi"
-description = "pasta script parser"
+name = "pasta_recipe"
+description = "pasta emote recipe"
 version = "0.2.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
 repository = "https://github.com/ekicyou/pasta-rs"
 keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
+
+[dependencies]
+log = "0.4"
+dyon = "0.37"
+
+[dev-dependencies]
+env_logger = "0.5"
