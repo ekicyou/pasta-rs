@@ -1,5 +1,6 @@
 use super::api::Shiori3;
 use shiori_hglobal::GStr;
+use std::marker::PhantomData;
 use winapi::_core::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
@@ -11,6 +12,10 @@ const DLL_PROCESS_ATTACH: DWORD = 1;
 const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
+
+pub struct RawAPI<TS: Shiori3> {
+    phantom: PhantomData<TS>,
+}
 
 pub trait RawShiori3: Shiori3 {
     fn raw_shiori3_load(hdir: HGLOBAL, len: usize) -> bool {

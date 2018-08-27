@@ -11,6 +11,7 @@ readme = "README.md"
 [dependencies]
 log = "0.4"
 dyon = "0.37"
+failure = "0.1.2"
 
 [dev-dependencies]
 env_logger = "0.5"

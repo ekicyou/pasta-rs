@@ -4,14 +4,12 @@ create a story.
 
 ## design
 
-```yuml
-// {type: sequence}
-[貴方](告白>[私]
+```plantuml
+@startuml
+Alice -> Bob: Authentication Request
+Bob --> Alice: Authentication Response
 
-```
-
-```yuml
-// {type: state}
-(start)->(Find Products)
-
+Alice -> Bob: Another authentication Request
+Alice <-- Bob: another authentication Response
+@enduml
 ```
