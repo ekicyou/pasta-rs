@@ -17,6 +17,32 @@ pub struct RawAPI<TS: Shiori3> {
     phantom: PhantomData<TS>,
 }
 
+impl<TS: Shiori3> RawAPI<TS> {
+    #[allow(dead_code)]
+    pub fn raw_shiori3_load(hdir: HGLOBAL, len: usize) -> bool {
+        let g_dir = GStr::capture(hdir, len);
+        false
+    }
+    #[allow(dead_code)]
+    pub fn raw_shiori3_unload() -> bool {
+        false
+    }
+    #[allow(dead_code)]
+    pub fn raw_shiori3_request(h: HGLOBAL, len: &mut usize) -> HGLOBAL {
+        let len_req = len.clone();
+        let g_req = GStr::capture(h, len_req);
+        ptr::null_mut()
+    }
+    #[allow(dead_code)]
+    pub fn raw_shiori3_dll_main(
+        h_inst: usize,
+        ul_reason_for_call: DWORD,
+        lpReserved: LPVOID,
+    ) -> bool {
+        false
+    }
+}
+
 pub trait RawShiori3: Shiori3 {
     fn raw_shiori3_load(hdir: HGLOBAL, len: usize) -> bool {
         let g_dir = GStr::capture(hdir, len);
