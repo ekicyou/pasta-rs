@@ -9,10 +9,15 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
+failure = "0.1"
+failure_derive = "0.1"
+log = "0.4"
+lazy_static     = "1"
 shiori_hglobal  = { path = "../shiori_hglobal" }
 shiori_parser  = { path = "../shiori_parser" }
-log = "0.4.2"
-lazy_static     = "1"
 
 [target."cfg(windows)".dependencies]
-winapi = {version = "0.3.5", features = [ "winbase", "stringapiset", ] }
+winapi = {version = "0.3", features = [ "winbase", "stringapiset", ] }
+
+[dev-dependencies]
+env_logger = "0.5"
