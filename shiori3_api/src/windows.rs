@@ -4,7 +4,6 @@ use shiori_hglobal::GStr;
 use std::cell::UnsafeCell;
 use std::mem;
 use std::ptr;
-use std::sync::Mutex;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[allow(dead_code)]
