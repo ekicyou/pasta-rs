@@ -47,7 +47,6 @@ impl<TS: Shiori3> RawAPI<TS> {
             _ => true,
         }
     }
-
     fn load(&self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
         let data = self.get_ref();
         data.shiori = None;
