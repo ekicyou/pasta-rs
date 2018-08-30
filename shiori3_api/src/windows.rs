@@ -2,7 +2,6 @@ use super::api::Shiori3;
 use super::error::*;
 use shiori_hglobal::GStr;
 use std::cell::UnsafeCell;
-use std::mem;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
@@ -29,7 +28,7 @@ pub struct RawAPI<TS: Shiori3> {
 impl<TS: Shiori3> RawAPI<TS> {
     fn get_ref(&self) -> &mut ImplData<TS> {
         let p = self.value.get();
-        unsafe { mem::transmute(p) }
+        unsafe { &mut *p }
     }
     fn get_shiori(&self) -> ShioriResult<&mut TS> {
         let data = self.get_ref();
