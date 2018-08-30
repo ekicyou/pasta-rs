@@ -19,11 +19,11 @@ const GMEM_FIXED: UINT = 0;
 #[derive(Copy, Eq, PartialEq, Clone, Debug)]
 pub enum GStrError {
     AnsiEncode,
-    Utf8Error(Utf8Error),
+    Utf8Encode(Utf8Error),
 }
 impl From<Utf8Error> for GStrError {
     fn from(err: Utf8Error) -> GStrError {
-        GStrError::Utf8Error(err)
+        GStrError::Utf8Encode(err)
     }
 }
 

@@ -1,14 +1,21 @@
 use failure::{Backtrace, Context, Fail};
+use shiori_hglobal::GStrError;
 use std::fmt;
 use std::fmt::Display;
 use std::sync::PoisonError;
 
 pub type ShioriResult<T> = Result<T, Error>;
 
-#[derive(Fail, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "others error")]
+    Others,
+    #[fail(display = "not initialized error")]
+    NotInitialized,
     #[fail(display = "Poison error")]
     Poison,
+    #[fail(display = "GStr error, impl({:?})", _0)]
+    GStr(GStrError),
     #[fail(display = "IO error")]
     Io,
     #[fail(display = "Serde error")]
@@ -24,8 +31,13 @@ pub enum ErrorKind {
 }
 
 impl<G> From<PoisonError<G>> for Error {
-    fn from(error: PoisonError<G>) -> Error {
+    fn from(_error: PoisonError<G>) -> Error {
         Error::from(ErrorKind::Poison)
+    }
+}
+impl From<GStrError> for Error {
+    fn from(error: GStrError) -> Error {
+        Error::from(ErrorKind::GStr(error))
     }
 }
 
