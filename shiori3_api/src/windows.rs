@@ -1,7 +1,8 @@
 use super::api::Shiori3;
 use super::error::*;
 use shiori_hglobal::GStr;
-use std::marker::PhantomData;
+use std::cell::UnsafeCell;
+use std::mem;
 use std::ptr;
 use std::sync::Mutex;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
@@ -15,23 +16,29 @@ const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
 
-pub struct RawAPI<TS: Shiori3> {
-    inst: Mutex<Option<TS>>,
+#[derive(Default)]
+struct ImplData<TS: Shiori3> {
+    shiori: Option<TS>,
     h_inst: usize,
-    phantom: PhantomData<TS>,
+}
+
+#[derive(Default)]
+pub struct RawAPI<TS: Shiori3> {
+    value: UnsafeCell<ImplData<TS>>,
 }
 
 impl<TS: Shiori3> RawAPI<TS> {
-    pub fn new() -> Self {
-        Self {
-            inst: Mutex::default(),
-            h_inst: 0,
-            phantom: PhantomData,
-        }
+    fn get_ref(&self) -> &mut ImplData<TS> {
+        let p = self.value.get();
+        unsafe { mem::transmute(p) }
+    }
+    fn get_shiori(&self) -> ShioriResult<&mut TS> {
+        let data = self.get_ref();
+        Ok(data.shiori.as_mut().ok_or(ErrorKind::NotInitialized)?)
     }
 
     #[allow(dead_code)]
-    pub fn raw_shiori3_load(&mut self, hdir: HGLOBAL, len: usize) -> bool {
+    pub fn raw_shiori3_load(&self, hdir: HGLOBAL, len: usize) -> bool {
         match self.load(hdir, len) {
             Err(e) => {
                 error!("{}", e);
@@ -40,19 +47,20 @@ impl<TS: Shiori3> RawAPI<TS> {
             _ => true,
         }
     }
-    fn load(&mut self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
-        let mut shiori_inst = self.inst.lock()?;
-        *shiori_inst = None;
+
+    fn load(&self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
+        let data = self.get_ref();
+        data.shiori = None;
         let mut shiori = TS::new();
         let g_dir = GStr::capture(hdir, len);
         let dir = g_dir.to_ansi_str()?;
-        shiori.load(self.h_inst, dir)?;
-        *shiori_inst = Some(shiori);
+        shiori.load(data.h_inst, dir)?;
+        data.shiori = Some(shiori);
         Ok(())
     }
 
     #[allow(dead_code)]
-    pub fn raw_shiori3_unload(&mut self) -> bool {
+    pub fn raw_shiori3_unload(&self) -> bool {
         match self.unload() {
             Err(e) => {
                 error!("{}", e);
@@ -61,14 +69,14 @@ impl<TS: Shiori3> RawAPI<TS> {
             _ => true,
         }
     }
-    fn unload(&mut self) -> ShioriResult<()> {
-        let mut shiori_inst = self.inst.lock()?;
-        *shiori_inst = None;
+    fn unload(&self) -> ShioriResult<()> {
+        let data = self.get_ref();
+        data.shiori = None;
         Ok(())
     }
 
     #[allow(dead_code)]
-    pub fn raw_shiori3_request(&mut self, h: HGLOBAL, len: &mut usize) -> HGLOBAL {
+    pub fn raw_shiori3_request(&self, h: HGLOBAL, len: &mut usize) -> HGLOBAL {
         match self.request(h, len) {
             Err(e) => {
                 error!("{}", e);
@@ -78,9 +86,8 @@ impl<TS: Shiori3> RawAPI<TS> {
             Ok(rc) => rc,
         }
     }
-    pub fn request(&mut self, h: HGLOBAL, len: &mut usize) -> ShioriResult<HGLOBAL> {
-        let mut shiori_inst = self.inst.lock()?;
-        let shiori = (*shiori_inst).as_mut().ok_or(ErrorKind::NotInitialized)?;
+    pub fn request(&self, h: HGLOBAL, len: &mut usize) -> ShioriResult<HGLOBAL> {
+        let shiori = self.get_shiori()?;
         let len_req = len.clone();
         let g_req = GStr::capture(h, len_req);
         let req = g_req.to_utf8_str()?;
@@ -93,14 +100,15 @@ impl<TS: Shiori3> RawAPI<TS> {
 
     #[allow(dead_code)]
     pub fn raw_shiori3_dll_main(
-        &mut self,
+        &self,
         h_inst: usize,
         ul_reason_for_call: DWORD,
         _lp_reserved: LPVOID,
     ) -> bool {
         match ul_reason_for_call {
             DLL_PROCESS_ATTACH => {
-                self.h_inst = h_inst;
+                let mut data = self.get_ref();
+                data.h_inst = h_inst;
             }
             DLL_PROCESS_DETACH => {
                 self.raw_shiori3_unload();
