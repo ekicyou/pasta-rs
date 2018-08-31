@@ -1,8 +1,9 @@
 use super::api::Shiori3;
 use super::error::*;
 use shiori_hglobal::GStr;
-use std::cell::UnsafeCell;
 use std::ptr;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[allow(dead_code)]
@@ -15,24 +16,27 @@ const DLL_THREAD_ATTACH: DWORD = 2;
 const DLL_THREAD_DETACH: DWORD = 3;
 
 #[derive(Default)]
-struct ImplData<TS: Shiori3> {
-    shiori: Option<TS>,
-    h_inst: usize,
-}
-
-#[derive(Default)]
 pub struct RawAPI<TS: Shiori3> {
-    value: UnsafeCell<ImplData<TS>>,
+    shiori: Mutex<Option<TS>>,
+    h_inst: AtomicUsize,
 }
 
 impl<TS: Shiori3> RawAPI<TS> {
-    fn get_ref(&self) -> &mut ImplData<TS> {
-        let p = self.value.get();
-        unsafe { &mut *p }
-    }
     fn get_shiori(&self) -> ShioriResult<&mut TS> {
-        let data = self.get_ref();
-        Ok(data.shiori.as_mut().ok_or(ErrorKind::NotInitialized)?)
+        let locked = self.shiori.lock()?;
+        let shiori = *locked.as_mut().ok_or(ErrorKind::NotInitialized)?;
+        Ok(shiori)
+    }
+    fn set_shiori(&self, obj: Option<TS>) -> ShioriResult<()> {
+        let target = self.shiori.get_mut()?;
+        *target = obj;
+        Ok(())
+    }
+    fn get_h_inst(&self) -> usize {
+        self.h_inst.load(Ordering::Relaxed)
+    }
+    fn set_h_inst(&self, value: usize) {
+        self.h_inst.store(value, Ordering::Relaxed)
     }
 
     #[allow(dead_code)]
@@ -46,13 +50,12 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     fn load(&self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
-        let data = self.get_ref();
-        data.shiori = None;
+        self.set_shiori(None)?;
         let mut shiori = TS::new();
         let g_dir = GStr::capture(hdir, len);
         let dir = g_dir.to_ansi_str()?;
-        shiori.load(data.h_inst, dir)?;
-        data.shiori = Some(shiori);
+        shiori.load(self.get_h_inst(), dir)?;
+        self.set_shiori(Some(shiori))?;
         Ok(())
     }
 
@@ -67,8 +70,7 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     fn unload(&self) -> ShioriResult<()> {
-        let data = self.get_ref();
-        data.shiori = None;
+        self.set_shiori(None)?;
         Ok(())
     }
 
@@ -104,8 +106,7 @@ impl<TS: Shiori3> RawAPI<TS> {
     ) -> bool {
         match ul_reason_for_call {
             DLL_PROCESS_ATTACH => {
-                let mut data = self.get_ref();
-                data.h_inst = h_inst;
+                self.set_h_inst(h_inst);
             }
             DLL_PROCESS_DETACH => {
                 self.raw_shiori3_unload();
