@@ -3,7 +3,7 @@ use super::error::*;
 use shiori_hglobal::GStr;
 use std::ptr;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[allow(dead_code)]
@@ -22,13 +22,8 @@ pub struct RawAPI<TS: Shiori3> {
 }
 
 impl<TS: Shiori3> RawAPI<TS> {
-    fn get_shiori(&self) -> ShioriResult<&mut TS> {
-        let locked = self.shiori.lock()?;
-        let shiori = *locked.as_mut().ok_or(ErrorKind::NotInitialized)?;
-        Ok(shiori)
-    }
     fn set_shiori(&self, obj: Option<TS>) -> ShioriResult<()> {
-        let target = self.shiori.get_mut()?;
+        let mut target = self.shiori.lock()?;
         *target = obj;
         Ok(())
     }
@@ -86,7 +81,8 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     pub fn request(&self, h: HGLOBAL, len: &mut usize) -> ShioriResult<HGLOBAL> {
-        let shiori = self.get_shiori()?;
+        let mut locked = self.shiori.lock()?;
+        let shiori = locked.as_mut().ok_or(ErrorKind::NotInitialized)?;
         let len_req = len.clone();
         let g_req = GStr::capture(h, len_req);
         let req = g_req.to_utf8_str()?;
