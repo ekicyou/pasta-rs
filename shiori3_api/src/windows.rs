@@ -22,11 +22,6 @@ pub struct RawAPI<TS: Shiori3> {
 }
 
 impl<TS: Shiori3> RawAPI<TS> {
-    fn set_shiori(&self, obj: Option<TS>) -> ShioriResult<()> {
-        let mut target = self.shiori.lock()?;
-        *target = obj;
-        Ok(())
-    }
     fn get_h_inst(&self) -> usize {
         self.h_inst.load(Ordering::Relaxed)
     }
@@ -45,12 +40,13 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     fn load(&self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
-        self.set_shiori(None)?;
+        let mut locked = self.shiori.lock()?;
+        *locked = None;
         let mut shiori = TS::new();
         let g_dir = GStr::capture(hdir, len);
         let dir = g_dir.to_ansi_str()?;
         shiori.load(self.get_h_inst(), dir)?;
-        self.set_shiori(Some(shiori))?;
+        *locked = Some(shiori);
         Ok(())
     }
 
@@ -65,7 +61,8 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     fn unload(&self) -> ShioriResult<()> {
-        self.set_shiori(None)?;
+        let mut locked = self.shiori.lock()?;
+        *locked = None;
         Ok(())
     }
 
@@ -81,12 +78,14 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     pub fn request(&self, h: HGLOBAL, len: &mut usize) -> ShioriResult<HGLOBAL> {
-        let mut locked = self.shiori.lock()?;
-        let shiori = locked.as_mut().ok_or(ErrorKind::NotInitialized)?;
         let len_req = len.clone();
         let g_req = GStr::capture(h, len_req);
         let req = g_req.to_utf8_str()?;
-        let res = shiori.request(req)?;
+        let res = {
+            let mut locked = self.shiori.lock()?;
+            let shiori = locked.as_mut().ok_or(ErrorKind::NotInitialized)?;
+            shiori.request(req)?
+        };
         let b_res = res.as_bytes();
         let g_res = GStr::clone_from_slice_nofree(b_res);
         *len = g_res.len();
