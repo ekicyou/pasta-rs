@@ -3,7 +3,7 @@ use super::error::*;
 use shiori_hglobal::GStr;
 use std::ptr;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Mutex;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[allow(dead_code)]
@@ -39,10 +39,10 @@ impl<TS: Shiori3> RawAPI<TS> {
             _ => true,
         }
     }
-    fn load(&self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
+    fn load(&self, h_dir: HGLOBAL, l_dir: usize) -> ShioriResult<()> {
         let mut locked = self.shiori.lock()?;
         *locked = None;
-        let g_dir = GStr::capture(hdir, len);
+        let g_dir = GStr::capture(h_dir, l_dir);
         let dir = g_dir.to_ansi_str()?;
         let shiori = TS::load(self.get_h_inst(), dir)?;
         *locked = Some(shiori);
@@ -137,11 +137,18 @@ mod tests {
     #[test]
     fn init_test() {
         let api: RawAPI<TestShiori> = Default::default();
-        api.raw_shiori3_dll_main(123, DLL_PROCESS_ATTACH, ptr::null_mut());
-        assert_eq!(api.get_h_inst(), 123);
         {
+            api.raw_shiori3_dll_main(123, DLL_PROCESS_ATTACH, ptr::null_mut());
+            assert_eq!(api.get_h_inst(), 123);
             let locked = api.shiori.lock().unwrap();
-            assert!(*locked.is_some());
+            assert!(locked.is_none());
+        }
+        {}
+        {
+            api.raw_shiori3_dll_main(456, DLL_PROCESS_DETACH, ptr::null_mut());
+            assert_eq!(api.get_h_inst(), 123);
+            let locked = api.shiori.lock().unwrap();
+            assert!(locked.is_none());
         }
     }
 }
