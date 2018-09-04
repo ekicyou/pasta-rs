@@ -1,6 +1,6 @@
 use super::api::Shiori3;
 use super::error::*;
-use shiori_hglobal::GStr;
+use hglobal::GStr;
 use std::ptr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;

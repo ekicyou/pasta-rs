@@ -1,5 +1,5 @@
 use failure::{Backtrace, Context, Fail};
-use shiori_hglobal::GStrError;
+use hglobal::GStrError;
 use std::fmt;
 use std::fmt::Display;
 use std::sync::PoisonError;

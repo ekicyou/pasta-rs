@@ -6,8 +6,8 @@ extern crate log;
 #[cfg(any(windows))]
 extern crate winapi;
 
-extern crate shiori_hglobal;
-extern crate shiori_parser;
+pub extern crate shiori_hglobal as hglobal;
+pub extern crate shiori_parser as parser;
 
 mod api;
 pub mod error;
