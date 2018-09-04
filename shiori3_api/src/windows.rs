@@ -42,10 +42,9 @@ impl<TS: Shiori3> RawAPI<TS> {
     fn load(&self, hdir: HGLOBAL, len: usize) -> ShioriResult<()> {
         let mut locked = self.shiori.lock()?;
         *locked = None;
-        let mut shiori = TS::new();
         let g_dir = GStr::capture(hdir, len);
         let dir = g_dir.to_ansi_str()?;
-        shiori.load(self.get_h_inst(), dir)?;
+        let shiori = TS::load(self.get_h_inst(), dir)?;
         *locked = Some(shiori);
         Ok(())
     }
@@ -109,5 +108,40 @@ impl<TS: Shiori3> RawAPI<TS> {
             _ => {}
         }
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use api::*;
+    use error::*;
+    use std::path::Path;
+
+    #[derive(Default)]
+    struct TestShiori {
+        h_inst: usize,
+    }
+    impl Drop for TestShiori {
+        fn drop(&mut self) {}
+    }
+    impl Shiori3 for TestShiori {
+        fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
+            Ok(Default::default())
+        }
+        fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> ShioriResult<&'a str> {
+            Ok("OK")
+        }
+    }
+
+    #[test]
+    fn init_test() {
+        let api: RawAPI<TestShiori> = Default::default();
+        api.raw_shiori3_dll_main(123, DLL_PROCESS_ATTACH, ptr::null_mut());
+        assert_eq!(api.get_h_inst(), 123);
+        {
+            let locked = api.shiori.lock().unwrap();
+            assert!(*locked.is_some());
+        }
     }
 }
