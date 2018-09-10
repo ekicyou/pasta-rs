@@ -127,7 +127,11 @@ mod tests {
     }
     impl Shiori3 for TestShiori {
         fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
-            Ok(Default::default())
+            let shiori = TestShiori {
+                h_inst: h_inst,
+                ..Default::default()
+            };
+            Ok(shiori)
         }
         fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> ShioriResult<&'a str> {
             Ok("OK")
