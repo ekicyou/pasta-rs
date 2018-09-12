@@ -116,6 +116,7 @@ mod tests {
     use super::*;
     use api::*;
     use error::*;
+    use std::env::*;
     use std::path::Path;
 
     #[derive(Default)]
@@ -155,4 +156,13 @@ mod tests {
             assert!(locked.is_none());
         }
     }
+    #[test]
+    fn dir_test() {
+        let src_path = file!();
+        assert_eq!(src_path, "shiori3_api\\src\\windows.rs");
+        let exe_path = current_exe().unwrap();
+        let exe_path_str = exe_path.to_str();
+        assert_eq!(exe_path_str, "shiori3_api\\src\\windows.rs");
+    }
+
 }
