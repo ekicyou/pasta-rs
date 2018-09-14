@@ -114,10 +114,8 @@ impl<TS: Shiori3> RawAPI<TS> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use api::*;
-    use error::*;
+    use env_logger;
     use std::borrow::Cow;
-    use std::env::*;
     use std::path::Path;
 
     #[derive(Default)]
@@ -143,20 +141,40 @@ mod tests {
 
     #[test]
     fn init_test() {
+        {
+            ::std::env::set_var("RUST_LOG", "trace");
+            let _ = ::env_logger::init();
+        }
+        trace!("init_test start");
         let api: RawAPI<TestShiori> = Default::default();
         {
+            trace!("init_test::raw_shiori3_dll_main::enter start");
             api.raw_shiori3_dll_main(123, DLL_PROCESS_ATTACH, ptr::null_mut());
             assert_eq!(api.get_h_inst(), 123);
             let locked = api.shiori.lock().unwrap();
             assert!(locked.is_none());
+            trace!("init_test::raw_shiori3_dll_main::enter start");
         }
-        {}
         {
+            trace!("init_test::raw_shiori3_request start");
+            let req = "request";
+            let h_req = GStr::clone_from_str(req);
+            let mut len = h_req.len();
+            let h = api.raw_shiori3_request(h_req.handle(), &mut len);
+            let h_res = GStr::capture(h, len);
+            let res = h_res.to_utf8_str().unwrap();
+            assert_eq!(res, "request is OK");
+            trace!("init_test::raw_shiori3_request end");
+        }
+        {
+            trace!("init_test::raw_shiori3_dll_main::leave start");
             api.raw_shiori3_dll_main(456, DLL_PROCESS_DETACH, ptr::null_mut());
             assert_eq!(api.get_h_inst(), 123);
             let locked = api.shiori.lock().unwrap();
             assert!(locked.is_none());
+            trace!("init_test::raw_shiori3_dll_main::leave end");
         }
+        trace!("init_test end");
     }
     #[test]
     fn dir_test() {

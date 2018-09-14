@@ -3,6 +3,8 @@ extern crate failure;
 extern crate failure_derive;
 #[macro_use]
 extern crate log;
+#[cfg(test)]
+extern crate env_logger;
 #[cfg(any(windows))]
 extern crate winapi;
 
