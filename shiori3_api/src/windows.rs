@@ -116,6 +116,7 @@ mod tests {
     use super::*;
     use api::*;
     use error::*;
+    use std::borrow::Cow;
     use std::env::*;
     use std::path::Path;
 
@@ -134,8 +135,9 @@ mod tests {
             };
             Ok(shiori)
         }
-        fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> ShioriResult<&'a str> {
-            Ok("OK")
+        fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> ShioriResult<Cow<'a, str>> {
+            let rc = format!("{} is OK", req.into());
+            Ok(rc.into())
         }
     }
 
@@ -160,9 +162,13 @@ mod tests {
     fn dir_test() {
         let src_path = file!();
         assert_eq!(src_path, "shiori3_api\\src\\windows.rs");
-        let exe_path = current_exe().unwrap();
-        let exe_path_str = exe_path.to_str();
-        assert_eq!(exe_path_str, "shiori3_api\\src\\windows.rs");
+        /*
+        let mut native_path = current_dir().unwrap();
+        native_path.pop();
+        native_path.push(src_path);
+        let native_path_str = native_path.to_str().unwrap();
+        assert_eq!(native_path_str, "shiori3_api\\src\\windows.rs");
+        */
     }
 
 }
