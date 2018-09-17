@@ -41,6 +41,12 @@ mod tests {
             let rc: String = lua.exec("return hello(\"hello\")", None).unwrap();
             assert_eq!(rc, "hello world");
         }
+        {
+            let rc: String = lua
+                .exec("return こんにちわ(\"世界\")", None)
+                .unwrap();
+            assert_eq!(rc, "こんにちわ、世界");
+        }
     }
 
     fn set_package_path<P: AsRef<Path>>(lua: &Lua, load_dir: P) {
