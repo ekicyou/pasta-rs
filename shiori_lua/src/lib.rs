@@ -25,8 +25,7 @@ mod tests {
         let globals = lua.globals();
         let package = globals.get::<_, Table>("package").unwrap();
         {
-            let mut src_path = current_dir().unwrap();
-            src_path.push("lua");
+            let src_path = current_dir().unwrap();
             set_package_path(&lua, src_path);
         }
         {
@@ -73,7 +72,16 @@ mod tests {
         }
 
         let mut buf = String::new();
-        append(&mut buf, load_dir);
+        {
+            let mut pre = load_dir.as_ref().to_path_buf();
+            pre.push("lua");
+            append(&mut buf, pre);
+        }
+        {
+            let mut pre = load_dir.as_ref().to_path_buf();
+            pre.push("libs");
+            append(&mut buf, pre);
+        }
         let globals = lua.globals();
         let package = globals.get::<_, Table>("package").unwrap();
         package.set("path", buf).unwrap();
