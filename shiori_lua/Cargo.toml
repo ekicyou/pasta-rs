@@ -10,6 +10,8 @@ readme = "README.md"
 
 [dependencies]
 log = "0.4"
+failure = "0.1"
+failure_derive = "0.1"
 rlua = {git="https://github.com/ekicyou/rlua", branch = "stable"}
 
 [dev-dependencies]

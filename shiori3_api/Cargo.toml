@@ -9,9 +9,9 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
+log = "0.4"
 failure = "0.1"
 failure_derive = "0.1"
-log = "0.4"
 shiori_hglobal  = { path = "../shiori_hglobal" }
 shiori_parser  = { path = "../shiori_parser" }
 

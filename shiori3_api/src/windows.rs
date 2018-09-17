@@ -15,10 +15,18 @@ const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
 
-#[derive(Default)]
 pub struct RawAPI<TS: Shiori3> {
     shiori: Mutex<Option<TS>>,
     h_inst: AtomicUsize,
+}
+
+impl<TS: Shiori3> Default for RawAPI<TS> {
+    fn default() -> RawAPI<TS> {
+        RawAPI::<TS> {
+            shiori: Mutex::new(None),
+            h_inst: AtomicUsize::default(),
+        }
+    }
 }
 
 impl<TS: Shiori3> RawAPI<TS> {
@@ -44,7 +52,7 @@ impl<TS: Shiori3> RawAPI<TS> {
         *locked = None;
         let g_dir = GStr::capture(h_dir, l_dir);
         let dir = g_dir.to_ansi_str()?;
-        let shiori = TS::load(self.get_h_inst(), dir)?;
+        let shiori = TS::new(self.get_h_inst(), dir)?;
         *locked = Some(shiori);
         Ok(())
     }
@@ -117,7 +125,7 @@ mod tests {
     use std::path::Path;
     use std::path::PathBuf;
 
-    #[derive(Default, Debug)]
+    #[derive(Debug)]
     struct TestShiori {
         h_inst: usize,
         load_dir: PathBuf,
@@ -126,11 +134,10 @@ mod tests {
         fn drop(&mut self) {}
     }
     impl Shiori3 for TestShiori {
-        fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
+        fn new<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
             let shiori = TestShiori {
                 h_inst: h_inst,
                 load_dir: load_dir.as_ref().to_path_buf(),
-                ..Default::default()
             };
             Ok(shiori)
         }

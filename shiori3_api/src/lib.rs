@@ -1,10 +1,10 @@
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
 #[macro_use]
 extern crate log;
 #[cfg(test)]
 extern crate env_logger;
+extern crate failure;
+#[macro_use]
+extern crate failure_derive;
 #[cfg(any(windows))]
 extern crate winapi;
 
