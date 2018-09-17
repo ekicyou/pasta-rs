@@ -88,6 +88,14 @@ impl GStr {
         GStr::clone_from_slice_impl(bytes, true)
     }
 
+    /// HGLOBALを新たに作成し、textをGStrにクローンします。
+    /// drop時にHGLOBALを開放しません。
+    pub fn clone_from_str_nofree<'a, S: Into<&'a str>>(text: S) -> GStr {
+        let s = text.into();
+        let bytes = s.as_bytes();
+        GStr::clone_from_slice_impl(bytes, false)
+    }
+
     /// 要素を&[u8]として参照します。
     pub fn to_bytes(&self) -> &[u8] {
         unsafe {

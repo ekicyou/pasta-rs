@@ -7,6 +7,7 @@ members = [
     "com_rc",
 #    "pasta_stage",
 #    "pasta_viewer",
+    "shiori_lua",
     "shiori_hglobal",
     "shiori_parser",
     "shiori3_api",

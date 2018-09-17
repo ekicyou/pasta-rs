@@ -77,8 +77,7 @@ impl<TS: Shiori3> RawAPI<TS> {
         }
     }
     pub fn request(&self, h: HGLOBAL, len: &mut usize) -> ShioriResult<HGLOBAL> {
-        let len_req = len.clone();
-        let g_req = GStr::capture(h, len_req);
+        let g_req = GStr::capture(h, *len);
         let req = g_req.to_utf8_str()?;
         let res = {
             let mut locked = self.shiori.lock()?;
@@ -114,13 +113,14 @@ impl<TS: Shiori3> RawAPI<TS> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use env_logger;
     use std::borrow::Cow;
     use std::path::Path;
+    use std::path::PathBuf;
 
-    #[derive(Default)]
+    #[derive(Default, Debug)]
     struct TestShiori {
         h_inst: usize,
+        load_dir: PathBuf,
     }
     impl Drop for TestShiori {
         fn drop(&mut self) {}
@@ -129,12 +129,13 @@ mod tests {
         fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
             let shiori = TestShiori {
                 h_inst: h_inst,
+                load_dir: load_dir.as_ref().to_path_buf(),
                 ..Default::default()
             };
             Ok(shiori)
         }
         fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> ShioriResult<Cow<'a, str>> {
-            let rc = format!("{} is OK", req.into());
+            let rc = format!("[{:?}]{} is OK", self, req.into());
             Ok(rc.into())
         }
     }
@@ -145,36 +146,41 @@ mod tests {
             ::std::env::set_var("RUST_LOG", "trace");
             let _ = ::env_logger::init();
         }
-        trace!("init_test start");
         let api: RawAPI<TestShiori> = Default::default();
         {
-            trace!("init_test::raw_shiori3_dll_main::enter start");
             api.raw_shiori3_dll_main(123, DLL_PROCESS_ATTACH, ptr::null_mut());
             assert_eq!(api.get_h_inst(), 123);
             let locked = api.shiori.lock().unwrap();
             assert!(locked.is_none());
-            trace!("init_test::raw_shiori3_dll_main::enter start");
         }
         {
-            trace!("init_test::raw_shiori3_request start");
+            let load_dir = "load/dir";
+            let g_load_dir = GStr::clone_from_str_nofree(load_dir);
+            let rc = api.raw_shiori3_load(g_load_dir.handle(), g_load_dir.len());
+            assert_eq!(rc, true);
+            let mut locked = api.shiori.lock().unwrap();
+            assert_eq!(locked.is_some(), true);
+            let shiori = locked.as_mut().unwrap();
+            assert_eq!(shiori.h_inst, 123);
+        }
+        {
             let req = "request";
-            let h_req = GStr::clone_from_str(req);
-            let mut len = h_req.len();
-            let h = api.raw_shiori3_request(h_req.handle(), &mut len);
+            let g_req = GStr::clone_from_str_nofree(req);
+            let mut len = g_req.len();
+            let h = api.raw_shiori3_request(g_req.handle(), &mut len);
             let h_res = GStr::capture(h, len);
             let res = h_res.to_utf8_str().unwrap();
-            assert_eq!(res, "request is OK");
-            trace!("init_test::raw_shiori3_request end");
+            assert_eq!(
+                res,
+                "[TestShiori { h_inst: 123, load_dir: \"load/dir\" }]request is OK"
+            );
         }
         {
-            trace!("init_test::raw_shiori3_dll_main::leave start");
             api.raw_shiori3_dll_main(456, DLL_PROCESS_DETACH, ptr::null_mut());
             assert_eq!(api.get_h_inst(), 123);
             let locked = api.shiori.lock().unwrap();
             assert!(locked.is_none());
-            trace!("init_test::raw_shiori3_dll_main::leave end");
         }
-        trace!("init_test end");
     }
     #[test]
     fn dir_test() {
