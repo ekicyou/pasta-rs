@@ -2,18 +2,22 @@
 SHIORI requestを処理し、responseを返します。
 ]]
 
+
+
+
 local request = coroutine.wrap(
     function(req)
-        -- load
-        local load_dir = req.load_dir
+        local function load()
+        end
+        local function unload()
+        end
 
-        -- request
+        load()
         while req do
             local res = "res"
             req = coroutine.yield(res)
         end
-
-        -- unload
+        unload()
     end
 )
 
