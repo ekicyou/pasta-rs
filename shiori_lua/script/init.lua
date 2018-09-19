@@ -1,3 +1,1 @@
-function hello(a)
-    return a + " world"
-end
+request = require "request"
