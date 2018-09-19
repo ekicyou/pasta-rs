@@ -74,12 +74,12 @@ mod tests {
         let mut buf = String::new();
         {
             let mut pre = load_dir.as_ref().to_path_buf();
-            pre.push("lua");
+            pre.push("script");
             append(&mut buf, pre);
         }
         {
             let mut pre = load_dir.as_ref().to_path_buf();
-            pre.push("libs");
+            pre.push("lib");
             append(&mut buf, pre);
         }
         let globals = lua.globals();

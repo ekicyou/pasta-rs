@@ -4,7 +4,7 @@ description = "lua shiori implement"
 version = "0.2.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
 repository = "https://github.com/ekicyou/pasta-rs"
-keywords = ["pasta", "ghost", "shiori", "ukagaka"]
+keywords = ["pasta", "ghost", "shiori", "ukagaka","lua"]
 license = "MIT"
 readme = "README.md"
 
