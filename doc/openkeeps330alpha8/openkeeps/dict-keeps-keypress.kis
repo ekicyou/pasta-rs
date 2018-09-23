@@ -1,0 +1,358 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   ＊OnKeyPressイベント制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22.00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.6      2004.07.10 13:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.1.0 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#辞書読み込み完了時処理(System.Callback.OnLoad)================================
+#キー入力の記述を探して、PhraseListを作ります。
+#自力でFlagModeを探し出し、キー入力反応文章があれば<FlagMode>.PhraseListを
+#作ります。
+#FlagModeListエントリに見つけたFlagModeが入っています。
+
+System.Callback.OnLoad : $(
+	# FlagModeList作成
+	#.clear FlagModeList;
+	.listtree @AllEntryList ".";
+	foreach @i @AllEntryList $(
+		if $[ ${@i} =~ ".TalkKeyPress." ] $(
+			.setstr @matchpos $(.match ${@i} ".TalkKeyPress.");
+			.setstr @localFlagMode $(.substr ${@i} 0 ${@matchpos});
+			if $[ $(.size FlagModeList) == 0 || $(.find FlagModeList ${@localFlagMode}) < 0 ] $(
+				.pushstr FlagModeList ${@localFlagMode};
+			);
+		);
+	);
+	# @LocalFlagModeListは、基底モードを含むモードリスト
+	.copy FlagModeList @LocalFlagModeList;
+	.pushstr @LocalFlagModeList $(NULL);
+	# PhraseList作成
+	foreach @i @LocalFlagModeList $(
+		.clear @keylist;
+		.clear $(Del1stPeriod ${@i}".TalkKeyPressPhraseList");
+		.setstr @entryname $(Del1stPeriod ${@i}".TalkKeyPressPhraseList");
+		.listsub @keylist $(Del1stPeriod ${@i}".TalkKeyPress");
+		foreach @j @keylist $(
+			.pushstr ${@entryname} $(.substr ${@j} $(.length $(Del1stPeriod ${@i}".TalkKeyPress.")));
+		);
+	);
+	# OverrideMode用のPhraseList作成
+	foreach @i @LocalFlagModeList $(
+		.setstr @f ${@i};
+		until $[ ${@f} == "__self__" ] $(
+			.copy $(Del1stPeriod ${@f}".TalkKeyPressPhraseList") $(Del1stPeriod ${@i}".TalkKeyPressPhraseList2");
+			if $[ ${@f} == "" ] $(break);
+			# ここに来る時は基底モードではないので、ピリオド削除不要
+			.setstr @f ${${@f}.InheritFrom};
+		);
+	);
+	# キーバッファの定期クリアタスク起動
+	KTM.RunTask $(
+		KTM.CreateTask
+		"ClearKeyBuffer"
+		KTM.TRUE
+		task.clearkeybuffer.proc
+		KTM.RANK4
+	);
+)
+
+#==============================================================================
+
+
+#キーバッファの定期クリア======================================================
+
+# 過去のキーバッファ内容
+# ここに空単語をn個入れると、約n秒前のキー入力まで有効になる
+beforekeybuff :  "" , "" , ""
+
+# キーバッファをシフト
+task.clearkeybuffer.proc : $(
+	.clear beforekeybuff[0];
+	if $(.size nowkeybuff) $(
+		.pushstr beforekeybuff $(.get nowkeybuff);
+		.clear nowkeybuff;
+	) else $(
+		.pushstr beforekeybuff $(NULL);
+	);
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : task.clearkeybuffer.proc
+
+#==============================================================================
+
+
+#OnKeyPressイベント本体========================================================
+# 仕様書に明記されていないキートップ文字ではなく、Win32仮想キーコードから
+# 押されたキーを判断します。
+
+event.OnKeyPress : $(
+	# キーバッファに入力された文字を追加
+	.pushstr nowkeybuff $(KeyFilter $(NonNegReference 1) $(Reference 0));
+	.setstr @keybuff $(.get beforekeybuff)$(.get nowkeybuff);
+	# PhraseList中の単語がキーバッファ末尾に合致すれば、その単語を候補に
+	foreach @i $(EntryName "TalkKeyPressPhraseList"$(if $(isOverrideMode) "2")) $(
+		if $(.match_at $(reverse ${@keybuff}) $(reverse ${@i})) $(
+			.pushstr @candidate ${@i};
+		);
+	);
+	# 単語候補のうち、最も長い単語を選ぶ
+	if $(.size @candidate) $(
+		.setstr @longestphrase "";
+		foreach @i @candidate $(
+			if $[ $(.length ${@i}) >= $(.length ${@longestphrase}) ] $(
+				.setstr @longestphrase ${@i};
+			);
+		);
+		Talk "TalkKeyPress."${@longestphrase};
+	);
+)
+
+# KeyFilter - OnKeyPressイベント用のキー入力フィルタ
+#
+# 入力が1文字より長いかを判定して振り分ける
+# 第1引数: キーコード
+# 第2引数: 文字
+# 戻り値:  フィルタリング後のキー入力
+#
+=kis
+function KeyFilter $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	if $(.size KeyTable2.$@arg[1]) $(
+		# キーテーブルにキーコードがあれば、文字として返す
+		return ${KeyTable2.$@arg[1]};
+	) else if $[ ${KeyTable1} =~ $@arg[2] ] $(
+		# 特殊記号だった
+		return "K"$KeyTable1.data[$(.match ${KeyTable1} $@arg[2])];
+	) else $(
+		# キーテーブルにも無く特殊記号でもなければ、
+		# キーコードの先頭にKを付けて返す
+		return  "K"$@arg[1];
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : KeyFilter
+
+#==============================================================================
+
+
+#KeyTable1(エントリに使えない文字を文字列に変換するテーブル)===================
+
+# テーブル本体
+KeyTable1 : ",/\;:[]@-^&."
+
+# 以下、変換する文字列
+#
+# ","
+KeyTable1.data : comma
+# "/"
+KeyTable1.data : slash
+# "\"
+KeyTable1.data : backslash
+# ";"
+KeyTable1.data : semicolon
+# ":"
+KeyTable1.data : colon
+# "["
+KeyTable1.data : bra
+# "]"
+KeyTable1.data : cket
+# "@"
+KeyTable1.data : at
+# "-"
+KeyTable1.data : minus
+# "^"
+KeyTable1.data : hat
+# "&"
+KeyTable1.data : and
+# "."
+KeyTable1.data : period
+
+# エントリを他から改変されないように保護
+=kis
+.writeprotect KeyTable1;
+.writeprotect KeyTable1.data;
+=end
+
+#==============================================================================
+
+
+#KeyTable2(Win32仮想キーコードを分かりやすい名前に変換するテーブル)============
+
+# 以下、変換する文字列
+KeyTable2.8 : VK_BACK
+KeyTable2.9 : VK_TAB
+
+KeyTable2.12 : VK_CLEAR
+KeyTable2.13 : VK_RETURN
+
+KeyTable2.16 : VK_SHIFT
+KeyTable2.17 : VK_CONTROL
+KeyTable2.18 : VK_MENU
+KeyTable2.19 : VK_PAUSE
+KeyTable2.20 : VK_CAPITAL
+
+KeyTable2.21 : VK_KANA
+KeyTable2.23 : VK_JUNJA
+KeyTable2.24 : VK_FINAL
+KeyTable2.25 : VK_HANJA
+KeyTable2.25 : VK_KANJI
+
+KeyTable2.27 : VK_ESCAPE
+
+KeyTable2.28 : VK_CONVERT
+KeyTable2.29 : VK_NONCONVERT
+KeyTable2.30 : VK_ACCEPT
+KeyTable2.31 : VK_MODECHANGE
+
+KeyTable2.32 : VK_SPACE
+KeyTable2.33 : VK_PRIOR
+KeyTable2.34 : VK_NEXT
+KeyTable2.35 : VK_END
+KeyTable2.36 : VK_HOME
+KeyTable2.37 : VK_LEFT
+KeyTable2.38 : VK_UP
+KeyTable2.39 : VK_RIGHT
+KeyTable2.40 : VK_DOWN
+KeyTable2.41 : VK_SELECT
+KeyTable2.42 : VK_PRINT
+KeyTable2.43 : VK_EXECUTE
+KeyTable2.44 : VK_SNAPSHOT
+KeyTable2.45 : VK_INSERT
+KeyTable2.46 : VK_DELETE
+KeyTable2.47 : VK_HELP
+
+KeyTable2.48 : 0
+KeyTable2.49 : 1
+KeyTable2.50 : 2
+KeyTable2.51 : 3
+KeyTable2.52 : 4
+KeyTable2.53 : 5
+KeyTable2.54 : 6
+KeyTable2.55 : 7
+KeyTable2.56 : 8
+KeyTable2.57 : 9
+
+KeyTable2.65 : a
+KeyTable2.66 : b
+KeyTable2.67 : c
+KeyTable2.68 : d
+KeyTable2.69 : e
+KeyTable2.70 : f
+KeyTable2.71 : g
+KeyTable2.72 : h
+KeyTable2.73 : i
+KeyTable2.74 : j
+KeyTable2.75 : k
+KeyTable2.76 : l
+KeyTable2.77 : m
+KeyTable2.78 : n
+KeyTable2.79 : o
+KeyTable2.80 : p
+KeyTable2.81 : q
+KeyTable2.82 : r
+KeyTable2.83 : s
+KeyTable2.84 : t
+KeyTable2.85 : u
+KeyTable2.86 : v
+KeyTable2.87 : w
+KeyTable2.88 : x
+KeyTable2.89 : y
+KeyTable2.90 : z
+
+KeyTable2.91 : VK_LWIN
+KeyTable2.92 : VK_RWIN
+KeyTable2.93 : VK_APPS
+
+KeyTable2.95 : VK_SLEEP
+
+KeyTable2.96 : 0
+KeyTable2.97 : 1
+KeyTable2.98 : 2
+KeyTable2.99 : 3
+KeyTable2.100 : 4
+KeyTable2.101 : 5
+KeyTable2.102 : 6
+KeyTable2.103 : 7
+KeyTable2.104 : 8
+KeyTable2.105 : 9
+KeyTable2.106 : VK_MULTIPLY
+KeyTable2.107 : VK_ADD
+KeyTable2.108 : VK_SEPARATOR
+KeyTable2.109 : VK_SUBTRACT
+KeyTable2.110 : VK_DECIMAL
+KeyTable2.111 : VK_DIVIDE
+KeyTable2.112 : VK_F1_
+KeyTable2.113 : VK_F2_
+KeyTable2.114 : VK_F3_
+KeyTable2.115 : VK_F4_
+KeyTable2.116 : VK_F5_
+KeyTable2.117 : VK_F6_
+KeyTable2.118 : VK_F7_
+KeyTable2.119 : VK_F8_
+KeyTable2.120 : VK_F9_
+KeyTable2.121 : VK_F10_
+KeyTable2.122 : VK_F11_
+KeyTable2.123 : VK_F12_
+KeyTable2.124 : VK_F13_
+KeyTable2.125 : VK_F14_
+KeyTable2.126 : VK_F15_
+KeyTable2.127 : VK_F16_
+KeyTable2.128 : VK_F17_
+KeyTable2.129 : VK_F18_
+KeyTable2.130 : VK_F19_
+KeyTable2.131 : VK_F20_
+KeyTable2.132 : VK_F21_
+KeyTable2.133 : VK_F22_
+KeyTable2.134 : VK_F23_
+KeyTable2.135 : VK_F24_
+
+KeyTable2.144 : VK_NUMLOCK
+KeyTable2.145 : VK_SCROLL
+
+KeyTable2.160 : VK_LSHIFT
+KeyTable2.161 : VK_RSHIFT
+KeyTable2.162 : VK_LCONTROL
+KeyTable2.163 : VK_RCONTROL
+KeyTable2.164 : VK_LMENU
+KeyTable2.165 : VK_RMENU
+
+# エントリを他から改変されないように保護
+=kis
+.listsub @temp KeyTable2;
+foreach @i @temp $(
+	.writeprotect ${@i};
+);
+=end
+
+#==============================================================================

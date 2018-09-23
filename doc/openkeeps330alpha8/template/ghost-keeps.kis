@@ -1,0 +1,747 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  スクリプト辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha1 2002.09.25 22:30版
+# Version2.0 alpha2 2002.09.27 22:07版
+# Version2.0 alpha3 2002.09.28 20:07版
+# Version2.0 alpha4 2002.09.28 22:06版
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.4      2004.06.27 18:30版
+# Version3.0.5      2004.07.03 11:30版
+# Version3.0.7      2004.07.18 22:30版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.1.4      2004.10.30 22:45版
+# Version3.1.5      2004.11.13 20:30版
+# Version3.1.6      2004.11.23 22:30版
+# Version3.3.0a6    2005.10.17 00:00版
+# Version3.3.0a7    2005.10.30 22:00版
+# Version3.3.0a8    2005.11.06 17:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+:crypt
+#汎用イベントトーク============================================================
+#TalkGeneral         : 単発のイベントの時
+#TalkGeneralBegin    : 一連のイベントが始まった時
+#TalkGeneralComplete : 一連のイベントが完了した時
+#TalkGeneralfail     : 一連のイベントが失敗して終わった時
+
+#使用できる変数
+# EventInfo : イベント内容の簡単な説明
+
+#幾つかのイベントでは、共通のイベントトークを設定すれば、個別のイベントトークを
+#設定しなくてもトークします。EventInfoエントリに、そのイベントの内容の説明が
+#入っています。
+#EventInfoエントリには、次のような内容です。
+#・TalkGeneral……………「○○です」と続けられる内容
+#・TalkGeneralBegin ……「○○開始です」と続けられる内容
+#・TalkGeneralComplete…「○○完了です」と続けられる内容
+#・TalkGeneralfail………「○○失敗です」と続けられる内容
+
+TalkGeneral : \1\s[10]\0\s[0]${EventInfo}です。\e
+TalkGeneralBegin : \1\s[10]\0\s[0]${EventInfo}開始です。\w8\w8\e
+TalkGeneralComplete : \1\s[11]\0\s[5]${EventInfo}完了です。\w8\w8\e
+TalkGeneralfail : \1\s[11]\0\s[4]${EventInfo}失敗です…\w4…\w4。\w8\w8\e
+
+#==============================================================================
+
+
+#イベント：時報、特定時間======================================================
+
+#指定した年月日、曜日、時間に喋らせることが出来ます。
+#書式は以下の４つ、同じ時間の場合は上のものほど優先されます。
+
+#TalkTime.2002_0401_1230（年４桁_月日_時分）
+#TalkTime.0401_1230（月日_時分）
+#TalkTime.1_1230（曜日(0～6)_時分）（０が日曜、６が土曜）
+#TalkTime.1230（時分）
+
+#時報的に喋らせたければ「TalkTime.1200」のように指定してください。
+
+#時報--------------------------------------------------------------------------
+TalkTime.0000 : \0\s[0]０時です。\n\n日付が変わりました。\e
+TalkTime.0100 : ${TalkTime.Etc}
+TalkTime.0200 : \0\s[0]２時です。\n\nそろそろ寝た方がいいような‥。\e
+TalkTime.0300 : ${TalkTime.Etc}
+TalkTime.0400 : \0\s[0]４時です。\n\n‥‥徹夜決定ですか。\e
+TalkTime.0500 : ${TalkTime.Etc}
+TalkTime.0600 : ${TalkTime.Etc}
+TalkTime.0700 : \0\s[0]７時です。\n\nおはようございます。\e
+TalkTime.0800 : ${TalkTime.Etc}
+TalkTime.0900 : ${TalkTime.Etc}
+TalkTime.1000 : \0\s[0]１０時です。\n\n百貨店の開店時間ですね。\e
+TalkTime.1100 : ${TalkTime.Etc}
+TalkTime.1200 : \0\s[0]正午をお知らせします。\e
+TalkTime.1300 : ${TalkTime.Etc}
+TalkTime.1400 : ${TalkTime.Etc}
+TalkTime.1500 : \0\s[0]１５時です。\n\nおやつの時間です。\e
+TalkTime.1600 : ${TalkTime.Etc}
+TalkTime.1700 : \0\s[0]１７時です。\n\n夕方です。\e
+TalkTime.1800 : ${TalkTime.Etc}
+TalkTime.1900 : ${TalkTime.Etc}
+TalkTime.2000 : ${TalkTime.Etc}
+TalkTime.2100 : ${TalkTime.Etc}
+TalkTime.2200 : \0\s[0]２２時です。\nニュースステーション‥\1\s[11]おバカ、9時54分から始まってるがな！\0\s[4]あう、またやっちゃったぁ～～。\e
+TalkTime.2300 : \0\s[0]２３時です。\n\n筑紫哲也タイムです。\e
+
+TalkTime.Etc : \0\s[0]%hour時です。\e
+
+#年月日、曜日指定の例----------------------------------------------------------
+
+#２００３年３月３日３時３３分
+TalkTime.2003_0303_0333 : \0\s[0]2003年3月3日3時33分です。３が並んでます。\1\s[10]この時間に何の意味があるんだ？\0\n\n\s[0]３が並んでます。\e
+
+#８月６日８時１５分
+TalkTime.0806_0815 : \0\s[0]広島に原爆が投下された時間です、\w2\s[6]黙祷‥‥。\e
+
+#火曜２１時１５分
+TalkTime.2_2115 : \0\s[0]プロジェクトＸの時間です。\w8\w8\_sえーっくす☆彡\e
+
+#毎日１１時５５分
+TalkTime.1155 : \0\s[0]多分、ＮＨＫで天気予報をやってると思います。\e
+
+#==============================================================================
+
+
+#イベント：起動時間喋り========================================================
+
+#TalkWorktime.＜起動時間＞ : 起動時間が１時間経過する毎に喋る。
+
+#使用できる変数
+# worktime : 起動時間
+
+#＜起動時間＞の指定
+#Veryshort（１～４時間）
+#Short（５～７時間）
+#Middle（８～１０時間）
+#Long（１１～２０時間）
+#Verylong（２０時間超）
+
+#paraworkでＯＳが起動している時間かゴーストが起動している時間か選択出来ます。
+# (0：ＯＳ ／ 1：ゴースト)
+parawork : 1
+
+TalkWorktime.Veryshort : \0\s[0]${TalkWorktime}起動時間・最短。\e
+TalkWorktime.Short : \0\s[0]${TalkWorktime}起動時間・短。\e
+TalkWorktime.Middle : \0\s[0]${TalkWorktime}起動時間・中。\e
+TalkWorktime.Long : \0\s[0]${TalkWorktime}起動時間・長。\e
+TalkWorktime.Verylong : \0\s[0]${TalkWorktime}起動時間・最長。\e
+
+#「TalkWorktime～」より呼び出しているエントリ。ここに書いてあるのは一例。
+TalkWorktime : \0\s[0]起動してから${worktime}時間経過しました。\n\n
+
+#==============================================================================
+
+
+#イベント：各表情からの復帰====================================================
+
+#TalkReturn.＜\0側サーフィス番号＞_＜\1側サーフィス番号＞
+#TalkReturn.＜\0側サーフィス番号＞
+#TalkReturn
+
+#一定時間以上イレギュラーなサーフィスが表示されている時。
+#メイン、サブどちらも0(10)以外の場合
+#TalkReturn（メイン側のサーフィス番号）_（サブ側のサーフィス番号）
+#該当するサーフィス番号が無い場合は「TalkReurn」が呼ばれる。
+#表情を変える必要が無い場合、「TalkReturn」は記述しなくてよい。
+
+TalkReturn.2 : \1\s[10]\0\s[0]はっ‥‥。\e
+TalkReturn.11 : \1\s[10]\e
+TalkReturn : \1\s[10]\0\s[0]\e
+TalkReturn.2_11 : \1\s[10]まぁお互い落ち着こうや。\0\w6\s[0]うん。\e
+
+#==============================================================================
+
+
+#イベント：最小化から復帰======================================================
+
+#TalkRestore : 最小化から復帰した時。
+
+#使用出来る変数
+#minimizedtime : 最小化されていた時間(分単位)
+
+TalkRestore : \1\s[10]\0\s[0]${minimizedtime}分ぶりに復帰しました。\e
+
+TalkRestore.Veryshort : \1\s[10]\0\s[0]‥\w4今、\w4最小化してた？\w8\1さあ。\w8\e
+TalkRestore.Long : (
+	\1\s[10]\0\s[4]
+	‥\w4‥\w4${minimizedtime}分も最小化するなら、\w4
+	素直に終了して下さいよぅ。\w8\n
+	\1わいは結構幸せなんやけどな。\w8\n
+	\s[11]きぃと密着${0}分‥！\n
+	\0\s[7]\w8だから嫌なの！\e
+)
+
+#==============================================================================
+
+
+#イベント：シェル切り替え時====================================================
+
+#TalkShellChanging.＜現在のシェル名＞.＜次のシェル名＞
+#TalkShellChanging.＜次のシェル名＞
+#TalkShellChanging
+# シェルの切り替えが指示された時。上ほど優先
+# 使用出来る変数
+# System.Request.Reference0 : 次に切り替わるシェルの名前
+
+#TalkShellChanged.＜前のシェル名＞.＜現在のシェル名＞
+#TalkShellChanged.＜現在のシェル名＞
+#TalkShellChanged
+# シェルが切り替わった時。上ほど優先
+# 使用出来る変数
+# System.Request.Reference0 : 現在のシェル名
+
+TalkShellChanging.冬服.夏服 : \1\s[10]\0\s[0]冬服から夏服へ着替えます。\e
+TalkShellChanging.夏服.冬服 : \1\s[10]\0\s[0]夏服から冬服へ着替えます。\e
+TalkShellChanging.夏服.夏服 : \0\s[0]……\w8今、夏服を着てる気がするけど。\w8\w8\n\1\s[10]まあええやろ。\w8\w8\nお色直しや。\w8\w8\0うん。\w8\w8\e
+TalkShellChanging.冬服.冬服 : \0\s[0]……\w8今、冬服を着てる気がするけど。\w8\w8\n\1\s[10]まあええやろ。\w8\w8\nお色直しや。\w8\w8\0うん。\w8\w8\e
+
+TalkShellChanging.夏服 : \1\s[10]\0\s[0]夏服へ着替えます。\e
+TalkShellChanging.冬服 : \1\s[10]\0\s[0]冬服へ着替えます。\e
+TalkShellChanging : \0\s[5]$(SReference 0)へ着替えます。\e
+
+TalkShellChanged.冬服.夏服 : \1\s[11]\0\s[5]冬服から夏服へ着替えました。\e
+TalkShellChanged.夏服.冬服 : \1\s[11]\0\s[5]夏服から冬服へ着替えました。\e
+TalkShellChanged.夏服.夏服 : \1\s[11]\0\s[5]夏服のまま、\w8お色直ししてきました。\w8\w8\n\1うむ、\w8いい腰のラインやった。\0\s[7]ぷしゅうっ！\w8\w8\e
+TalkShellChanged.冬服.冬服 : \1\s[11]\0\s[5]冬服のまま、\w8お色直ししてきました。\w8\w8\n\1うむ、\w8いい腰のラインやった。\0\s[7]ぷしゅうっ！\w8\w8\e
+
+TalkShellChanged.夏服 : \1\s[11]\0\s[5]夏服へ着替えました。\e
+TalkShellChanged.冬服 : \1\s[11]\0\s[5]冬服へ着替えました。\e
+TalkShellChanged : \1\s[11]\0\s[5]$(Reference 0)に着替えました。\e
+
+#==============================================================================
+
+
+#イベント：バルーンが切り替わった==============================================
+#条件 : バルーンエクスプローラでバルーンを切り替えた時に発生。
+
+#TalkBalloonChange.バルーンの名前
+#TalkBalloonChange
+#使用できる変数
+# System.Request.Reference0 : 切り替えたバルーンの名前
+
+TalkBalloonChange.デフォルト : \1\s[10]\0\s[0]MATERIAのデフォルトバルーンです。\e
+
+TalkBalloonChange : \1\s[10]\0\s[0]バルーンを「$(SReference 0)」に切り替えました。\e
+
+#==============================================================================
+
+
+#イベント：消滅指示時==========================================================
+
+#TalkVanishSelecting : 消滅指示が右クリックメニューから選ばれた
+#TalkVanishSelected : 消滅指示確認ダイアログで「はい」が選択された
+#TalkVanishCancel : 消滅指示確認ダイアログで「いいえ」が選択された
+#TalkVanishButtonHold :消滅指示確認で「はい」を選択後、サーフィスダブルクリック
+#　　　　　　　　　　　 によりキャンセルされた
+
+TalkVanishSelecting : \0\s[0]消滅指示が右クリックメニューから選択されました。\e
+TalkVanishSelected : \0\s[0]消滅します、\w3さようなら。\e
+TalkVanishCancel : \0\s[0]消滅は回避されました。\e
+TalkVanishButtonHold : \0\s[0]消滅指示がユーザーの手によりキャンセルされました。\w3ありがとうございます。\e
+
+#==============================================================================
+
+
+#イベント：選択肢タイムアウト==================================================
+
+#TalkTimeout : 選択肢表示後、一定時間経過しても選択されなかった場合。
+
+#使用出来る変数
+# System.Request.Reference0 : タイムアウトを起こした時のスクリプト
+
+TalkTimeout : \b[0]\0\s[7]選択タイムアウトです。\e
+
+#==============================================================================
+
+
+#イベント：ＳＳＴＰ受信中断====================================================
+
+#TalkSSTPbreak : ＳＳＴＰ受信を中断(台詞表示中にバルーンをダブルクリック)した時
+
+TalkSSTPbreak : \0\s[2]ＳＳＴＰ受信を中断しました。\e
+
+#==============================================================================
+
+
+#イベント：画面解像度、色数変更================================================
+
+#TalkDisplayChange : 画面の色数、解像度が変更された場合。
+
+# 使用可能な変数
+# DislpayDpp    : ディスプレイの色数 (単位：ビット)
+# DisplayWidth  : ディスプレイの幅 (単位：ドット)
+# DisplayHeight : ディスプレイの高さ (単位：ドット)
+
+TalkDisplayChange : \0\s[0]ディスプレイサイズが、${DisplayWidth} × ${DisplayHeight}\n\n${DisplayDpp}ビットカラーに変更になりました。\e
+
+#==============================================================================
+
+
+#反応：見切れ==================================================================
+
+#TalkMikire : 見切れ状態(画面端からはみ出している場合)になった時
+#TalkMikirez : 見切れ状態から回復した時
+
+TalkMikire  : \0\s[4]見切れています。\e
+TalkMikirez : \0\s[5]見切れが解除されました。\e
+
+#==============================================================================
+
+
+#反応：重なり==================================================================
+
+#TalkKasanari : メインゴーストとサブゴーストが重なって一定時間経過。
+#スクリプトでは「\0\4」（\0側が移動）又は「\1\4」（\1側が移動）が可能
+
+TalkKasanari : \0\s[7]重ねないで下さい。\1\4\e
+
+#==============================================================================
+
+
+#ネットワーク：メールチェック==================================================
+
+#TalkMailstart : メールチェックが指示された時。
+#System.Request.Reference2 : チェックするサーバの名前
+
+#TalkGottaMail : 旧メールチェック
+#・使用可能な変数
+# System.Request.Reference0 : 到着しているメールの数(単位：通)
+# System.Request.Reference1 : 到着しているメールの総容量(単位：Byte)
+# System.Request.Reference2 : チェックするサーバの名前
+# System.Request.Reference4 : 全メールの top result
+# System.Request.Reference5 : list result
+# System.Request.Reference6 : uidl result
+# NewMail                   : オリジンを補正した到着しているメールの数(単位：通)
+
+#TalkNoMail : 旧メールチェックの結果、メールが到着していない。
+
+#TalkGottaMail2 : 新メールチェック。メールの新着数を表示できる
+#・使用可能な変数
+#　上記の変数陣に加え、
+# System.Request.Reference3 : 前回から増えた・減ったメールの数(単位：通)
+# NewMail : オリジンを補正した新着メールの数(単位：通)
+
+#TalkNoMail2 : 前回メールチェック時から比べて、新しいメールが到着してない。
+
+#TalkMail＜エラー内容識別子＞ : メールチェック時、エラーが発生した。
+# エラー内容識別子 : timeout / kick / defect / Error
+# エラーの内容 (タイムアウト / (パスワード)エラー / 設定不備 / その他)
+
+
+TalkMailstart : \0\s[0]$(SReference 2)\n\nメールボックスにアクセスします。\e
+TalkNoMail : \0\s[0]新しいメールはありませんでした。\e
+TalkGottaMail : \0\s[5]メールが来ています。\n\n${NewMail}通、$(SReference 1)バイト\n\nです。\e
+TalkNoMail2 : \0\s[0]新しいメールはありませんでした。\e
+TalkGottaMail2 : \1\s[11]\0\s[5]${NewMail}通、新しいメールが来ています。\e
+TalkMailErrortimeout : \0\s[4]タイムアウトしましたぁ‥‥。\e
+TalkMailErrorkick : \0\s[4]エラーですぅ‥‥。\e
+TalkMailErrordefect : \0\s[4]メールの設定が正しく行なわれていません。\e
+TalkMailfail : \1「$(SReference 0)」エラーやで。\0\s[2]メールサーバーの設定がされてないような‥‥。\e
+
+#==============================================================================
+
+
+#ネットワーク：時間あわせ======================================================
+
+#TalkNTPstart : 時間合わせが指示された時。
+#TalkNTPfailed : ＳＮＴＰサーバからの時刻取得に失敗した時。
+#TalkNTPcompare : ＳＮＴＰサーバより時刻情報を取得した時。
+
+#・使用可能な変数
+# TimeSNTP  : ＳＮＴＰサーバから取得した時刻
+# TimeLOCAL : 自分のＯＳでの現在時刻
+# System.Request.Reference3 : ＳＮＴＰサーバと自分のＯＳとのズレ(単位：秒)
+#・スクリプトに「\6」と書く事で、実際にＯＳの時計が合わされる。
+
+TalkNTPstart : \0\s[0]ＳＮＴＰサーバ\n\n$(SReference 0)\n\nへのリクエストを開始します。\e
+TalkNTPfail : \0\s[4]ＳＮＴＰサーバへの接続に失敗しました。\e
+
+TalkNTPcompareM0 : \0\s[0]まだズレてないみたいです。\e
+TalkNTPcompareM1 : \0\s[0]僅かだけど$(SReference 3)秒ほどズレてました。${TalkNTPcompareM4}
+TalkNTPcompareM2 : \0\s[0]$(SReference 3)秒の差がありました。${TalkNTPcompareM4}
+TalkNTPcompareM3 : \0\s[0]$(SReference 3)秒もズレてますけど‥‥。${TalkNTPcompareM4}
+
+TalkNTPcompareM4 : \n\n\q["修正する,Adjust"]\n\q["修正しない,NoAdjust"]\e
+
+Select.Adjust : \0\s[5]はい、修正しました。\6\e
+Select.NoAdjust : \0\s[3]放置しますね‥‥。\e
+
+
+TalkNTPcompare : (
+	\_q\0\s[0]
+	ＳＮＴＰ：${TimeSNTP}\n
+	ローカル：${TimeLOCAL}
+	\_q\n\n
+	$(
+		if $[ $(IntReference 3) == 0 ]
+			${TalkNTPcompareM0}
+		else if $[ $(IntReference 3) < 10 ]
+			${TalkNTPcompareM1}
+		else if $[ $(IntReference 3) < 30 ]
+			${TalkNTPcompareM2}
+		else
+			${TalkNTPcompareM3}
+	)
+)
+
+#==============================================================================
+
+
+#ネットワーク：ネットワーク更新================================================
+
+#TalkUpdateBegin : ネットワーク更新が指示された。
+
+#TalkUpdateReady : ネットワーク更新がの準備ができた。
+#  System.Request.Reference0 : これから更新を行なうファイルの全数（0起源につき注意）
+#  UpdateFileTotal : これから更新を行うファイルの全数 (1オリジン)
+
+#TalkUpdatecomplete.changed : ネットワーク更新が無事完了した。
+#  System.Request.Reference1 : 更新されたファイルリスト (カンマで区切られている)
+
+#TalkUpdatecomplete.none : ファイルの更新がなかった場合。
+
+#TalkUpdatefail.* : 更新に失敗。(*は失敗理由)
+#  失敗理由 : timeout / md5miss / 404 / 403 / etc
+#             (タイムアウト/MD5不一致/サーバ404エラー/403エラー/その他)
+
+#TalkDownloadBegin : ファイルのダウンロードが始まった。
+#  System.Request.Reference0 : ダウンロードするファイル名
+#  System.Request.Reference1 : 更新すべきファイルのうち、現在何番目か
+#  System.Request.Reference2 : 更新すべきファイルの全数
+#  UpdateFileNo : 更新すべきファイルのうち、現在何番目か (1オリジン)
+
+#TalkMD5Begin : ファイルのMD5を比較開始する。
+#  System.Request.Reference0 : MD5を比較するファイル名
+
+#TalkMD5Complete : MD5が一致した場合。
+#TalkMD5Fail : MD5が一致しない場合。
+#  System.Request.Reference0 : ＭＤ５を比較するファイル名
+#  System.Request.Reference1 : 「updates2.dau」にある、ＭＤ５
+#  System.Request.Reference2 : ダウンロードしたファイルのＭＤ５
+
+#Ver.2.2.4より追加:
+#SystemupdateBegin     : 本体オンラインアップデート開始
+
+#SystemupdateReady     : 本体オンラインアップデート準備完了
+#  System.Request.Reference0 : これから更新を行なうファイルの全数（0起源につき注意）
+#  UpdateFileTotal : これから更新を行うファイルの全数 (1オリジン)
+
+#SystemupdateNoupdate  : 本体オンラインアップデート完了(更新無し)
+#SystemupdateCompleted : 本体オンラインアップデート完了(更新有り)
+#SystemupdateFailed.*  : 本体オンラインアップデート失敗(*は失敗理由)
+#  失敗理由 :  timeout / md5miss / 404 / 403 / fileio / readonly / etc
+#              (タイムアウト/MD5不一致/サーバ404エラー/403エラー/
+#               容量不足等でファイル書き込み失敗/読取専用ファイルだった/その他)
+
+TalkUpdateBegin : \0\s[0]ネットワーク更新を開始します。\e
+TalkUpdateReady : \0\s[0]${UpdateFileTotal}個のファイルが更新されたみたいです。
+TalkUpdatecomplete.changed : \0\s[5]ネットワーク更新、終了しました。\w8\1今日はこのくらいにしといたろ。\e
+TalkUpdatecomplete.none : \0\s[6]更新されたファイルは無いらしいです。\e
+TalkUpdatefail.timeout : \0\s[4]データが送られて来ません。\1時間を空けて試してみ。\e
+TalkUpdatefail.md5miss : \0\s[4]ＭＤ５が一致しません。\n\nネットワーク更新を中断します。\e
+TalkUpdatefail.404 : \0\s[4]エラー４０４：ファイルが見つかりません。\n\nネットワーク更新を中断します。\e
+TalkUpdatefail.403 : \0\s[4]エラー４０３：サーバーにアクセスできません。\n\nネットワーク更新を中断します。\e
+TalkUpdatefail.fileio : \0\s[4]容量不足等でファイルが書き込めませんでした。\n\nネットワーク更新を中断します。\e
+TalkUpdatefail.readonly : \0\s[4]ファイルが読取専用で上書きできませんでした。\n\nネットワーク更新を中断します。\e
+TalkUpdatefail.etc : \0\s[4]「$(SReference 0)」エラーにより、ネットワーク更新に失敗しました。\e
+TalkDownloadBegin : \0\s[0]更新されたファイル\n\n$(SReference 0)\n\nを受信しています。\e
+TalkMD5Begin : \0\s[0]$(SReference 0)\n\nのＭＤ５を照合します。\e
+TalkMD5Complete : \0\s[5]\_q$(SReference 1)\n$(SReference 2)\_q\n\n一致しました。\e
+TalkMD5Fail : \0\s[0]\_q$(SReference 1)\n$(SReference 2)\_q\n\n一致しませんでした。\e
+
+SystemupdateBegin : \0\s[0]本体のネットワーク更新を開始します。\e
+SystemupdateReady : \0\s[0]本体の${UpdateFileTotal}個のファイルが更新されたみたいです。
+SystemupdateCompleted : \0\s[5]本体のネットワーク更新、終了しました。\w8\1今日はこのくらいにしといたろ。\e
+SystemupdateNoupdate : \0\s[6]本体の更新は無いらしいです。\e
+SystemupdateFailed.etc : \0\s[4]「$(SReference 0)」エラーにより、ネットワーク更新に失敗しました。\e
+
+#==============================================================================
+
+
+#ネットワーク：ヘッドラインセンサー============================================
+
+#TalkHeadlineBeginヘッドライン取得が指示された時
+#TalkHeadlineFirst : ヘッドライン読み上げの開始(最初のページ)
+#TalkHeadlineNext : ヘッドライン読み上げの開始(２ページ目以降)
+#TalkHeadlineChoice : ヘッドライン読み上げ終了(最後のページ以外)
+#TalkHeadlineChoiceEnd : ヘッドライン読み上げ終了(最後のページ)
+# System.Request.Reference0 : 対象サイト名
+
+#TalkHeadlinefail＜失敗理由識別子＞ : ヘッドライン取得結果(情報が取得されない場合)
+# 失敗理由識別子 : noupdate  / cantdownload / cantanalyze / etc
+# ヘッドラインセンス失敗理由 (更新なし / 受信失敗 / 解析失敗 / その他)
+
+#TalkHeadlineChoiceの選択肢は空（[]）で次ページ
+#・「${JumpURL}」と記述する事で、対象サイトにアクセスする。
+
+TalkHeadlineBegin : \0\s[0]$(SReference 0) ヘッドラインを取得します。\e
+TalkHeadlinefail.noupdate : \0\s[4]ヘッドラインは更新されていませんでした。\e
+TalkHeadlinefail.cantdownload : \0\s[4]ヘッドライン情報が取得できませんでした。\e
+TalkHeadlinefail.cantanalyze : \0\s[4]ヘッドライン情報の解析に失敗しました。\e
+TalkHeadlinefail.etc : \0\s[2]「$(SReference 0)」エラー発生\e
+TalkHeadlineFirst :\0\b[2]\s[0]$(SReference 0) ヘッドラインです。
+TalkHeadlineNext : \0\b[2]\s[0]$(SReference 0) ヘッドラインの続きです。
+TalkHeadlineChoice : \q["次のページへ,"]\n\q["読む,HeadlineJump"]\n\q["読まない,HeadlineCancel"]\e
+TalkHeadlineChoiceEnd : \q["読む,HeadlineJump"]\n\q["読まない,HeadlineCancel"]\e
+Select.HeadlineJump : $(resetFreeze)\b[-1]\!["open,browser,"${JumpURL}]\e
+Select.HeadlineCancel : $(resetFreeze)\0ヘッドラインを読みませんでした。\e
+
+#==============================================================================
+
+
+#ネットワーク：RSSリーダ=======================================================
+
+#トークを設定できるエントリ：
+#・TalkRSSBegin.＜正規化したサイト名＞：RSS取得が指示された時
+#・TalkRSSBegin：RSS取得が指示された時
+#・TalkRSSComplete.＜正規化したサイト名＞：RSS取得に成功した時
+#・TalkRSSComplete：RSS取得に成功した時
+#・TalkRSSfail.＜失敗理由識別子＞：RSS取得に失敗した時
+#・TalkRSSfail：RSS取得に失敗した時
+
+# 失敗理由識別子 : cantdownload / cantanalyze
+# RSS取得失敗理由 (受信失敗 / 解析失敗)
+
+#提示される情報：
+#・JumpURL：     RSSを取得するサイトのURL(RSSフィードのURLではない)
+#・RSSSiteTitle：RSSを取得するサイト名
+#提示される情報(取得成功時)
+#・RSSItem：     取得したサイト内容の概略とURL(\qタグを含む)
+#・RSSItemList:  取得したサイト内容のアイテム数
+#・RSSItemList.＜0～RSSItemList-1＞.title: 各アイテムのタイトル
+#・RSSItemList.＜0～RSSItemList-1＞.link: 各アイテムのURL
+
+TalkRSSBegin : \0\s[0]サイト「${RSSSiteTitle}」のRSSを取得します。\e
+TalkRSSfail.cantdownload : \0\s[4]RSSが取得できませんでした。\e
+TalkRSSfail.cantanalyze : \0\s[4]RSSの解析に失敗しました。\e
+TalkRSSComplete : (
+	\0\b[2]\s[0]サイト「${RSSSiteTitle}」の概要です。\w8\n\n
+	${RSSItem}\n
+	\q["サイトを開く,RSSJump"]\n
+	\q["読み込み終了,RSSCancel"]\n
+	\e
+)
+Select.RSSJump : \!["open,browser,"${JumpURL}]\e
+Select.RSSCancel : \0\s[0]RSS読み込みを終了します。\e
+
+#==============================================================================
+
+
+#ネットワーク：ＩＰアドレスブラックリスティング================================
+
+#TalkBlacklist ブラックリスト行きが指定された時
+#・使用可能な変数
+# System.Request.Reference0 : ブラックリストに登録されるクライアントのＩＰアドレス
+
+TalkBlacklist : \0\s[0]ＩＰアドレス「$(SReference 0)」をブラックリスティングしました。\e
+
+#==============================================================================
+
+
+#ネットワーク：ネットワークが重い==============================================
+
+#TalkNetworkheavy : サーバからデータが一定時間以上送られてこない時。
+
+#ネットワーク更新やメールチェック、その他ネットワークを使ったイベントなどに
+#汎用的に使われます。
+
+TalkNetworkheavy : \0\s[6]重いね‥‥。\w8\w8\1あぁ、重いな‥‥。\e
+
+#==============================================================================
+
+
+#ネットワーク：ＵＲＬＤ＆Ｄによるダウンロード==================================
+
+#TalkDownload : ブラウザなどからショートカットがドロップされた。
+# System.Request.Reference0 : ショートカットのデータ(ＵＲＬ)
+
+#TalkDownloadfail.artificial : ダウンロードが意図的に中断された
+#                                （バルーンをダブルクリック）
+#TalkDownloadfail.timeout : ダウンロードがタイムアウトで失敗した
+#TalkDownloadfail.etc : その他の要因でダウンロードが失敗した
+
+TalkDownload : \0\s[0]$(SReference 0)\n\nから、ダウンロード中です。\e
+
+TalkDownloadfail.artificial : \0\s[0]指示通りダウンロードを中断しました。\e
+
+TalkDownloadfail.timeout : \0\s[4]ダウンロード中にタイムアウトしました。\e
+
+TalkDownloadfail.etc : \0\s[4]‥えっと、\w4よく分かんないけどダウンロード失敗です。\e
+
+#==============================================================================
+
+
+
+#ファイル：各種インストール====================================================
+
+#TalkInstallBegin : 圧縮ファイルがＤ＆Ｄされた時
+
+#条件 : インストールが完了した時。
+#書式 : TalkInstall＜インストールオブジェクト＞(＜インストールオブジェクト＞‥)
+# インストールオブジェクト : datainstで登録されている、オブジェクトの識別子
+# 複数ある場合は、連続して表記される。
+#・「datainst」に該当しない識別子の場合は「TalkInstall」が呼ばれる。
+# InstallName  : インストールしたオブジェクト名
+# InstallName1 : インストールしたもうひとつのオブジェクト名(複数の場合)
+
+#TalkInstallfail＜失敗理由識別子＞ : インストールに失敗した時
+#System.Request.Reference0 : 失敗した理由
+
+#TalkInstallrefuse : 他ゴースト専用ファイルをインストールしようとした時。
+# System.Request.Reference0 : 指名されているゴーストの名前
+
+
+TalkInstallBegin : \0\s[0]インストールを開始します。\e
+TalkInstall : \0\s[8]「${InstallName}」をインストールしました。\e
+TalkInstallshell : \0\s[0]シェル「${InstallName}」をインストールしました。\e
+TalkInstallghost : \0\s[0]ゴースト「${InstallName}」をインストールしました。\e
+TalkInstallplugin : \0\s[0]プラグイン「${InstallName}」をインストールしました。\e
+TalkInstallballoon : \0\s[0]バルーン「${InstallName}」をインストールしました。\e
+TalkInstallheadline : \0\s[0]ヘッドラインセンサ「${InstallName}」をインストールしました。\e
+TalkInstallshellballoon : \0\s[0]シェル＆バルーン「${InstallName}」と「${InstallName1}」をインストールしました。\e
+TalkInstallghostballoon : \0\s[0]ゴースト＆バルーン「${InstallName}」と「${InstallName1}」をインストールしました。\e
+TalkInstallcalendarskin : \0\s[0]カレンダースキン「${InstallName}」をインストールしました。\e
+TalkInstallcalendarplugin : \0\s[0]スケジュールセンサ「${InstallName}」をインストールしました。\e
+TalkInstallfail : \0\s[4]\nインストールに失敗しました‥‥。\e
+TalkInstallfail.unlha32 : \0\s[4]\n「unlha32.dll」が存在しません。インストールに失敗しました。\e
+TalkInstallfail.unzip32 : \0\s[4]\n「unzip32.dll」が存在しません。インストールに失敗しました。\e
+TalkInstallfail.invalidtype : \0\s[4]\n「install.txt」が不正です。インストールに失敗しました。\e
+
+TalkInstallrefuse : \0\s[0]これは「$(SReference 0)」用のデータなので、インストールしませんでした。\e
+
+#==============================================================================
+
+
+#ファイル：updates2.dauファイル作成============================================
+
+#TalkUpdateCreating : 「updates2.dau」の作成開始
+#TalkUpdateCreated :「updates2.dau」の作成が終わった時。
+
+TalkUpdateCreating : \0\s[0]「updates2.dau」を作成します。\e
+TalkUpdateCreated : \0\s[5]「updates2.dau」が完成しました。\e
+
+#==============================================================================
+
+
+#ファイル：アーカイブ(nar)ファイル作成=========================================
+
+#TalkNarCreating : アーカイブファイルの作成開始
+#TalkNarCreated : アーカイブファイルの作成が終わった時。
+
+TalkNarCreating : \0\s[0]「nar」ファイルを作成します。\e
+TalkNarCreated : \0\s[5]「nar」ファイルが完成しました。\e
+
+#==============================================================================
+
+
+#リソース：ネットワーク更新ボタン名============================================
+#エントリ名 : UpdateCaption
+#書式 ： "右クリックメニューに表示されるネットワーク更新名"
+
+UpdateCaption : "ネットワーク更新(&U)"
+
+#==============================================================================
+
+
+#リソース：消滅指示ボタン名====================================================
+#エントリ名 : VanishCaption
+#書式 ： "右クリックメニューに表示される消滅指示ボタン名"
+
+VanishCaption : "消滅指示ボタン"
+
+#==============================================================================
+
+
+#リソース：メールチェックボタン名==============================================
+#エントリ名：BiffCaption
+#書式 ： "右クリックメニューに表示されるメールチェックボタン名"
+
+BiffCaption : "メールチェック(&M)"
+
+#==============================================================================
+
+
+#リソース：ヘッドラインセンスボタン名==========================================
+#エントリ名：HeadlineCaption
+#書式 ： "右クリックメニューに表示されるヘッドラインセンスボタン名"
+
+HeadlineCaption : "ヘッドライン(&H)"
+
+#==============================================================================
+
+
+#リソース：RSSリーダボタン名===================================================
+#エントリ名：RSSCaption
+#書式 ： "右クリックメニューに表示されるRSSリーダボタン名"
+
+RSSCaption : "RSS(&R)"
+
+#==============================================================================
+
+
+#リソース：時計合わせボタン名==================================================
+#エントリ名：SntpCaption
+#書式 ： "右クリックメニューに表示される時計合わせボタン名"
+
+SntpCaption : "時計合わせ(&T)"
+
+#==============================================================================
+
+
+#壁紙変更======================================================================
+
+#注 : MATERIA490以後廃止されました。
+
+#TalkWallpaper 画像ファイル(png、bmp）のドロップにより、壁紙を変更する時。
+
+TalkWallpaper : \0\s[5]壁紙を変更します。\e
+
+#==============================================================================
+
+#ファイル：ファイルドロップ====================================================
+
+#TalkFileDrop.＜ファイル種類＞ : ファイルがドラッグ＆ドロップされた時。
+#TalkFileDrop         : 複数のファイルがドラッグ＆ドロップされた時。
+# ファイル種類 : ファイルの拡張子(アルファベット・数字は全て、半角小文字で記述)
+
+#使用できる変数
+# DroppedFiles : ドラッグ＆ドロップされたファイル名(フルパス名、複数の場合あり)
+
+TalkFileDrop.bmp :\0\s[0]「bmp」タイプファイルです。\e
+
+TalkFileDrop.jpg :\0\s[0]「jpg」タイプファイルです。\e
+
+TalkFileDrop.png :\0\s[0]「png」タイプファイルです。\e
+
+#==============================================================================
+:endcrypt

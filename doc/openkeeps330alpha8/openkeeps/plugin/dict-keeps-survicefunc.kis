@@ -1,0 +1,734 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  サービス関数群
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha1 2002.09.25 22:30版
+# Version2.0 alpha2 2002.09.27 22:07版
+# Version2.0 alpha3 2002.09.28 20:07版
+# Version2.0 alpha4 2002.09.28 22:06版
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.5a     2004.07.04 21:15版
+# Version3.0.7      2004.07.18 22:30版
+# Version3.0.8      2004.07.25 21:45版
+# Version3.1.5      2004.11.13 20:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.1.0 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#==============================================================================
+#サービス関数群(必須ではないので、辞書として登録しなくても良い)
+#==============================================================================
+
+#------------------------------------------------------------------------------
+
+# Referenceコマンド(Referenceを参照する)
+# 第1引数: Reference番号
+# 戻り値: 該当Reference
+#=kis
+#function Reference $(.get "System.Request.Reference"$@arg[1][0]);
+#=end
+
+#------------------------------------------------------------------------------
+
+# raisesaoriコマンド(\![raise]タグ経由でSAORIモジュールを呼ぶ)
+# 第1引数:     呼ぶSAORIモジュールのエイリアス名
+# 第2引数以降: SAORIモジュールに与える引数(省略可能)
+=kis
+function raisesaori $(
+	if $[ $(.size @arg) < 2 ] $(return);
+
+	.clear @arg[0];
+	return "\\![raise,OnSaoriRaise,"$(.join @arg ",")"]";
+);
+=end
+
+# raisesaoriコマンド専用イベント処理
+System.Callback.OnGET : $(
+	if $[ ${System.Request.ID} == "OnSaoriRaise" ] $(
+		.clear @ref;
+		.setstr @i 0;
+		while $(.size System.Request.Reference${@i}) $(
+			.pushstr @ref ${System.Request.Reference${@i}};
+			.inc @i;
+		);
+		.xargs @ref callsaori;
+		silent;
+	);
+)
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : raisesaori
+
+#------------------------------------------------------------------------------
+
+# GetWordRandomコマンド(エントリからランダムに単語を重複せずに呼び出す)
+# 第1引数 : エントリ名
+# 戻り値  : エントリ内の単語
+# 備考    : 「エントリ名.buffer」というエントリを占有する
+=kis
+function  GetWordRandom $(
+	if $[ $(.size @arg) != 2] $(return);
+	if $[ $(.size $@arg[1].buffer) == 0 ] $(.copy $@arg[1] $@arg[1].buffer);
+
+	.setstr @pos $(.rand $(.size $@arg[1].buffer));
+	.get $@arg[1].buffer[${@pos}];
+	.clear $@arg[1].buffer[${@pos}];
+);
+=end
+
+# Nonoverlapコマンド(指定エントリを単語重複せず呼び出すエントリ化する)
+# 第1引数 : エントリ名
+# 戻り値  : なし
+# 備考    : 「エントリ名.backup」、「エントリ名.backup.buffer」という
+#           エントリを占有する
+#           GetWordRandomコマンドが必要
+=kis
+function Nonoverlap $(
+	if $[ $(.size $@arg[1].backup) == 0 ] $(.copy $@arg[1] $@arg[1].backup);
+	.set $@arg[1] "$(GetWordRandom "$@arg[1]".backup)";
+	.writeprotect $@arg[1];
+	.writeprotect $@arg[1].backup;
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetWordRandom,Nonoverlap
+
+#------------------------------------------------------------------------------
+
+# GetWordSyncコマンド(エントリからランダムに単語を重複せずに呼び出す)
+# 第1引数 : エントリ名
+# 戻り値  : エントリ内の単語
+# 備考    : 「エントリ名.buffer」というエントリを占有する
+=kis
+function  GetWordSync $(
+	if $[ $(.size @arg) != 2] $(return);
+	if $[ $(.size $@arg[1].buffer) == 0 ] $(.copy $@arg[1] $@arg[1].buffer);
+
+	.setstr @pos $(.rand $(.size $@arg[1].buffer));
+	.get $@arg[1].buffer[${@pos}];
+	.clear $@arg[1].buffer[${@pos}];
+	if $[ $(.find kp.nonoverlapsync $@arg[1].buffer) < 0 ] $(
+		.pushstr kp.nonoverlapsync $@arg[1].buffer;
+	);
+);
+=end
+
+# Nonoverlap.Syncコマンド(指定エントリを単語重複せず呼び出すエントリ化する)
+# 第1引数 : エントリ名
+# 戻り値  : なし
+# 備考    : 「エントリ名.backup」、「エントリ名.backup.buffer」という
+#           エントリを占有する
+#           GetWordRandomコマンドが必要
+=kis
+function Nonoverlap.Sync $(
+	if $[ $(.size $@arg[1].backup) == 0 ] $(.copy $@arg[1] $@arg[1].backup);
+	.set $@arg[1] "$(GetWordSync "$@arg[1]".backup)";
+	.writeprotect $@arg[1];
+	.writeprotect $@arg[1].backup;
+);
+=end
+
+# コールバックに同期して、重複回避のためにバッファ消去
+System.Callback.OnGET, System.Callback.OnNOTIFY : $(
+	while $(.size kp.nonoverlapsync) $(.clear $(.pop kp.nonoverlapsync));
+)
+
+#------------------------------------------------------------------------------
+
+=kis
+# 第1引数 : エントリ名
+# 第2引数 : 重複回避する呼び出し回数
+# 戻り値  : エントリ内の単語
+# 備考    : 「エントリ名.buffer」というエントリを占有する
+
+function GetWordHistorical $(
+	if $[ $(.size @arg) != 3 ] $(return);
+	if $[ $(.size $@arg[1].buffer) == 0 ] $(
+		.copy $@arg[1] @temp;
+		while $(.size @temp) $(
+			.setstr @i $(.rand $(.size @temp));
+			.push $@arg[1].buffer $(.getcode @temp[${@i}]);
+			.clear @temp[${@i}];
+		);
+	);
+	.setstr @i $(
+		if $[ ( $(.size $@arg[1]) / 2 ) < $@arg[2] ]
+			$[ $(.size $@arg[1]) / 2 ]
+		else
+			$@arg[2]
+	);
+	.set @s $(.popcode $@arg[1].buffer);
+	.insert $@arg[1].buffer[$(.rand ${@i})] $(.getcode @s);
+	return ${@s};
+);
+=end
+
+=kis
+# 第1引数 : エントリ名
+# 第2引数 : 重複回避のために履歴を持つ数(省略可能、省略時はエントリの単語数)
+# 備考    : 「エントリ名.backup」、「エントリ名.backup.buffer」という
+#           エントリを占有する
+#           GetWordHistoricalコマンドが必要
+function Historical $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+	.setstr @history $(
+		if $[ $(.size @arg) == 3 ] $@arg[2] else $[ $(.size $@arg[1]) / 2 ];
+	);
+	if $[ $(.size $@arg[1]) <= 2 ] $(return);
+	if $[ $(.size $@arg[1].backup) == 0 ] $(.copy $@arg[1] $@arg[1].backup);
+	.set $@arg[1] "$(GetWordHistorical "$@arg[1]".backup "${@history}")";
+	.writeprotect $@arg[1];
+	.writeprotect $@arg[1].backup;
+);
+=end
+
+#------------------------------------------------------------------------------
+
+# GetWordSequentialコマンド(エントリを先頭から順に呼び出す)
+# 第1引数 : エントリ名
+# 戻り値  : エントリ内の単語
+# 備考    : 「エントリ名.pos」というエントリを占有する
+=kis
+function GetWordSequential $(
+	if $[ $(.size @arg) != 2] $(return);
+	if $[ $(.size $@arg[1].pos) == 0 ] $(.setstr $@arg[1].pos 0);
+
+	.get $@arg[1][${$@arg[1].pos}];
+	.inc $@arg[1].pos;
+	if $[ ${$@arg[1].pos} >= $(.size $@arg[1]) ] $(.setstr $@arg[1].pos 0);
+);
+=end
+
+# Sequentialコマンド(指定エントリを添え字順に呼び出すエントリ化する)
+# 第1引数 : エントリ名
+# 戻り値  : なし
+# 戻り値  : 「エントリ名.backup」、「エントリ名.backup.pos」という
+#           エントリを占有する
+#           GetWordSequentialコマンドが必要
+=kis
+function Sequential $(
+	if $[ $(.size $@arg[1].backup) == 0 ] $(.copy $@arg[1] $@arg[1].backup);
+	.set $@arg[1] "$(GetWordSequential "$@arg[1]".backup)";
+	.writeprotect $@arg[1];
+	.writeprotect $@arg[1].backup;
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetWordSequential,Sequential
+
+#------------------------------------------------------------------------------
+
+# GetWordRSequentialコマンド(エントリを最後尾から順に呼び出す)
+# 第1引数 : エントリ名
+# 戻り値  : エントリ内の単語
+# 備考    : 「エントリ名.pos」というエントリを占有する
+=kis
+function GetWordRSequential $(
+	if $[ $(.size @arg) != 2] $(return);
+	if $[ $(.size $@arg[1].pos) == 0 ] $(
+		.setstr $@arg[1].pos $[ $(.size $@arg[1]) - 1 ];
+	);
+
+	.get $@arg[1][${$@arg[1].pos}];
+	.dec $@arg[1].pos;
+	if $[ ${$@arg[1].pos} < 0 ] $(
+		.setstr $@arg[1].pos $[ $(.size $@arg[1]) - 1 ];
+	);
+);
+=end
+
+# RSequentialコマンド(指定エントリを添え字降順に呼び出すエントリ化する)
+# 第1引数 : エントリ名
+# 戻り値  : なし
+# 戻り値  : 「エントリ名.backup」、「エントリ名.backup.pos」という
+#           エントリを占有する
+#           GetWordRSequentialコマンドが必要
+=kis
+function RSequential $(
+	if $[ $(.size $@arg[1].backup) == 0 ] $(.copy $@arg[1] $@arg[1].backup);
+	.set $@arg[1] "$(GetWordRSequential "$@arg[1]".backup)";
+	.writeprotect $@arg[1];
+	.writeprotect $@arg[1].backup;
+);
+=end
+
+#------------------------------------------------------------------------------
+
+# EntryOption.＜cmd＞エントリにエントリ名を登録すると、OnLoad時に
+# 「$(＜cmd＞ ＜エントリ名＞)」を自動実行する。
+# エントリの加工を宣言的に行い、より「エントリのオプション」的に見せる。
+System.Callback.OnLoad : $(
+	.listtree @list EntryOption;
+	if $(.size @list) $(
+		foreach @i @list $(
+			.setstr @cmd $(.substr ${@i} 12);
+			foreach @entry ${@i} $(
+				if $[ ! $(.size ${@entry}.backup) ] $(${@cmd} ${@entry});
+			);
+		);
+	);
+)
+
+#------------------------------------------------------------------------------
+
+# ii(indirect invokation)コマンド
+# \![]タグを簡単に書く
+#
+# usage: $(ii <コマンド> <引数> <引数> ...)
+#
+# 例: $(ii open mailer /mailurl:mailto:hoge@hoge.ne.jp?subject=件名&body=本文)
+# 例: $(ii biff)
+#
+=kis
+function ii \![$(
+	# 先頭の'ii'を削除
+	.clear @arg[0];
+	# 引数の数-1だけ繰り返す
+	loop $[$(.size @arg)-1] $(
+		.echo $(.shiftcode @arg)",";
+	);
+	# ラスト
+	.echo $(.shiftcode @arg);
+)];
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : ii
+
+#------------------------------------------------------------------------------
+
+=kis
+# anchorコマンド(\_aタグをラッピングして使いやすくする)
+# 第1引数: 選択時のID
+# 第2引数: アンカーの表示文字列
+function anchor $(if $[ $(.size @arg) == 3 ] "\_a["$@arg[1]"]"$@arg[2]"\_a");
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : anchor
+
+#------------------------------------------------------------------------------
+
+# 簡易文字種判別関数
+
+# 文字種判別のテンプレートとなる関数
+=kis
+function ischaracters $(
+	setstr @pos 0;
+
+	while $[ ${@pos} < $(.length $@arg[1]) ] $(
+		.setstr @char $(.char_at $@arg[1] ${@pos});
+		if $[ $@arg[2] !~ ${@char} ] $(
+			return 0;
+		);
+		.inc @pos;
+	);
+	return 1;
+);
+
+# 英大文字だけの文字列ならば真
+function isupper $(ischaracters $@arg[1] $kp.asciichar[0]);
+# 英小文字だけの文字列ならば真
+function islower $(ischaracters $@arg[1] $kp.asciichar[1]);
+# 数字だけなら真
+function isdigit $(ischaracters $@arg[1] $kp.asciichar[2]);
+# アルファベットだけの文字列ならば真
+function isalpha $(ischaracters $@arg[1] $(get kp.asciichar[0..1]));
+# アルファベットと数字だけの文字列ならば真
+function isalnum $(ischaracters $@arg[1] $(get kp.asciichar[0..2]));
+=end
+
+# 判別に用いる文字テーブル
+kp.asciichar : "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+kp.asciichar : "abcdefghijklmnopqrstuvwxyz_"
+kp.asciichar : "+-0123456789"
+=kis
+.writeprotect kp.asciichar;
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : ischaracters,isupper,isdigit,isalpha,isalnum
+
+#------------------------------------------------------------------------------
+
+=kis
+# \0と\1で同時に違う内容の発話を生成するコマンド「SynchronizedTalk」
+# 書式   : $(SynchronizedTalk 引数1 引数2 [引数3...])
+# 第1引数: \0側の発話内容
+# 第2引数: \1側の発話内容
+# 第3引数以降: 各スコープの発話内容(省略可能)
+# 戻り値 : 同時発話するスクリプト
+# 機能   : \0側と\1側のトークを一文字ごとに切り出し、スコープ切替を挟んで
+#          繋げて返す
+# 備考   : sslex_char_atを内部で使用しているので、発話内容にさくらスクリプトが
+#          含まれていても正常動作する
+function SynchronizedTalk $(
+	if $[ $(.size @arg) < 3 ] $(return);
+
+	.clear @arg[0];
+	.setstr @scope 0;
+	loop $(.size @arg) $(
+		# 以降、各スコープに関する初期化
+		# 文字列ポインタ初期化
+		.setstr @p[${@scope}] 0;
+		# スコープタグ初期化
+		.setstr @prefix[${@scope}] $(
+			if $[ ${@scope} <= 1 ]
+				"\\"${@scope}
+			else
+				"\\p["${@scope}"]"
+		);
+		.inc @scope;
+	);
+
+	#すべての文字を表示しきるまでループ
+	.setstr @cond 0;
+	.setstr @lastscope $(NULL);
+	until $[ ${@cond} == $(.size @arg) ] $(
+		.setstr @cond 0;
+		.setstr @scope 0;
+		loop $(.size @arg) $(
+			.clear @char;
+			.setstr @char $(sslex_char_at $@arg[${@scope}] $@p[${@scope}]);
+			.setstr @p[${@scope}] $[ $@p[${@scope}] + $(.length ${@char}) ];
+			if $[ ${@char} != "" ] $(
+				# まだ末尾に達しておらず、文字がある
+				if $[ ${@scope} != ${@lastscope} ] $(
+					# 直前に文字があったスコープと違うならスコープ切り替え
+					.pushstr @talk $@prefix[${@scope}];
+					.setstr @lastscope ${@scope};
+				);
+				.pushstr @talk ${@char};
+			);
+			# 終了条件を計算
+			if $[ $@p[${@scope}] >= $(.length $@arg[${@scope}]) ] $(.inc @cond);
+			.inc @scope;
+		);
+	);
+
+	# まとめて出力
+	return $(.get @talk);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SynchronizedTalk
+
+#------------------------------------------------------------------------------
+
+=kis
+# 機能:    ゆっくり話す
+# 第1引数: ウェイト(msec)
+# 第2引数: トーク内容
+# 戻り値:  ウェイトを挿入したトーク内容
+function SlowTalk $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	.setstr @wait $@arg[1];
+	# 強制数値化
+	.inc @wait 0;
+	.setstr @halfwait $[ ${@wait} / 2 ];
+
+	.setstr @i 0;
+	.setstr @len $(.length $@arg[2]);
+	while $[ ${@i} < ${@len} ] $(
+		.setstr @c $(sslex_char_at $@arg[2] ${@i});
+		.echo ${@c};
+		.inc @i $(.length ${@c});
+		if $[ $(.length ${@c}) > 1 && ${@c} != "\\\\" ] $(
+			continue;
+		) else if $[ $(.match ${slowtalk.1byte} ${@c}) >= 0 || ${@c} == "\\\\" ] $(
+			.echo "\\_w["${@halfwait}"]";
+		) else $(
+			.echo "\\_w["${@wait}"]";
+		)
+	);
+);
+=end
+
+SlowTalk.1byte : (
+	"abcdefghijklmnopqrstuvwxyz"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"0123456789"
+	"!\"#$%&'()*+,-./:+<=>?@[\\]^_`{|}~"
+	"｡｢｣､ｦｧｨｩｪｫｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ"
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : SloTalk.1byte
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SlowTalk
+
+#------------------------------------------------------------------------------
+
+############################################################################
+#
+# 日付計算関連スクリプト集 "daycalc"
+#   前提   : 華和梨Phase 8.0.0以降
+#   Phase  : 0.04
+#   日時   : 2002/07/09
+#   作者   : さとー(shobu@mail.goo.ne.jp)
+#   備考   : パブリックドメインとして自由に改変、再配布可
+#          : 改変、再配布の際、作者に連絡の必要なし
+#   Thanx  : umks6.p2, みずひらもとかず、ゴースト制作上の質問スレッド126
+#
+############################################################################
+#
+#	関数群
+#		$(daycalc.pastday 年 月 日)
+#		$(daycalc.pastday 年 月 日 時 分 秒)
+#			引数が3個なら、1970年1月1日から指定日までの経過日数を返す。
+#			日付として有効でなければ-1を返す。
+#			引数が6個なら、1970年1月1日0時0分0秒から指定日時までの経過秒数を返す。
+#			日時として有効でなければ-1を返す。
+#
+#		$(daycalc.today)
+#			1970年1月1日から今日までの経過日数を返す。
+#			計算過程でdaycalc.yearを破壊する。
+#
+#		$(daycalc.now)
+#			1970年1月1日0時0分0秒から今までの経過秒数を返す。
+#			計算過程でdaycalc.yearを破壊する。
+#			現在、暫定的にローカル時刻で計算している
+#
+#		$(daycalc.dow 年 月 日)
+#			その日の曜日(0..6,日曜日が0)を返す。
+#			日付として有効でなければ-1を返す。
+#
+#	使用エントリ
+#		daycalc.year  : 内部で年を代入する
+#
+#	注意
+#		1900/1/1から1970/1/1までの間、閏年は17回。
+#		1970/1/1は木曜日である。
+#
+############################################################################
+
+# うるう年計算用関数
+=kis
+function daycalc.isL1 $(if $[ ${daycalc.year} % 4 ] 0 else 1);
+function daycalc.isL2 $(if $[ ${daycalc.year} % 100 ] 0 else 1);
+function daycalc.isL3 $(if $[ ${daycalc.year} % 400 ] 0 else 1);
+=end
+
+# 各月の日数テーブル
+daycalc.month (
+	31,
+	$[ 28 + $(daycalc.isL1) - $(daycalc.isL2) + $(daycalc.isL3) ],
+	31,
+	30,
+	31,
+	30,
+	31,
+	31,
+	30,
+	31,
+	30,
+	31
+)
+
+# 日数テーブルの保護
+=kis
+writeprotect daycalc.month;
+=end
+
+# 日付を与えると、妥当性チェックする。
+# 日付として有効なら1、無効なら0を返す。
+# 第1引数: 年
+# 第2引数: 月
+# 第3引数: 日
+=kis
+function daycalc.isvaliddate $(
+	# 引数が3個以外なら終了
+	if $[ $(size @arg) != 4 ] $(return 0);
+
+	# 日付参照用に年をセット
+	setstr daycalc.year $@arg[1];
+
+	if $[ $@arg[1] < 1900 ] $(return 0);
+	if $[ $@arg[2] < 1 || $@arg[2] > 12 ] $(return 0);
+	if $[ $@arg[3] < 1 || $@arg[3] > $daycalc.month[$[$@arg[2]-1]] ] $(return 0);
+	return 1;
+);
+=end
+
+# 時刻を与えると、妥当性チェックする。
+# 時刻として有効なら1、無効なら0を返す。
+# 第1引数: 時
+# 第2引数: 分
+# 第3引数: 秒
+=kis
+function daycalc.isvalidtime $(
+	# 引数が3個以外なら終了
+	if $[ $(size @arg) != 4 ] $(return 0);
+
+	if $[ $@arg[1] < 0 || $@arg[1] > 23 ] $(return 0);
+	if $[ $@arg[2] < 0 || $@arg[2] > 60 ] $(return 0);
+	if $[ $@arg[3] < 0 || $@arg[3] > 60 ] $(return 0);
+	return 1;
+);
+=end
+
+# 年数を与えると、1970年1月1日から指定年の1月1日までの経過日数を返す。
+# 妥当でない年を与えると-1を返す。主に内部用。
+# 第1引数: 年
+=kis
+function  daycalc._pastday $(
+	# 引数が1個以外なら終了
+	if $[ $(size @arg) != 2 ] $(return -1);
+
+	# 年数として妥当でなければ終了
+	if $[ !$(daycalc.isvaliddate $@arg[1] 1 1) ] $(return -1);
+
+	return $[
+		($@arg[1] - 1970) * 365
+		+ ((($@arg[1]-1)-1900)/4)
+		- ((($@arg[1]-1)-1900)/100)
+		+ ((($@arg[1]-1)/400)-4)
+		- 17
+		- 1
+	];
+);
+=end
+
+# ■ 引数3個の場合
+# 日付を与えると、1970年1月1日から指定日までの経過日数を返す。
+# 日付として成立していなければ-1を返す。
+# 第1引数: 年
+# 第2引数: 月
+# 第3引数: 日
+#
+# ■ 引数6個の場合
+# 日付、時刻を与えると、1970年1月1日0時0分0秒から指定時までの経過秒数を返す。
+# 日時として成立していなければ-1を返す。
+# 第1引数: 年
+# 第2引数: 月
+# 第3引数: 日
+# 第4引数: 時
+# 第5引数: 分
+# 第6引数: 秒
+=kis
+function daycalc.pastday $(
+	# 引数が3個、もしくは6個以外なら終了
+	if $[ $(size @arg) == 4 ] $(
+		# 日付として妥当でなければ終了
+		if $[ !$(daycalc.isvaliddate $@arg[1] $@arg[2] $@arg[3]) ] $(return -1);
+	) else if $[ $(size @arg) == 7 ] $(
+		# 日時として妥当でなければ終了
+		if $[ !$(daycalc.isvaliddate $@arg[1] $@arg[2] $@arg[3]) ] $(return -1);
+		if $[ !$(daycalc.isvalidtime $@arg[4] $@arg[5] $@arg[6]) ] $(return -1);
+	) else $(
+		return -1;
+	);
+
+	# 1970年1月1日から指定年1月1日までの経過日数
+	setstr @totalday $(daycalc._pastday $@arg[1]);
+
+	# 日付参照用に年をセット
+	setstr daycalc.year $@arg[1];
+
+	# 指定年の指定月までの日数を加算
+	setstr @pos 0;
+	loop $[ $@arg[2]-1 ] $(
+		inc @totalday $daycalc.month[${@pos}];
+		inc @pos;
+	);
+
+	# 指定年の指定月の、1日から指定日までの日数を加算
+	inc @totalday $@arg[3];
+
+	if $[ $(size @arg) == 4 ] $(
+		# 引数が3個なら、日数を返す
+		return ${@totalday};
+	) else $(
+		# 引数が6個なら、日数にさらに時間を掛けて返す
+		return $[
+			${@totalday} * 86400
+			+ $@arg[4] * 3600
+			+ $@arg[5] * 60
+			+ $@arg[6]
+		];
+	);
+
+);
+
+# 1970年1月1日から今日までの経過日数を返す。
+=kis
+function daycalc.today $(
+	return $[ $(daycalc._pastday $(date %y)) + $(date %J) ];
+);
+=end
+
+# 日付を与えると、指定日の曜日を返す。
+# 日付として成立していなければ-1を返す。
+# 第1引数: 年
+# 第2引数: 月
+# 第3引数: 日
+=kis
+function daycalc.dow $(
+	# 引数が3個以外なら終了
+	if $[ $(size @arg) != 4 ] $(return -1);
+
+	# 日付として妥当でなければ終了
+	if $[ !$(daycalc.isvaliddate $@arg[1] $@arg[2] $@arg[3]) ] $(return -1);
+
+	# 1970/1/1の曜日オフセットを加えて剰余を求める
+	return $[ ($(daycalc.pastday $@arg[1] $@arg[2] $@arg[3]) + 4) % 7 ];
+);
+=end
+
+# 1970年1月1日0時0分0秒から今までの経過日秒を返す。
+# 現在は都合によりローカル時間で返す。
+=kis
+function daycalc.now $(
+	return $[ 
+		$(daycalc.today) * 86400
+		+ $(date %k) * 3600
+		+ $(date %N) * 60
+		+ $(date %r)
+	];
+);
+=end
+
+# SetNowtimeをdaycalcを使ってラッピングしたコマンド「SetNowtime.date」
+# 現在は日本の時間帯を前提にしている
+=kis
+if $[ ${System.Debugger} == "on" ] $(
+	function SetNowtime.date $(
+		SetNowtime $[ $(daycalc.pastday $@arg[1] $@arg[2] $@arg[3] $@arg[4] $@arg[5] $@arg[6]) - 9 * 3600 ];
+	);
+);
+=end
+
+#------------------------------------------------------------------------------
+
+
+#==============================================================================

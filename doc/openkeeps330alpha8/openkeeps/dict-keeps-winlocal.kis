@@ -1,0 +1,599 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   ＊Windowsローカルアプリケーションイベント制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.6      2004.07.10 13:30版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.3.0a6    2005.10.17 00:00版
+# Version3.3.0a7    2005.10.30 22:00版
+# Version3.3.0a8    2005.11.06 17:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#パラメータデータ抽出 (CallGetData)============================================
+
+#入力を「,」で区切り、先頭の単語をStringNormalizeで正規化して返す
+
+=kis
+function GetData $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	
+	.split @data $@arg[1] ",";
+	return $(StringNormalize $@data[0]);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetData
+
+#==============================================================================
+
+
+##SHIORI/2.2 Notify対応アプリ汎用イベント======================================
+
+event.OnApplicationBoot : $(
+	CheckAppli;
+	TalkSearch "kp.onapplicationboot";
+)
+
+kp.onapplicationboot (
+	TalkAppliBoot.$(NormReference 0) ,
+	TalkAppliBoot
+)
+
+event.OnApplicationClose : $(
+	CheckAppli;
+	TalkSearch "kp.onapplicationclose";
+)
+
+kp.onapplicationclose (
+	TalkAppliClose.$(NormReference 0) ,
+	TalkAppliClose
+)
+
+event.OnApplicationExist : $(
+	CheckAppli;
+	TalkSearch "kp.onapplicationexist";
+)
+
+kp.onapplicationexist (
+	TalkAppliExist.$(NormReference 0) ,
+	TalkAppliExist
+)
+
+event.OnApplicationVersion : $(
+	CheckAppli;
+	.setstr AppliMaker     $(SReference 1);
+	.setstr AppliVersion   $(SReference 2);
+	.setstr AppliCopyright $(SReference 3);
+	.setstr AppliURL       $(SReference 4);
+)
+
+event.OnApplicationOperationFinish : $(
+	CheckAppli;
+	TalkSearch "kp.onapplicationoperationfinish";
+)
+
+kp.onapplicationoperationfinish (
+	TalkAppliFinish.$(NormReference 0) ,
+	TalkAppliFinish
+)
+
+event.OnApplicationFileOpen : $(
+	CheckAppli;
+	.setstr AppliFile $(.filename $(SReference 1));
+	.split @ext ${AppliFile} ".";
+	.setstr AppliType $(StringNormalize $@ext[-1]);
+	TalkSearch "kp.onapplicationfileopen";
+)
+
+kp.onapplicationfileopen (
+	TalkAppliOpen.$(NormReference 0) ,
+	TalkAppliOpen
+)
+
+event.OnWebsiteUpdateNotify : $(
+	CheckAppli;
+	Talk "TalkWebsite";
+)
+
+=kis
+function CheckAppli $(
+	if $[ $(SReference 0) != ${AppliName} ] $(
+		.setstr AppliName      $(SReference 0);
+		.setstr AppliMaker     "NoData";
+		.setstr AppliVersion   "NoData";
+		.setstr AppliCopyright "NoData";
+		.setstr AppliURL       "NoData";
+	);
+);
+=end
+
+=kis
+function CheckWeb $(
+	.split @temp $(SReference 2) ",";
+	.clear WebNews;
+	.setstr @temp1 0;
+	if $(size @temp) $(
+		.setstr WebNews $@temp[0];
+		until $[ $(.size @temp) == ${@temp1} ] $(
+			.inc @temp1;
+			.setstr WebNews ${WebNews}"\n"$@temp[${@temp1}];
+		);
+	);
+);
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onapplicationboot,
+	kp.onapplicationclose,
+	kp.onapplicationexist,
+	kp.onapplicationoperationfinish,
+	kp.onapplicationfileopen
+)
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : CheckAppli,CheckWeb
+
+#==============================================================================
+
+
+##UD Sensor イベント===========================================================
+
+event.OnUdsUpdate : $(
+	.setstr UDSTime1Per  $[ $(IntReference 2) + $(IntReference 1) * 60 ];
+	.setstr UDSTimePast  $[ $(IntReference 4) + $(IntReference 3) * 60 ];
+	.setstr UDSTimeTotal $[ $(IntReference 6) + $(IntReference 5) * 60 ];
+	Talk "TalkUDSensor";
+	.clear UDSTime1Per;
+	.clear UDSTimePast;
+	.clear UDSTimeTotal;
+)
+
+#==============================================================================
+
+
+#「きのこ」反応================================================================
+
+kinokobattery : 100
+kinokoresource : 100
+
+event.OnKinokoObjectCreate : $(KinokoCheki "TalkKinokoCreate")
+event.OnKinokoObjectDestroy : $(
+	KinokoCheki "TalkKinokoDestroy";
+	.clear kinokoname;
+	.clear kinokotype;
+)
+event.OnKinokoObjectChanged : $(KinokoCheki "TalkKinokoCreate")
+event.OnKinokoObjectInstalled : $(KinokoCheki "TalkKinokoInstalled")
+
+event.OnBatteryLow : $(
+	if $[ $(IntReference 0) < ${kinokobattery} ] $(
+		Talk "TalkKinokoBatteryLow";
+	);
+	.setstr kinokobattery $(IntReference 0);
+)
+event.OnBatteryCritical : $(
+	if $[ $(IntReference 0) < ${kinokobattery} ] $(
+		Talk "TalkKinokoBatteryCritical";
+	);
+	.setstr kinokobattery $(IntReference 0);
+)
+event.OnSysResourceLow : $(
+	if $[ $(IntReference 0) < ${kinokoresource} ] $(
+		Talk "TalkKinokoSystemLow";
+	);
+	.setstr kinokoresource $(IntReference 0);
+)
+event.OnSysResourceCritical : $(
+	if $[ $(IntReference 0) < ${kinokoresource} ] $(
+		Talk "TalkKinokoSystemCritical";
+	);
+	.setstr kinokoresource $(IntReference 0);
+)
+
+=kis
+# 第1引数: トークエントリ
+function KinokoCheki $(
+	if $[ $(size @arg) != 2 ] $(return);
+
+	.setstr kinokoname $(GetData $(Reference 0));
+	.setstr kinokotype $(GetData $(Reference 2));
+	if $(EntrySize $@arg[1]".Name."${kinokoname}) $(
+		Talk $@arg[1]".Name."${kinokoname};
+	) else if $(EntrySize $@arg[1]".Type."${kinokotype}) $(
+		Talk $@arg[1]".Type."${kinokoname};
+	) else $(
+		Talk $@arg[1]".Type.Etc";
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : KinokoCheki
+
+#未対応
+#event.OnKinokoObjectChanging : \_q\u\s[10](栞)きのこスキンが交換されています。${DataResult}\_q\e
+
+#==============================================================================
+
+
+#「猫どりふ」反応==============================================================
+
+drifname : NoName
+driftype : Typeless
+target : Which
+defended : 0
+
+event.OnNekodorifObjectEmerge : $(
+	GetSubName;
+	#setFreeze;
+	DrifCheck "TalkNekodrifEmerge"${target};
+)
+event.OnNekodorifObjectHit : $(
+	if ${System.Request.Reference3} $(
+		.setstr defended 0;
+		DrifCheck "TalkNekodrifDefend"${target};
+	) else $(
+		DrifCheck "TalkNekodrifHit"${target};
+	);
+)
+event.OnNekodorifObjectVanish : $(
+	if ${defended} $(
+		DrifCheck "TalkNekodrifVanish"${target};
+	);
+)
+event.OnNekodorifObjectDodge : $(
+	DrifCheck "TalkNekodrifDodge"${target};
+)
+
+=kis
+# 第1引数: トークエントリ
+function DrifCheck $(
+	if $[ $(size @arg) != 2 ] $(return);
+
+	if $(EntrySize $@arg[1]".Name."${drifname}) $(
+		Talk $@arg[1]".Name."${drifname};
+	) else if $(EntrySize $@arg[1]".Type."${driftype}) $(
+		Talk $@arg[1]".Type."${driftype};
+	) else $(
+		Talk $@arg[1]".Type.Etc";
+	);
+);
+=end
+
+=kis
+function GetSubName $(
+	.setstr drifname $(GetData $(Reference 0));
+	.setstr driftype $(GetData $(Reference 2));
+	if $[ ${System.Request.Reference4} == ${Character1} ] $(
+		.setstr target "Kero";
+	) else $(
+		.setstr target "Sakura";
+	);
+)
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : DrifCheck,GetSubName
+
+#==============================================================================
+
+
+#起動時に「猫どりふ」が既に起動していた(OnNekodorifExist)======================
+#発生条件：「猫どりふ」を起動した状態でSSPを起動する
+
+event.OnNekodorifExist : \t$(
+	InitCond;
+	BootCondSearch;
+	GetifExist kp.callback.OnBoot;
+	TalkSearch "kp.onnekodorifexist"$(if $(isCrashed) "2");
+	.clear kp.modifier;
+)
+
+kp.onnekodorifexist : TalkNekodrifExist
+
+=kis
+# 専用トークがなかった場合、OnBoot扱いでトークエントリを検索する
+.copy kp.onboot kp.onnekodorifexist;
+
+# クラッシュ後の起動
+# TalkCrashed以外はkp.onnekodorifexistと共通
+.setstr kp.onnekodorifexist2 "TalkCrashed";
+.copy kp.onnekodorifexist kp.onnekodorifexist2;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onnekodorifexist,kp.onnekodorifexist2
+
+#==============================================================================
+
+
+#起動時にMATERIAが既に起動していた(OnEmbryoExist)==============================
+#発生条件：MATERIAを起動した状態でSSPを起動する
+
+event.OnEmbryoExist : \t$(
+	InitCond;
+	BootCondSearch;
+	GetifExist kp.callback.OnBoot;
+	TalkSearch "kp.onembryoexist"$(if $(isCrashed) "2");
+	.clear kp.modifier;
+)
+
+kp.onembryoexist : TalkMateriaExist
+
+=kis
+# 専用トークがなかった場合、OnBoot扱いでトークエントリを検索する
+.copy kp.onboot kp.onembryoexist;
+
+# クラッシュ後の起動
+# TalkCrashed以外はkp.onembryoexistと共通
+.setstr kp.onembryoexist2 "TalkCrashed";
+.copy kp.onembryoexist kp.onembryoexist2;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onembryoexist,kp.onembryoexist2
+
+#==============================================================================
+
+
+#ＳＳＰスケジューラー==========================================================
+
+event.OnSchedulesenseBegin : $(
+	setFreeze;
+	Talk "TalkScheduleSenseBegin";
+)
+event.OnSchedulepostBegin : $(
+	setFreeze;
+	Talk "TalkSchedulePostBegin";
+)
+event.OnSchedule5MinuteToGo : $(
+	resetFreeze;
+	ScheduleSub;
+	Talk "TalkSchedule5Min.ToGo";
+)
+event.OnScheduleRead : $(
+	ScheduleSub;
+	resetFreeze;
+	Talk "TalkScheduleRead";
+)
+event.OnSchedulesenseComplete :$(
+	resetFreeze;
+	Talk "TalkScheduleSenseComplete";
+)
+event.OnSchedulesenseFailure : $(
+	resetFreeze;
+	TalkSearch "kp.schedulesenseerror";
+)
+event.OnSchedulepostComplete : $(
+	resetFreeze;
+	Talk "TalkeSchedulePostComplete";
+)
+
+kp.schedulesenseerror (
+	TalkScheduleSensefail.$(NormReference 0),
+	TalkScheduleSensefail.etc
+)
+
+=kis
+function ScheduleSub $(
+	if $(size "SSP.dataicon."$(EntNamReference0)) $(
+		.setstr IconType ${SSP.dataicon.$(EntNamReference 0)};
+	) else $(
+		.setstr IconType "未定義";
+	);
+)
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.schedulesenseerror
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : ScheduleSub
+
+#==============================================================================
+
+
+#ＳＳＰスケジュール機能・アイコン==============================================
+
+SSP.dataicon.default     : "その他"
+SSP.dataicon.event       : "イベント"
+SSP.dataicon.meeting     : "会議/ミーティング"
+SSP.dataicon.appointment : "アポイントメント"
+SSP.dataicon.reservation : "予約"
+SSP.dataicon.duedate     : "しめきり"
+SSP.dataicon.party       : "飲み会／パーティー"
+SSP.dataicon.date        : "デート"
+SSP.dataicon.work        : "仕事／バイト"
+SSP.dataicon.go          : "お出かけ"
+SSP.dataicon.tv          : "テレビ番組"
+SSP.dataicon.recording   : "録画予約"
+SSP.dataicon.cd          : "ＣＤ発売日"
+SSP.dataicon.game        : "ゲーム発売日"
+SSP.dataicon.video       : "ビデオ／ＤＶＤ発売日"
+SSP.dataicon.book        : "本／漫画／雑誌発売日"
+SSP.dataicon.release     : "発売日"
+
+=kis
+# データアイコンを保護
+.listtree @list SSP.dataicon;
+foreach @i @list $(.writeprotect ${@i});
+=end
+
+#==============================================================================
+
+
+#対Winamp反応(OnMusicPlay)=====================================================
+
+#yuna-sexyfont-pluginが必要です。
+#作曲者名や曲名を喋ってくれます
+
+event.OnMusicPlay : $(
+	if $(isFreezing) $(return);
+	# エラーメッセージを含んでいないかチェック
+	loop $(.size kp.winampmsg) $(
+		.setstr @i ${-1};
+		if $(.match_at ${System.Request.Reference0} $kp.winampmsg[${@i}] 1) $(
+			# エラーメッセージを含んでいた
+			return;
+		);
+	);
+	# エラーチェッククリアした
+	.clear Wartist;
+	# 表示する際に文字が喰われないよう、予めエスケープし、前後の空白を除く
+	.setstr @message $(TrimSpace $(.escape $(SReference 0)));
+
+	# 区切りはあったが、アーティスト名が無かった
+	if $(.match_at ${@message} "- ") $(
+		.setstr Wtitle $(.substr ${@message} 2);
+	) else $(
+		# アーティスト名は存在？
+		setstr @hyphen $(.match ${@message} " - ");
+		if $[ ${@hyphen} >= 0 ] $(
+			# " - "でアーティスト名と曲名が区切られている筈
+			# 前後の空白を取り除いてあるので、アーティスト名が必ずある
+			.setstr Wartist $(.substr ${@message} 0 ${@hyphen});
+			.setstr Wtitle $(.substr ${@message} $[ ${@hyphen} + 3 ]);
+		) else $(
+			# 区切り自体が無いので、全部曲名と見なす
+			.setstr Wtitle ${@message};
+		);
+	);
+	.setstr kp.musicplay.artist $(
+		if $[ ${Wartist} != "" ]
+			$(StringUserNormalize ${Wartist})
+		else
+			"__noartist__"
+	);
+	.setstr kp.musicplay.title $(StringUserNormalize ${Wtitle});
+	TalkSearch "kp.onmusicplay";
+	.clear Wartist;
+	.clear Wtitle;
+	.cleartree kp.musicplay;
+)
+
+kp.winampmsg (
+	"Buffer",
+	"ICY 200 OK",
+	"Connecting",
+	"error opening sound device"
+)
+
+kp.onmusicplay (
+	TalkWinampplay.${kp.musicplay.artist}.${kp.musicplay.title},
+	TalkWinampplay.__other__.${kp.musicplay.title},
+	TalkWinampplay.${kp.musicplay.artist},
+	TalkWinampplay
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.winampmsg, kp.onmusicplay
+
+#==============================================================================
+
+
+# 対iTunes反応(OnMusicPlayEx)==================================================
+
+#iSing4uプラグインが必要です。
+#作曲者名や曲名を喋ってくれます。
+#トークエントリはOnMusicPlayイベントと共通です。
+
+event.OnMusicPlayEx : $(
+	# 基本情報を格納
+	.setstr Wartist $(SReference 1);
+	.setstr Wtitle $(SReference 0);
+	.setstr kp.musicplay.artist $(
+		if $[ ${Wartist} != "" ]
+			$(UserNormReference 1)
+		else
+			"__noartist__"
+	);
+	.setstr kp.musicplay.title $(UserNormReference 0);
+	# 拡張情報を格納
+	# Wextend.[属性]エントリに値を格納する
+	# 属性：genre, album, rate, playcount
+	.cleartree Wextend;
+	.setstr @i 2;
+	while $(size System.Request.Reference${@i}) $(
+		.clear @msg;
+		.split @msg $(Reference ${@i}) $(chr 1);
+		.setstr Wextend.$(StringNormalize $@msg[0]) $(KillDangerousTag $@msg[1]);
+		.setstr kp.musicplay.$(StringNormalize $@msg[0]) $(StringUserNormalize $@msg[1]);
+		.inc @i;
+	);
+	if $(.size kp.musicplay.rating) $(
+		.setstr kp.modifier $(ModifierSearch "kp.musicrate" $(NonNegative ${kp.musicplay.rating}));
+	);
+
+	# トーク
+	TalkSearch "kp.onmusicplayex";
+
+	# 後始末
+	.clear Wartist;
+	.clear Wtitle;
+	.cleartree Wextend;
+	.cleartree kp.musicplay;
+	.clear kp.modifier;
+)
+
+kp.onmusicplayex (
+	TalkiTunesplay.${kp.musicplay.artist}.${kp.musicplay.title}.${kp.modifier},
+	TalkiTunesplay.${kp.musicplay.artist}.${kp.musicplay.title},
+	TalkWinampplay.${kp.musicplay.artist}.${kp.musicplay.title},
+	TalkiTunesplay.__other__.${kp.musicplay.title},
+	TalkWinampplay.__other__.${kp.musicplay.title},
+	TalkiTunesplay.${kp.musicplay.artist},
+	TalkWinampplay.${kp.musicplay.artist},
+	TalkiTunesplay.${kp.musicplay.artist}.${kp.musicplay.album},
+	TalkiTunesplay.__other__.${kp.musicplay.genre},
+	TalkiTunesplay.__other__.${kp.musicplay.album},
+	TalkiTunesplay.__other__.${kp.modifier},
+	TalkiTunesplay,
+	TalkWinampplay
+)
+
+kp.musicrate (
+	1_None,
+	21_Verylow,
+	41_Low,
+	61_Middle,
+	81_High,
+	101_Veryhigh
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onmusicplayex, kp.musicrate
+
+#==============================================================================

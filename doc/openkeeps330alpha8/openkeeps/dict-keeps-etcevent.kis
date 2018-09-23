@@ -1,0 +1,887 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  一般イベント制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+#
+# Version3.3.0a8    2005.11.06 17:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#各種状態変化系****************************************************************
+
+#シェルセット切り替え関連(OnShellChange...)====================================
+
+#シェルセット切り替え前(OnShellChanging)---------------------------------------
+
+event.OnShellChanging : $(
+	setFreeze;
+	.setstr shellbefore ${System.Shell};
+	TalkSearch "kp.onshellchanging";
+)
+
+kp.onshellchanging (
+	TalkShellChanging.$(StringNormalize ${shellbefore}).$(NormReference 0),
+	TalkShellChanging.$(NormReference 0),
+	TalkShellChanging,
+	TalkGeneralBegin
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onshellchanging
+
+#シェルセット切り替え後(OnShellChanged)----------------------------------------
+
+event.OnShellChanged: $(
+	resetFreeze;
+	.setstr System.Shell $(SReference 0);
+	.setstr System.ShellPath $(Reference 2);
+	GetifExist kp.callback.OnShellChanged;
+	TalkSearch "kp.onshellchanged";
+	.clear shellbefore;
+)
+
+kp.onshellchanged (
+	TalkShellChanged.$(StringNormalize ${shellbefore}).$(NormReference 0),
+	TalkShellChanged.$(NormReference 0),
+	TalkShellChanged,
+	TalkGeneralComplete
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onshellchanged
+
+#==============================================================================
+
+
+#バルーン切り替え(OnBalloonChange)=============================================
+
+#Thanx to maron.kis(OpenKEEPS会議室3 >>2)
+
+event.OnBalloonChange : $(
+	.setstr System.Balloon $(SReference 0);
+	.setstr System.BalloonPath $(Reference 1);
+	if $(isNotFreezing) $(
+		TalkSearch "kp.onballoonchange";
+	);
+)
+
+kp.onballoonchange (
+	TalkBalloonChange.$(NormReference 0),
+	TalkBalloonChange,
+	TalkGeneral
+)
+
+#保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onballoonchange
+
+#==============================================================================
+
+
+#イベント実行系処理群**********************************************************
+
+#ＳＳＴＰ受信中断(OnSSTPBreak)=================================================
+
+event.OnSSTPBreak : $(TalkSearch "kp.onsstpbreak")
+
+kp.onsstpbreak (
+	TalkSSTPbreak,
+	TalkGeneral
+)
+
+#保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onsstpbreak
+
+#==============================================================================
+
+
+#お勧めサイトリストから選択(OnRecommendsiteChoice)=============================
+
+#\0,\1のお勧めサイトが選ばれたときに実行されます。
+#特殊文字除去ルーチンを通して出力されるので注意してください
+
+event.OnRecommendsiteChoice : $(
+	TalkSearch "kp.onrecommendsitechoice";
+)
+
+kp.onrecommendsitechoice (
+	TalkURL.$(NormReference 0),
+	TalkURL,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onrecommendsitechoice
+
+#==============================================================================
+
+
+#インストール、ファイル関連処理群**********************************************
+
+#各種インストール関連(OnInstall...)============================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+event.OnInstallBegin : $(
+	setFreeze;
+	# インストール過程で再起動の可能性があるので、closemodeを設定
+	.setstr closemode 2;
+	TalkSearch "kp.oninstallbegin";
+)
+
+kp.oninstallbegin (
+	TalkInstallBegin,
+	TalkGeneralBegin
+)
+
+event.OnInstallComplete : $(
+	resetFreeze;
+	# closemodeが2ではない場合、インストール過程で再起動した可能性がある
+	if $[ $(GetInteger closemode) != 2 ] $(
+		# 暫定的にネットワーク更新成功と同じコールバックを呼ぶ
+		GetifExist kp.callback.OnUpdateComplete;
+	) else $(
+		.setstr closemode 0;
+	);
+	.setstr InstallName $(SReference 1);
+	.clear InstallName1;
+	if $(.size System.Request.Reference2) $(
+		.setstr InstallName1 $(SReference 2);
+	);
+	# インストールされたオブジェクトの判別
+	# インストールに成功したのなら、どれか一つぐらい該当があるはず
+	.setstr @talkentry "TalkInstall";
+	.setstr @no 0;
+	foreach @object datainst $(
+		if $[ $(Reference 0) =~ ${@object} ] $(
+			.setstr @talkentry ${@talkentry}${@object};
+			.inc @no;
+		);
+	);
+	# ベースウェア間の実装違いを吸収
+	# ・複数オブジェクト表記があれば、それに従う
+	# ・単一オブジェクト表記だがInstallName1があり、かつCROWではない場合、
+	#   複数オブジェクトはバルーンと見なす
+	# ・CROWのInstall1は、複数オブジェクトではないので消去
+	if $[ ${@no} < 2 && $(.size InstallName1) ] $(
+		if $[  ${kp.BaseWare} == "crow" ] $(
+			.clear InstallName1;
+		) else $(
+			.setstr @talkentry ${@talkentry}"balloon";
+		);
+	);
+
+	if $(EntrySize ${@talkentry}) $(
+		Talk ${@talkentry};
+	) else $(
+		TalkSearch "kp.oninstallcomplete";
+	);
+	.clear InstallName;
+	.clear InstallName1;
+)
+
+kp.oninstallcomplete (
+	TalkInstall,
+	TalkGeneralComplete
+)
+
+event.OnInstallFailure : $(
+	resetFreeze;
+	TalkSearch "kp.oninstallfailure";
+)
+
+kp.oninstallfailure (
+	TalkInstallfail.$(NormReference 0),
+	TalkInstallfail,
+	TalkGeneralfail
+)
+
+event.OnInstallRefuse : $(
+	resetFreeze;
+	TalkSearch "kp.oninstallrefuse";
+)
+
+kp.oninstallrefuse (
+	TalkInstallrefuse,
+	TalkGeneral
+)
+
+##インストールされたオブジェクトを識別する識別子(識別子の登録順に注意)
+datainst : calendar , skin , shell , ghost , balloon , plugin , headline
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.oninstallbegin,
+	kp.oninstallcomplete,
+	kp.oninstallfailure,
+	kp.oninstallrefuse,
+	datainst
+)
+
+#==============================================================================
+
+
+#updates2.dau作成関連(OnUpdatedata...)=========================================
+#freezeフラグ設定必要
+
+#updates2.dau作成前(OnUpdatedataCreating)--------------------------------------
+
+event.OnUpdatedataCreating : $(
+	setFreeze;
+	TalkSearch "kp.onupdatedatacreating";
+)
+
+kp.onupdatedatacreating (
+	TalkUpdateCreating,
+	TalkGeneralBegin
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onupdatedatacreating
+
+#updates2.dau完成後(OnUpdatedataCreated)---------------------------------------
+
+event.OnUpdatedataCreated : $(
+	resetFreeze;
+	TalkSearch "kp.onupdatedatacreated";
+)
+
+kp.onupdatedatacreated (
+	TalkUpdateCreated,
+	TalkGeneralComplete
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onupdatedatacreated
+
+#==============================================================================
+
+
+#narファイル作成関連(OnNarCreate...)===========================================
+#freezeフラグ設定必要
+
+#narファイル作成前(OnNarCreating)----------------------------------------------
+
+event.OnNarCreating : $(
+	setFreeze;
+	TalkSearch "kp.onnarcreating";
+)
+
+kp.onnarcreating (
+	TalkNarCreating,
+	TalkGeneralBegin
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onnarcreating
+
+#narファイル完成後(OnNarCreated)-----------------------------------------------
+
+event.OnNarCreated : $(
+	resetFreeze;
+	TalkSearch "kp.onnarcreated";
+)
+
+kp.onnarcreated (
+	TalkNarCreated,
+	TalkGeneralComplete
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onnarcreated
+
+#==============================================================================
+
+
+#ファイル・フォルダドロップ開始(OnFileDrop2)===================================
+# DroppedFilesに、ドロップされたファイル名が入っています。
+# 複数ファイルがドロップされた場合、Reference0をバイト値1で区切り、その結果を
+# DroppedFilesに全て格納します。
+# kp.FileDropNoSingleに何か定義しておくと、単独ファイルがDnDされても
+# 複数ファイルがDnDされたのと同じトークを呼びます。独自処理を組みたい人向け。
+
+event.OnFileDrop2 : $(
+	.clear DroppedFiles;
+	.split DroppedFiles $(Reference 0) $(.chr 1);
+	if $[ $(.size DroppedFiles) <= 1 && $(.size kp.FileDropNoSingle) == 0 ] $(
+		.split @ext $(.filename ${DroppedFiles}) ".";
+		if $[ $(.find kp.ExtToAvoid $@ext[-1]) < 0 && $(.isfile $(.cncpath ${DroppedFiles})) ] $(
+			# 回避指定拡張子ではない「ファイル」を処理
+			# フォルダに反応すると、Narやupdates2.dauを作らなくなる
+			Talk "TalkFileDrop."$(StringNormalize $@ext[-1]);
+		);
+	) else $(
+		# 複数のファイルがドロップされた
+		Talk "TalkFileDrop";
+	);
+	.clear DroppedFiles;
+)
+
+# ninix(-aya)?は、FilDropped系イベントは「OnFileDropped」のみが来る。
+# よって現行イベントで最も仕様が近い、OnFileDrop2イベントにリダイレクトする。
+event.OnFileDropped : $(
+	if $(.match_at ${System.Request.Sender} "ninix") $(.get event.OnFileDrop2);
+)
+
+# 処理してはいけない拡張子一覧(アーカイブ等が該当)
+kp.ExtToAvoid : nar, zip, lzh
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.ExtToAvoid
+
+#==============================================================================
+
+
+#ネットワーク系処理群**********************************************************
+
+#メールチェック関連(OnBiff...)=================================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#注
+#OnBIFFBeginは右クリックメニューの存在チェックにも使われています。
+#ref0にtestが入ってきた場合はそれですので、freezeフラグの場所に注意
+
+event.OnBIFFBegin : $(
+	if $[ ${System.Request.Reference0} == "test" ] $(
+		if ${kp.config.usebiff} "Mail.OK";
+	) else $(
+		setFreeze;
+		TalkSearch "kp.onbiffbegin";
+	);
+)
+
+kp.onbiffbegin (
+	TalkMailstart,
+	TalkGeneralBegin
+)
+
+event.OnBIFFComplete : $(
+	resetFreeze;
+	.setstr NewMail $(IntReference 0);
+	TalkSearch "kp.onbiffcomplete";
+	.clear NewMail;
+)
+
+kp.onbiffcomplete (
+	Talk$(if $[ ${NewMail} > 0 ] "Gotta" else "No")Mail,
+	TalkGeneralComplete
+)
+
+event.OnBIFF2Complete : $(
+	resetFreeze;
+	if $[ $(IntReference 3) <= 0 ] $(
+		.setstr NewMail $(IntReference 0);
+	) else $(
+		.setstr NewMail $(IntReference 3);
+	);
+	TalkSearch "kp.onbiff2complete";
+	.clear NewMail;
+	.setstr BeforeMailNo $(AdjustOrigin $(IntReference 0));
+	.setstr BeforeMailByte $(IntReference 1);
+)
+
+kp.onbiff2complete (
+	Talk$(if $[ ${NewMail} > 0 || $(IntReference 1) != ${BeforeMailByte} ] "Gotta" else "No")Mail2,
+	TalkGeneralComplete
+)
+
+event.OnBIFFFailure : $(
+	resetFreeze;
+	TalkSearch "kp.onbifffailure";
+)
+
+kp.onbifffailure (
+	TalkMail$(if $(EntrySize "TalkMailError"$(EntNamReference 0)) "Error"$(EntNamReference 0) else "fail"),
+	TalkGeneralfail
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onbiffbegin,
+	kp.onbiffcomplete,
+	kp.onbiff2complete,
+	kp.onbifffailure
+)
+
+#==============================================================================
+
+
+#ヘッドラインセンサー関連(OnHeadlinesense...)==================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#注
+#OnHeadlinesenseBeginは右クリックメニューの存在チェックにも使われています。
+#ref0にtestが入ってきた場合はそれですので、freezeフラグの場所に注意
+
+event.OnHeadlinesenseBegin : $(
+	if $[ ${System.Request.Reference0} == "test" ] $(
+		if ${kp.config.useheadline} "HeadLine.OK";
+	) else $(
+		setFreeze;
+		.setstr JumpURL $(SReference 1);
+		TalkSearch "kp.onheadlinesensebegin";
+	);
+)
+
+kp.onheadlinesensebegin (
+	TalkHeadlineBegin,
+	TalkGeneralBegin
+)
+
+event.OnHeadlinesense.OnFind : \t$(
+	.setstr JumpURL $(SReference 1);
+	Talk $(
+		if $[ ${System.Request.Reference2} =~ "First" ]
+			"TalkHeadlineFirst"
+		else
+			"TalkHeadlineNext"
+	);
+	echo \n\n$(SReference 3)\n;
+	Talk $(
+		if $[ ${System.Request.Reference2} =~ "Last" ]
+			"TalkHeadlineChoiceEnd"
+		else
+			"TalkHeadlineChoice"
+	);
+)
+
+#03/1/23: ヘッドラインをセキュアにすると、タグジャンプまで潰れる？
+
+event.OnHeadlinesenseComplete , event.OnHeadlinesenseFailure : $(
+	resetFreeze;
+	TalkSearch "kp.headlineerror";
+)
+
+kp.headlineerror (
+	TalkHeadlinefail.$(NormReference 0),
+	TalkHeadlinefail.etc,
+	TalkGeneralfail
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onheadlinesensebegin, kp.headlineerror
+
+#==============================================================================
+
+
+#RSSリーダイベント(OnRSS...)===================================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#取得開始
+event.OnRSSBegin : $(
+	setFreeze;
+	.setstr JumpURL $(SReference 1);
+	.setstr RSSSiteTitle $(SReference 0);
+	TalkSearch "kp.onrssbegin";
+)
+
+kp.onrssbegin (
+	TalkRSSBegin.$(UserNormReference 0),
+	TalkRSSBegin,
+	TalkGeneralBegin
+)
+
+#取得成功
+event.OnRSSComplete : \t$(
+	resetFreeze;
+	.setstr JumpURL $(SReference 1);
+	.setstr RSSSiteTitle $(SReference 0);
+	.cleartree RSSItemList;
+	# ヘッドラインセンサ的な解説文生成
+	.setstr @i 2;
+	.setstr @itemno 0;
+	while $(.size System.Request.Reference${@i}) $(
+		.clear @element;
+		.split @element $(Reference ${@i}) $(.chr 1);
+		.pushstr @item (
+			"\q[■ \""
+			$(.gsub $(
+				.setstr @candidate1 $(KillDangerousTag $@element[0]);
+				.setstr @candidate2 $(SubstrBytes ${@candidate1} 43);
+				if $[ ${@candidate1} != ${@candidate2} ]
+					${@candidate2}…
+				else
+					${@candidate1}
+			) "\"" "\"\"")
+			"\","
+			$@element[1]
+			"]\n"
+		);
+		.setstr RSSItemList.${@itemno}.title $@element[0];
+		.setstr RSSItemList.${@itemno}.link $@element[1];
+		.inc @i;
+		.inc @itemno;
+	);
+	.setstr RSSItem $(.join @item);
+	.setstr RSSItemList ${@itemno};
+
+	TalkSearch "kp.onrsscomplete";
+	.clear RSSSiteTitle;
+	.clear RSSItem;
+)
+
+kp.onrsscomplete (
+	TalkRSSComplete.$(UserNormReference 0),
+	TalkRSSComplete,
+	TalkGeneralComplete
+)
+
+#取得失敗
+event.OnRSSFailure : $(
+	resetFreeze;
+	.clear JumpURL;
+	.clear RSSSiteTitle;
+	.clear RSSItem;
+	.cleartree RSSItemList;
+	TalkSearch "kp.onrssfailure";
+)
+
+kp.onrssfailure (
+	TalkRSSfail.$(NormReference 0),
+	TalkRSSfail,
+	TalkGeneralfail
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onrssbegin, kp.onrsscomplete, kp.onrssfailure
+
+#==============================================================================
+
+
+#時計あわせ関連(OnSNTP...)=====================================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#注
+#OnSNTPBeginは右クリックメニューの存在チェックにも使われています。
+#ref0にtestが入ってきた場合はそれですので、freezeフラグの場所に注意
+
+#時計あわせ開始(OnSNTPBegin)---------------------------------------------------
+
+event.OnSNTPBegin : $(
+	if $[ ${System.Request.Reference0} == "test" ] $(
+		if ${kp.config.usesntp} "SNTP.OK";
+	) else $(
+		setFreeze;
+		TalkSearch "kp.onsntpbegin";
+	);
+)
+
+kp.onsntpbegin (
+	TalkNTPstart,
+	TalkGeneralBegin
+)
+
+#SNTPサーバに接続失敗(OnSNTPFailure)-------------------------------------------
+
+event.OnSNTPFailure : $(
+	resetFreeze;
+	TalkSearch "kp.onsntpfailure";
+)
+
+kp.onsntpfailure (
+	TalkNTPfail,
+	TalkGeneralfail
+)
+
+#SNTPサーバに接続成功後の時間比較(event.OnSNTPCompare)-------------------------
+
+event.OnSNTPCompare : $(
+	.split @s $(SReference 1) ",";
+	.split @l $(SReference 2) ",";
+	.setstr @i 1;
+	while $[ ${@i} <= 5 ] $(
+		.setstr @s[${@i}] $(FillZero $@s[${@i}] 2);
+		.setstr @l[${@i}] $(FillZero $@l[${@i}] 2);
+		.inc @i;
+	);
+	.setstr TimeSNTP $@s[0]"/"$@s[1]"/"$@s[2]" "$@s[3]":"$@s[4]":"$@s[5];
+	.setstr TimeLOCAL $@l[0]"/"$@l[1]"/"$@l[2]" "$@l[3]":"$@l[4]":"$@l[5];
+	resetFreeze;
+	Talk "TalkNTPcompare";
+	.clear TimeSNTP;
+	.clear TimeLOCAL;
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onsntpbegin, kp.onsntpfailure
+
+#==============================================================================
+
+
+#ＵＲＬＤ＆Ｄによるダウンロード(OnURLDrop...)==================================
+#ここではシステムによる他イベント抑制が入る為freezeは使いません
+#（下手をするとfreezeフラグが立ちっぱなしになる可能性がある）
+
+event.OnURLDropping : $(TalkSearch "kp.onurldropping")
+
+kp.onurldropping (
+	TalkDownload,
+	TalkGeneralBegin
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onurldropping
+
+#ダウンロード失敗(OnDropFailure)-----------------------------------------------
+
+#Reference0　ダウンロード中断したファイルのローカル上での絶対パス 
+#Reference1　失敗の理由 
+#　timeout 　　タイムアウト 
+#　artificial　ユーザが意図的に中断 
+
+event.OnURLDropFailure : $(TalkSearch "kp.onurldropfailure")
+
+kp.onurldropfailure (
+	TalkDownloadfail.$(NormReference 1),
+	TalkDownloadfail.etc,
+	TalkGeneralfail
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onurldropfailure
+
+#==============================================================================
+
+
+#ネットワークが重い(OnNetworkHeavy)============================================
+#時計あわせ、ネットワーク更新、ヘッドラインセンサー、メールチェック時、
+#ＵＲＬＤ＆Ｄによるダウンロード時、
+#なかなか繋がらなかったり、トラフィックが込み合っている場合に実行されます。
+
+event.OnNetworkHeavy : $(TalkSearch "kp.onnetworkheavy")
+
+kp.onnetworkheavy (
+	TalkNetworkheavy,
+	TalkGeneral
+)
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onnetworkheavy
+
+#==============================================================================
+
+
+#SSTP発信元IPをブラックリストに入れた(OnSSTPBlacklisting)======================
+
+event.OnSSTPBlacklisting : $(TalkSearch "kp.onsstpblacklisting")
+
+kp.onsstpblacklisting (
+	TalkBlacklist,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onsstpblacklisting
+
+#==============================================================================
+
+
+#だぶるているからのSSTPNotify受信(OnDoubleTailScriptSend)======================
+#ここは変える必要がありません
+
+event.OnDoubleTailScriptSend : $(
+	if $[ $(.tolower ${System.Request.SecurityLevel}) == "local"
+		&& ${System.Debugger} == "on" ] $(
+		.eval ${System.Request.Reference0};
+	);
+)
+
+#==============================================================================
+
+
+#==============================================================================
+#以上GET SHIORI/3.0イベント
+#==============================================================================
+
+
+#==============================================================================
+#以下リソース文字列取得
+#==============================================================================
+
+#お勧めサイトリスト取得========================================================
+
+resource.sakura.recommendsites : $(if ${kp.config.userecommend} $(MakeList "sakura"))
+resource.kero.recommendsites : $(if ${kp.config.userecommend} $(MakeList "kero"))
+resource.sakura.portalsites : $(if ${kp.config.useportal} $(MakeList "portal"))
+
+=kis
+function MakeList $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @urllist $(EntryName URL.$@arg[1]);
+	.setstr @randlist $(EntryName randlist.$@arg[1]);
+
+	if $(.size ${@randlist}) $(
+		# ランダムに選んで表示する
+		.copy ${@urllist} @locallist;
+		loop ${@randlist} $(
+			.setstr @i $(.rand $(.size @locallist));
+			.pushstr @temp $@locallist[${@i}];
+			.clear @locallist[${@i}];
+			if $[ $(.size @locallist) == 0 ] $(break);
+		);
+		setstr @urllist "@temp";
+	);
+	.get ${@urllist};
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : MakeList
+
+#==============================================================================
+
+
+#ボタン名取得==================================================================
+
+resource.recommendrootbutton.caption : $(
+	if ${kp.config.userecommend} $(EntryRefer "Sakura.URLCaption");
+)
+resource.kero.recommendbuttoncaption : $(
+	if ${kp.config.userecommend} $(EntryRefer "Kero.URLCaption");
+)
+resource.portalrootbutton.caption : $(
+	if ${kp.config.useportal} $(EntryRefer "Portal.URLCaption");
+)
+resource.updatebutton.caption : $(
+	if ${kp.config.useupdate} $(EntryRefer "UpdateCaption");
+)
+resource.vanishbutton.caption : $(
+	if ${kp.config.usevanish} $(EntryRefer "VanishCaption");
+)
+resource.biffbutton.caption : $(
+	if ${kp.config.usebiff} $(EntryRefer "BiffCaption");
+)
+resource.headlinesenserootbutton.caption : $(
+	if ${kp.config.useheadline} $(EntryRefer "HeadlineCaption");
+)
+resource.rssreaderbutton.caption :$(
+	if ${kp.config.useheadline} $(EntryRefer "RSSCaptin");
+)
+resource.sntpbutton.caption : $(
+	if ${kp.config.usesntp} $(EntryRefer "SntpCaption");
+)
+
+#==============================================================================
+
+
+#ボタン表示/非表示=============================================================
+
+resource.recommendrootbutton.visible : $(if ${kp.config.userecommend} 1 else 0)
+resource.portalrootbutton.visible : $(if ${kp.config.useportal} 1 else 0)
+resource.updatebutton.visible : $(if ${kp.config.useupdate} 1 else 0)
+resource.vanishbutton.visible  : $(if ${kp.config.usevanish} 1 else 0)
+resource.biffbutton.visible : $(if ${kp.config.usebiff} 1 else 0)
+resource.headlinesenserootbutton.visible : $(if ${kp.config.useheadline} 1 else 0)
+resource.sntpbutton.visible : $(if ${kp.config.usesntp} 1 else 0)
+
+#==============================================================================
+
+
+#ユーザー名取得================================================================
+#ユーザー名が存在しないときは「ユーザーさん」になります
+
+resource.username : ${username}
+
+#==============================================================================
+
+
+#ネットワーク更新URL===========================================================
+
+resource.homeurl : $(if ${kp.config.useupdate} ${HomeURL})
+
+# 起動時にHomeURL.ghostの内容をHomeURLに転送
+System.Callback.OnLoad : $(.setstr HomeURL ${HomeURL.ghost})
+
+#==============================================================================
+
+
+#新形式リソース名と旧形式リソース名を相互コピー================================
+#MATERIA、SSP、CROWで理解できるリソース名が違う事例を吸収
+
+System.Callback.OnLoad : $(
+	loop $(.size kp.newid) $(
+		.setstr @i ${-1};
+		if $[ $(.size resource.$kp.newid[${@i}]) == 0 ] $(
+			.copy resource.$kp.oldid[${@i}] resource.$kp.newid[${@i}];
+		);
+		if $[ $(.size resource.$kp.oldid[${@i}]) == 0 ] $(
+			.copy resource.$kp.newid[${@i}] resource.$kp.oldid[${@i}];
+		);
+	);
+	.clear kp.newid;
+	.clear kp.oldid;
+)
+
+kp.newid (
+	recommendrootbutton.caption,
+	portalrootbutton.caption,
+	updatebutton.caption,
+	vanishbutton.caption,
+	readmebutton.caption,
+	recommendrootbutton.visible,
+	portalrootbutton.visible,
+	updatebutton.visible,
+	vanishbutton.visible,
+	biffbutton.visible,
+	sntpbutton.vislble,
+)
+
+kp.oldid (
+	sakura.recommendbuttoncaption,
+	sakura.portalbuttoncaption,
+	updatebuttoncaption,
+	vanishbuttoncaption,
+	readmebuttoncaption,
+	sakura.recommendsitesbuttonvisible,
+	sakura.portalsitesbuttonvisible,
+	updatebuttonvisible,
+	vanishbuttonvisible,
+	biffbuttonvisible,
+	sntpbuttonvisible
+)
+
+#==============================================================================
+
+
+#==============================================================================
+#以上リソース文字列取得
+#==============================================================================
+
+
+#==============================================================================
+#現バージョンで廃止されたエントリ。互換環境で使えるものも有
+#==============================================================================
+
+#壁紙を変更した(OnWallpaperChange)=============================================
+#サーフィス上にドロップされたファイルが画像ファイルだった場合実行されます。
+#注：MATERIA490より廃止されました
+
+event.OnWallpaperChange : $(Talk "TalkWallpaper")
+
+#==============================================================================
+
+
+#ディスプレイ解像度変更(OnDisplayChange)=======================================
+
+#ディスプレイ解像度が変わった際に（解像度、色数のいずれでも）実行されます
+#MATERIA580より廃止
+
+event.OnDisplayChange : $(
+	.setstr DisplayDpp $(IntReference 0);
+	.setstr DisplayWidth $(IntReference 1);
+	.setstr DisplayHeight $(IntReference 2);
+	if $[ $(.size flagdisplay) == 0 ] $(.setstr flagdisplay 1);
+	if $[  $(isNotFreezing) && $(.size flagdisplay) ] $(
+		GetifExist kp.callback.OnDisplayChange;
+		Talk "TalkDisplayChange";
+	);
+)
+
+#==============================================================================

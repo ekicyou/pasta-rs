@@ -1,0 +1,865 @@
+■ Changelog
+
+2005/11/06 Ver.3.3.0 alpha8
+ * 巨大化していたdict-keeps-baseevent.kisをメンテナンス性向上のため、ファイルを
+   分割。分割後の機能区分は次の通り。
+   - dict-keeps-baseevent.kis …… 起動/終了、マウス反応、状態変化イベント
+                                   基底的UI、ネットワーク更新、NOTIFY
+   - dict-keeps-etcevent.kis  …… 上記以外のイベント、リソース文字列
+   (loader.kis、dict-keeps-baseevent.kis、dict-keeps-etcevent.kis)
+ * SSP、DAE等で実装された基底イベントについて、「OpenKEEPSに対応イベント記述が
+   あっても、ユーザ設定のトークが無い」場合に基底イベントが呼ばれなかった問題を
+   修正。(dict-system.kis)
+ * ゴーストから見える時刻を変更するデバッグ時コマンド機能に機能追加。
+   SetNowtimeコマンドで設定した時刻を、OnSecondChangeが来る度に自動的に1ずつ
+   増やすようにした。これで幸水上のコマンドラインテストのみならず、ゴーストで
+   特定時刻イベントのテストをPCの時刻を変えずに出来るようになる。
+   (dict-keeps-system.kis)
+ * セーブデータ肥大現象対策機能が死んでいた問題を修正(dic-keeps-system.kis)
+ * 既に起動済みなのにOnFirstBootが来た場合の対策機能が死んでいた問題を修正
+   (dict-keeps-baseevent.kis)
+ * OnFirstBootやOnBootなど、他のイベントによって割り込まれたくない起動/終了
+   イベントで、自動的に\tタグを挿入する機能を内部的に微修正。動作に変化は
+   ないはずである。
+   (dict-keeps-system.kis、dict-keeps-baseevent.kis)
+ * OnGhostChanged・OnGhostCalledイベントで、ユーザの設定したトークがない場合、
+   OnBootイベントのトークで代用する。SSPなどで実装されている機能を、実装されて
+   いないMATERIA上でも同じことを出来るようにしたものである。
+   (dict-keeps-baseevent.kis)
+ * OnGhostChangingイベントで、ユーザの設定したトークがない場合、OnCloseイベント
+   のトークで代用する。SSPなどで実装されている機能を、実装されていないMATERIA上
+   でも同じことを出来るようにしたものである。
+   (dict-keeps-baseevent.kis)
+ * SSPのゴーストキャッシュへの対応が不十分だった問題を修正。キャッシュから出た
+   場合、正しく「起動した」と認識できていなかった。
+   (dict-keeps-baseevent.kis)
+ * RSSリーダイベントにおいて、概要に「[]」など、さくらスクリプトにも使われる
+   文字が含まれていた場合、誤動作していた問題を修正。同時に、RSSの各アイテムを
+   提示するエントリを追加。次のエントリに、RSSのアイテムごとのタイトルとURLが
+   格納される。
+   - RSSItemList …………………………… アイテムの総数
+   - RSSItemList.＜0以上の数＞.title … あるアイテムのタイトル(title)
+   - RSSItemList.＜0以上の数＞.link  … あるアイテムのURL(link)
+   (dict-keeps-etcevent.kis、ghost-keeps.kis)
+ * RSSリーダイベントで、タイトルが長すぎる場合にバルーンで1行に収まらない問題に
+   対処。平均的なバルーンで1行に収まる長さ(マーカー込みで46文字)で、タイトルを
+   切るようにした。
+   (dict-keeps-system.kis、dict-keeps-etcevent.kis)
+ * iTunes対応プラグインイベントにおいて、マイレートキーワードの区分を変更。
+   未設定の場合の「None」を追加し、マイレートの星の数とキーワード区分を一致
+   させた。変更後の区分は、次のようになる。
+   - マイレート設定無し …… 0
+   - マイレートが20以下 …… Verylow
+   - マイレートが21～40 …… Low
+   - マイレートが41～60 …… Middle
+   - マイレートが61～80 …… High
+   - マイレートが81以上 …… Veryhigh
+   (dict-keeps-winlocal.kis)
+
+2005/10/30 Ver.3.3.0 alpha7
+ * DAEとSSPのRSS取得イベントに対応。トークエントリは次の通り。
+   ・RSS取得開始(OnRSSBegin)
+   - TalkRSSBegin.＜正規化したサイト名＞
+   - TalkRSSBegin
+   ・RSS取得成功(OnRSSComplete)
+   - TalkRSSComplete.＜正規化したサイト名＞
+   - TalkRSSComplete
+   ・RSS取得失敗(OnRSSFailure)
+   - TalkRSSfail.＜失敗理由識別子＞
+   - TalkRSSfail：RSS取得に失敗した時
+     失敗理由識別子 : cantdownload(受信失敗) / cantanalyze(RSSの解析失敗)
+   情報として提示するエントリは次の通り。
+   - JumpURL：     RSSを取得するサイトのURL(RSSフィードのURLではない)
+   - RSSSiteTitle：RSSを取得するサイト名
+   - RSSItem：     取得したサイト内容の概略とURL(\qタグを含む)
+   また、オーナードローメニューのRSSのキャプションは、RSSCaptionエントリで
+   設定できる。
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * セーブ時保存エントリとネットワーク更新等でのバックアップ時保存エントリを、
+   openkeeps.kis以外のテンプレートファイル等に書いてもよい仕様に変更。
+   バックアップ時には、特にdatabackupparamエントリに明記しなくても、セーブ時
+   保存エントリを自動的にバックアップする。datasaveparamに明示的に書いても
+   書かなくてもよい。エントリを重複して指定しても、自動的に対応する。
+   (dict-keeps-system.kis)
+ * iTunes対応プラグインイベントで、マイレートが機能していなかったバグを修正。
+   というか、iSing4uの仕様書の方もバグっていた。双方すり合わせの上修正。
+   (dict-keeps-winlocal.kis)
+ * iTunes対応プラグインイベントのマイレート区分が1ずつずれていたので、ここに
+   修正のうえ再掲示する。
+   - マイレートが20未満 …… Verylow
+   - マイレートが20～39 …… Low
+   - マイレートが40～59 …… Middle
+   - マイレートが60～79 …… High
+   - マイレートが80以上 …… Veryhigh
+   (dict-keeps-winlocal.kis)
+ * iTunes対応プラグインイベントのトークエントリを変更。Winampプラグイン用
+   イベントと、最大限の過去互換を取っている。解凍まろん氏案を採用。
+   - TalkiTunesplay.＜正規化したアーティスト名＞.＜正規化した曲名＞.＜マイレートキーワード＞
+   - TalkiTunesplay.＜正規化したアーティスト名＞.＜正規化した曲名＞
+   - TalkWinampplay.＜正規化したアーティスト名＞.＜正規化した曲名＞
+   - TalkiTunesplay.__other__.＜正規化した曲名＞
+   - TalkWinampplay.__other__.＜正規化した曲名＞
+   - TalkiTunesplay.＜正規化したアーティスト名＞
+   - TalkWinampplay.＜正規化したアーティスト名＞
+   - TalkiTunesplay.＜正規化したアーティスト名＞.＜正規化したアルバム名＞
+   - TalkiTunesplay.__other__.＜正規化したジャンル名＞
+   - TalkiTunesplay.__other__.＜正規化したアルバム名＞
+   - TalkiTunesplay.__other__.＜マイレートキーワード＞
+   - TalkiTunesplay
+   - TalkWinampplay
+   (dict-keeps-winlocal.kis)
+
+2005/10/17 Ver.3.3.0 alpha6
+ * alpha5でのBugTrack/3(タグによるリロードでゴースト起動からの経過時間カウント
+   がリセットされる)対応が、単純な再起動の場合に不十分だったので修正
+   (dict-keeps-baseevent.kis)
+ * ゴースト切り替えイベントとWinamp対応イベントで、ユーザ定義正規化を定義して
+   いないと異常動作する問題を修正。ユーザ定義正規化オプションを指定していない
+   場合、ユーザ定義正規化コマンドは、正規化コマンドと同じ動作をする。
+   (dict-keeps-system.kis、dict-keeps-baseevent.kis)
+ * シングルクリックイベントで、マウスの中央ボタン/ホイールのクリックに対応。
+   右クリックの場合の「Right」を「Middle」または「Wheel」に置き換えたエントリで
+   トーク設定可能。一覧すると次の通り。
+   - C＜0/1＞SingleMiddle.＜当たり判定領域名＞.＜サーフィス番号＞
+   - C＜0/1＞SingleMiddle.＜当たり判定領域名＞
+   - C＜0/1＞SingleclickMiddle
+   (dict-keeps-baseevent.kis)
+ * 芝やん氏作のiTunes対応プラグイン「iSing4u」に対応。OnMusicPlayExイベント用
+   エントリは意味が近いWinampイベントのOnMusicPlayイベントのものと同じであるが、
+   通知内容が増えているので、若干拡張している。以下にトーク用エントリを示す。
+   - TalkWinampplay.＜正規化したアーティスト名＞.＜正規化した曲名＞.＜マイレートキーワード＞
+   - TalkWinampplay.＜正規化したアーティスト名＞.＜正規化した曲名＞
+   - TalkWinampplay.__other__.＜正規化した曲名＞
+   - TalkWinampplay.＜正規化したアーティスト名＞
+   - TalkWinampplay.＜正規化したアーティスト名＞.＜正規化したアルバム名＞
+   - TalkWinampplay.__other__.＜正規化したジャンル名＞
+   - TalkWinampplay.__other__.＜正規化したアルバム名＞
+   - TalkWinampplay.__other__.＜マイレートキーワード＞
+   - TalkWinampplay
+   ここでいう「マイレートキーワード」とは、マイレート0～100を5段階に分け、単語で
+   表したものである。
+   - マイレートが20以下 …… Verylow
+   - マイレートが21～40 …… Low
+   - マイレートが41～60 …… Middle
+   - マイレートが61～80 …… High
+   - マイレートが81以上 …… Veryhigh
+   また、iSing4uプラグインから通知された場合に限り、以下のエントリにも情報が
+   格納される
+   - Wextend.album ……… アルバム名
+   - Wextend.genre ……… ジャンル名
+   - Wextend.rate  ……… マイレート(0～100)
+   - Wextend.playcount … 再生回数
+   (dict-keeps-winlocal.kis)
+ * BugTrack/6(OnApplicationOperationFinishイベントの不具合)を修正
+   (dict-keeps-winlocal.kis)
+ * テンプレートファイル構成を再編。里々や文のテンプレートを参考に、肥大化して
+   分かりにくくなっていたghost-keeps.kisを分割した。無論、従来通りのテンプレート
+   ファイルを持ってきても、問題なく動作する。OpenKEEPSの新規採用を検討している人
+   向けと考えて欲しい。ファイル構成は次の通り。
+   - ghost-keeps.kis  ………………… イベント対応辞書
+   - ghost-keeps-bootend.kis  ……… 起動/終了/ゴースト切り替え反応辞書
+   - ghost-keeps-menu.kis …………… メニュー、ユーザーインターフェース辞書
+   - ghost-keeps-mouse.kis  ………… マウス反応辞書
+   - ghost-keeps-notify.kis ………… NOTIFY通知対応辞書
+   - ghost-keeps-winlocal.kis ……… Windows固有アプリイベント対応辞書
+   - ghost-keeps-comm.kis …………… コミュニケート辞書
+   - ghost-keeps-keypress.kis ……… キー入力イベント辞書
+   - ghost-keeps-translate.kis  …… トランスレータ辞書
+   - ghost-keeps-url.kis  …………… おすすめURLリスト
+  この変更と同時に、BugTrack/5のスペルミスも修正した。
+   (ghost-keeps*.kis)
+
+2005/09/29 Ver.3.3.0 alpha5(BTSでのみ公開)
+ * 基底イベント(BaseID)に対応(dict-system.kis)
+ * BugTrack/2(セーブデータが既にある場合でも、OnFirstBootでセーブデータが
+   クリアされる)に対応(dict-keeps-baseevent.kis)
+ * BugTrack/3(タグによるリロードでゴースト起動からの経過時間カウントが
+   リセットされる)に対応(dict-keeps-baseevent.kis)
+ * BugTrack/4(OpenKEEPSの起動時間区分のスペルミス)に対応
+   (dict-keeps-default.kis、openkeeps.kis)
+
+2005/05/22 Ver.3.3.0 alpha4(ゴースト「晶子＆みたぺん」でのみ公開)
+ * OnOtherGhostBooted/OnOtherGhostClosedイベント対応
+   (dict-keeps-baseevent.kis, dict-keeps-default.kis)
+
+2005/05/04 Ver.3.3.0 alpha3(ゴースト「晶子＆みたぺん」でのみ公開)
+ * OnGhostCallCompleteで5秒遅延して話す時、Referenceヘッダが正常に参照できて
+   いなかった問題を修正。(dict-keeps-baseevent.kis、dict-system.kis)
+
+2005/05/01 Ver.3.3.0 alpha2(ゴースト「晶子＆みたぺん」でのみ公開)
+ * OnGhostCallCompleteイベントが発生した時、OnGhostCallingイベントのトークが
+   完了してないことがありうるため、Statusヘッダが"Talking"でなくなってから5秒
+   待つ仕様を追加(dict-keeps-baseevent.kis)
+
+2005/04/29 Ver.3.3.0 alpha1(ゴースト「晶子＆みたぺん」でのみ公開)
+ * OnGhostCalling/OnGhostCalled/OnGhostCallComplete対応(dict-keeps-baseevent.kis)
+
+2005/02/27 Ver.3.2.0
+ * Ver.3.1.10を安定したと判断し、同じ内容で安定版としてリリース
+
+2005/01/15 Ver.3.1.10
+ * ネットワーク更新時のSHIORI再起動直後、本体による0オリジン/1オリジンの補正
+   がうまく行かない問題を修正(dict-keeps-system.kis)
+
+2005/01/10 Ver.3.1.9
+ * ネットワーク更新時など、データをバックアップしてSHIORIを再起動する際、
+   データを正しく保存できていなかったバグを修正。内部的にはSetCloseCondで
+   消去していたバックアップ時保存データを、アンロード時にゴースト終了と
+   判別できた場合のみ消去に変更。これに伴い、ClearData内部コマンド新設。
+   (dict-keeps-system.kis、dict-keeps-baseevent.kis)
+ * ネットワーク更新とインストール時にSHIORIが再起動する場合の処理を変更。
+   上記のイベントでの再起動把握が甘かったので、データバックアップを行わない
+   可能性があった。(dict-keeps-baseevent.kis)
+ * ネットワーク更新時、更新ファイル数エントリ(UpdateFileTotal)をバックアップ
+   対象に登録。これでSHIORIリロードを含むネットワーク更新をMATERIA上で行った
+   場合でも、更新ファイル数が消えるバグが解消。(dict-keeps-baseevent.kis)
+
+2004/12/26 Ver.3.1.8
+ * テンプレート辞書をサブフォルダ内まで再帰読み込みするとき、フォルダ内辞書を
+   先に読むか、サブフォルダ内を先に再帰読み込みするか決定するオプション追加。
+   openkeeps.kis内の「kp.config.usesubdirfirst」オプションをオンにすると
+   サブフォルダ内を先に再帰読み込み、オフにするとフォルダ内辞書を先に読む。
+   (openkeeps.kis、loader.kis、dict-keeps-default.kis)
+ * Changelog内の漢字間違いを修正
+
+2004/12/19 Ver.3.1.7
+ * テンプレート辞書をサブフォルダ内まで再帰読み込みするとき、フォルダ内辞書を
+   読み込むより前に、サブフォルダ内を再帰読み込みする仕様に変更(loader.kis)
+ * SAORIモジュールの自動登録時、「Saori.＜SAORIモジュールのエイリアス名＞」
+   と「Saorix.＜SAORIモジュールのエイリアス名＞」という関数を定義する。
+   引数はそれぞれ、「callsaori ＜SAORIモジュールのエイリアス名＞」および
+   「callsaorix ＜SAORIモジュールのエイリアス名＞」のエイリアス名以降と同じ。
+   (loader.kis)
+ * このバージョンで特に問題がない場合、この内容を安定版としてリリースする。
+
+2004/11/23 Ver.3.1.6
+ * Ver.3.1.5でOnGhostChanged、OnGhostChangingイベントの応答で使えるようにした
+   エントリ名が、一部間違っていたので修正。以下に改めて掲載する。
+   - TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞.＜キーワード＞
+   - TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞
+   - TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜キーワード＞
+   - TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞
+   - TalkGhostChangingEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞
+   - TalkGhostChangingEx.＜正規化した\0側名＞.＜正規化したゴースト名＞
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * ゴースト切り替え反応で、再起動反応ようエントリを追加。これらのトークエントリ
+   は、クラッシュ後起動の次に優先して使われる。起動時間トーク優先のオプションを
+   設定しても、それより優先される。エントリは次の通り。
+   - TalkRebooting  … OnGhostChangingイベントで、次のゴーストが自分の時
+   - TalkRebooted …… OnGhostChangedイベントで、前のゴーストが自分の時
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+
+2004/11/13 Ver.3.1.5
+ * OnGhostChangedイベントとOnGhostChangingイベントで、ゴーストの\0側の名前
+   だけではなく、ゴースト名(descript.txtのname)を使った応答が可能に。
+   SSPやCROWなど、Reference2でゴースト名を通知する本体で有効。
+   OnGhostChangedイベントで、新たに使用できるトークエントリは次の通り。
+   - TalkGhostGhangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞.＜キーワード＞
+   - TalkGhostGhangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞
+   - TalkGhostGhangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜キーワード＞
+   - TalkGhostGhangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞
+   正規化したゴースト名は、beforenameエントリに入っている。
+   なお、ゴースト名を使う場合のキーワードは、次のエントリに設定する。
+   - GhostChangedWords.＜正規化した\0側名＞.＜正規化したゴースト名＞
+
+   OnGhostChangingイベントで、新たに使用できるトークエントリは次の通り。
+   - TalkGhostChangingEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞
+   - TalkGhostChangingEx.＜正規化した\0側名＞.＜正規化したゴースト名＞
+   正規化したゴースト名は、nextnameに入っている。
+
+   これらの新たに使えるゴースト切り替え反応は、openkeeps.kis内の
+   kp.config.useghostchangeghostnameオプションで使用/不使用を決定出来る。
+   使用する場合、従来のゴースト切り替え反応より優先して使う。
+   (dict-keeps-baseevent.kis、ghost-keeps、openkeeps.kis)
+ * ゴースト切り替え反応で、起動時間キーワードによる反応を優先するオプションを
+   追加。openkeeps.kis内で、kp.config.useghostchangetimefirstオプションを
+   オンにすると、起動時間キーワード反応を最優先して使う。
+   (dict-keeps-baseevent.kis、openkeeps.kis)
+ * デバッグ時に、時刻に関連した動作のデバッグを補助するシステムを追加。
+   debuggerコマンドをonにして起動した場合、次のコマンド群によってdateコマンド
+   から見える現在時刻を変更できる。なお、PCの時刻が本当に変更される訳ではない。
+   - SetNowtimeコマンド …… 「現在時刻」設定、第1引数で1970/1/1 0:00:00からの
+                             秒数を設定する。
+   - ResetNowtimeコマンド … 「現在時刻」の設定を解除する。このコマンドを使用
+                             すると、dateコマンドは本来の現在時刻を見る。
+   - IncNowtimeコマンド …… SetNowtimeコマンドで設定した「現在時刻」を1秒進める
+   - DecNowtimeコマンド …… SetNowtimeコマンドで設定した「現在時刻」を1秒戻す
+   (dict-keeps-system.kis、dict-keeps-baseevent.kis)
+ * 上記に関連してSetNowtimeコマンドへの入力補助用に、サービス関数に拙作の
+   日付計算関連スクリプト「daycalc」を追加。さらにSetNowtimeを拡張したコマンド
+   SetNowtime.dateコマンドを追加。SetNowtime.dateコマンドの引数は次の通り。
+   - SetNowtime.date ＜年＞ ＜月＞ ＜日＞ ＜時＞ ＜分＞ ＜秒＞
+   なお、SetNowtime.dateコマンドは日本標準時での動作を仮定している。変更が
+   必要な方は、さとーまで一報頂きたい。
+   (dict-keeps-survicefunc.kis)
+ * テンプレート辞書の共通名は、大文字/小文字を無視するよう変更(loader.kis)
+ * テンプレートの説明のタイポを修正(ghost-keeps.kis)
+
+2004/10/30 Ver.3.1.4
+ * ゴースト切り替え時、日付やキーワードについてゴースト名を問わず反応したい
+   場合、正規化したゴースト名として「__other__」を使えるようにした。
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * CROWがネットワーク更新時に0オリジンで来る問題に対処。CROWは0オリジンの
+   本体と見なすよう変更。(dict-keeps-system.kis)
+ * デバッガモードの時(debugger onの時)、コマンドラインイベントデバッグ辞書を
+   ロードするようにした。これは華和梨添付マニュアル中tips.htmlにある、
+   debugOnGETコマンドならびにdebugOnNOTIFYコマンドを転記したものである。
+   幸水上でのデバッグの際、イベントを模擬するのに特別な外部辞書が不要となる。
+   (loader.kis、callbackdebug.kis)
+ * SSPでネットワーク更新失敗イベントの通知情報が増えたのに合わせ、テンプレート
+   にサンプルを追記(ghost-keeps.kis)
+
+2004/10/16 Ver.3.1.3
+ * MATERIA起動後の起動イベント(SSP)に対応。トークはTalkMateriaExistエントリに
+   書く。このエントリにトークを書かなかった場合、OnBootイベントのトークを使う。
+   (dict-keeps-winlocal.kis、ghost-keeps-winlocal.kis)
+ * 「猫どりふ」起動後の起動イベント(SSP)に対応。トークはTalkNekodrifExist
+   エントリに書く。このエントリにトークを書かなかった場合、OnBootイベントの
+   トークを使う。(dict-keeps-winlocal.kis、ghost-keeps-winlocal.kis)
+ * 「最後にインストールしたゴースト/シェルに切り替え」タグに対応
+   (dict-keeps.kis)
+ * 汎用イベントトークを導入。イベントを「単発イベント」「開始イベント」
+   「完了イベント」「失敗イベント」に分類、各イベントのトークが設定されて
+   いない場合、汎用イベントトークを上記分類に従い使う。幾つかのイベントは、
+   これらの分類がされていないことに注意。イベント分類は次の通り。
+   - 単発イベント
+       起動時間通知(OnMinuteChange), 初回起動(OnFirstBoot), 起動(OnBoot),
+       ゴースト切り替え(OnGhostChanged), 終了(OnClose), 
+       ゴースト切り替え(OnGostChanging), 最小化から復帰(OnWindowStateRestore),
+       バルーン切り替え(OnBalloonChange), SSTP中断(OnSSTPBreak),
+       おすすめサイト選択(OnRecommendsiteChoice),
+       選択肢タイムアウト(OnChoiceTimeout),
+       ネットワーク更新準備完了(OnUpdateReady),
+       ネットワーク更新が重い(OnNetworkheavt),
+       SSTPサイトをブラックリストに入れた(OnSSTPBlacklisting)
+   - 開始イベント
+       シェル切り替え開始(OnShellChanging), インストール開始(OnInstallBegin),
+       updates2.dau作成開始(OnUpdatedateCreating), NAR作成開始(OnNarCreating),
+       メールチェック開始(OnBIFFBegin), 
+       ヘッドラインセンス開始(OnHeadlinesenseBgein),
+       時計合わせ開始(OnSNTPBegin), ネットワーク更新開始(OnUpdateBegin),
+       更新内容ダウンロード開始(OnUpdate.DownloadBegin),
+       MD5照合開始(OnUpdate.OnMD5CompareBegin)
+       URL渡しによるダウンロード開始(OnURLDropping)
+   - 完了イベント
+       シェル切り替え完了(OnShellChanged), インストール完了(OnInstallComplete)
+       updates2.dau作成完了(OnUpdatedateCreated), NAR作成完了(OnNarCreated),
+       メールチェック完了(OnBIFFComplete,OnBIFF2Complete),
+       ネットワーク更新完了(OnUpdateComplete),
+       MD5照合完了(OnUpdate.OnMD5CompareComplete)
+   - 失敗イベント
+       インストール失敗(OnInstallFailure), インストール拒絶(OnInstallRefuse),
+       メールチェック失敗(OnBIFFFailure),
+       ヘッドラインセンス完了(OnHeadlinesenseComplete),
+       ヘッドラインセンス失敗(OnHeadlinesenseFailure),
+       時計あわせ失敗(OnSNTPFailure), ネットワーク更新失敗(OnUpdateFaliure),
+       MD5照合失敗(OnUpdate.OnMD5CompareFailure),
+       ファイルダウンロード失敗(OnURLDropFailure)
+   汎用イベントトークエントリは、次の通りになる。
+   - 単発イベント … TalkGeneral
+   - 開始イベント … TalkGeneralBegin
+   - 完了イベント … TalkGeneralComplete
+   - 失敗イベント … TalkGeneralfail
+   (dict-keeps.kis、ghost-keeps.kis)
+ * 汎用イベントトーク用に、イベント情報エントリ「EventInfo」を追加。この
+   エントリにイベントの内容を簡単に説明した文章が入っている。汎用イベント中で
+
+     \1\s[10]\0\s[0]${EventInfo}です。\e
+
+   などと使える。EventInfo中の説明文は、次のような形になっている。
+   - 単発イベント … トークで「○○です」と続けられる内容
+   - 開始イベント … トークで「○○開始です」と続けられる内容
+   - 完了イベント … トークで「○○完了です」と続けられる内容
+   - 失敗イベント … トークで「○○失敗です」と続けられる内容
+   (dict-keeps-system.kis、dict-keeps-default.kis)
+ * イベント情報エントリの言語選択が内部的に可能。デフォルトでは日本語。
+   openkeeps.kisで設定可能。次のようなエントリ群にイベント情報を設定すると、
+   任意の言語によるイベント説明が設定できる。
+
+     kp.eventinfo.＜言語の識別名＞.＜イベント名＞
+
+   言語の識別名だが、「ja_JP」など、ロケールをエントリ名として使用可能なものに
+   変えた名前を推奨する。
+   (openkeeps.kis、dict-keeps-default.kis)
+
+2004/09/26 Ver.3.1.2
+ * ユーザ定義の正規化を導入。正規化の際、同一視したい文字や削除したい文字を
+   openkeeps.kisで指定出来る。正規化変換テーブルは、完全にユーザが書くほかに、
+   既にある正規化、強い正規化を元に簡単に書くことが出来る。
+   ゴースト切り替え時の前のゴーストのメッセージの正規化、WinAmp反応の曲名、
+   アーティスト名の正規化をユーザ定義の正規化へ変更してある。
+   ユーザ定義の正規化コマンドはStringUserNormalizeで、使い方はStringNormalize
+   コマンドと同じ。ユーザ定義の正規化を行ってReferenceを参照するコマンドの、
+   UserNormReferenceコマンドも新設。使い方はReferenceコマンドと同じ。
+   (openkeeps.kis、dict-keeps-system.kis、dict-keeps-baseevent.kis、
+    dict-keeps-winlocal.kis、dict-keeps-default.kis)
+ * シングル右クリック時、当り判定領域を問わず反応することが可能なように変更。
+   このためのエントリ名は「C＜0/1＞SingleclickRight」を当てる。
+   (dict-keeps-baseevent.kis)
+ * SSPのバルーン切り替えイベントに対応。対応エントリは以下の通り。
+   - TalkBalloonChange.＜正規化したバルーン名＞
+   - TalkBalloonChange
+   スクリプトを提供してくれたmaron.kis氏(OpenKEEPS会議室3 >>2)に感謝。
+   (dict-keeps-baseevent.kis)
+ * 上記に合わせ、現在のバルーン名、バルーンのパスをSystem.Balloonエントリ、
+   System.BalloonPathエントリで取得できるように機能追加
+   (dict-keeps-baseevent.kis)
+ * テンプレートの誤記、説明書きの混乱しやすい点(キーワードを${}で括っている等)
+   を修正(ghost-keeps.kis、ghost-keeps-winlocal.kis)
+
+2004/09/19 Ver.3.1.1
+ * WinAmp反応用に、「強い正規化」の考え方を導入。正規化の際に消している半角記号
+   と対応する全角記号も、正規化の対象とするのが「強い正規化」である。WinAmp反応
+   用エントリで、アーティスト名と曲名部分は、強い正規化した名前とする。
+   具体例を挙げる。アーティスト名「Ｔ－ＳＱＵＡＲＥ」、曲名「ＴＲＵＴＨ＠」
+   だった場合、「TalkWinampplay.tsquare.truth」エントリが該当エントリとなる。
+   強い正規化を行うコマンドは$(StringStrongNormalize)で、使い方はStringNormalize
+   コマンドと同じ。NormReferenceコマンドに対応するものとして、StrongNormReference
+   コマンドを用意した。
+   (dict-keeps-system.kis、dict-keeps-winlocal.kis)
+ * マウスの右ボタンによるシングルクリックに対応。openkeeps.kisのオプション設定で
+   従来通りの左右ボタン区別なし、左右ボタン区別ありを選択出来る。
+   エントリ名として、左ボタン反応(従来のもの)のうち「Single」を「SingleRight」
+   を置き換えたエントリ名が右クリック用エントリとなる。「Singleclick」の場合は
+   「SingleclickRight」と、例外的な変化をする。
+   具体例を挙げる、\0側の当り判定領域名Headの右クリックに対応するには、
+   「C0SingleRight.Head」エントリにトークを書く。
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * シェル切替反応を拡張。切替前後ともに、以下の形式のエントリを理解する。
+   - TalkShellChang＜ing 又は ed＞.＜切替前のシェル名＞.＜切替後のシェル名＞
+   - TalkShellChang＜ing 又は ed＞.＜切替後のシェル名＞
+   - TalkShellChang＜ing 又は ed＞
+   切替前後のシェル名は、いずれも正規化したものを使う。
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * お勧めサイト選択時反応に、デフォルトのトークエントリを追加。
+   「TalkURL.＜サイト名＞」エントリが見つからなかった場合、「TalkURL」エントリ
+   を探し、その内容を話す。
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * テンプレートのサンプルの誤記、解説の不明点を修正。
+   (ghost-keeps.kis、ghost-keeps-winlocal.kis)
+
+2004/09/11 Ver.3.1.0
+ * 開発版体制に移行。次の安定番リリースはVer.3.2.0となる。
+ * 起動ごと、ゴーストごとに生成する偽造しにくいIDである、Ghost IDをロード時に
+   生成する。kp.gidに保存されている32桁の16進数がそれである。本体発行の
+   Unique IDと目的は一緒だが、Unique IDを発行しない本体 (非Win系互換本体等)で
+   ゴーストにユニークなIDが必要な時に使う。(loader.kis)
+ * SSP以外で長い自発トークを行う時、後続の自発トークと衝突したり、他の優先度の
+   低いトークと衝突するのを防ぐため、明示的な「長話モード」機能を追加。
+   トーク内で$(LongtalkMode)と書くと、そのトークは長話と見なす。長話モード中、
+   自発発話タイマを止め、ランダムトークフラグもOFFにする。この機能はトークを
+   話し終わると、自動的にOFFになる。
+   (dict-keeps-system.kis、dict-keeps-baseevent.kis)
+ * メニュー構築支援の一貫として、メニューフォーム機能追加。通常、\qタグから
+   選択肢を選ぶと、「Select.*」といった選択肢IDに1対1対応したエントリを呼び出す。
+   一方、メニューフォームの場合、ある選択肢グループ全体に対し、呼び出すエントリ
+   を決めることが出来る。インストール済みゴーストのメニューなど、機械的に選択肢
+   IDを割り振る場合に分かりやすい記述が出来る。通常のメニューと使い分ける。
+   以下、使い方の説明。
+   - トーク中に$(MenuForm ＜フォーム名＞)と記述すると、選択後に
+     「MenuForm.＜フォーム名＞」というエントリに飛ぶ。あとは使用者に任される。
+   - $(Menu.q ＜選択肢の表示文字＞)とすると、$(MenuForm)記述後から数えてIDを
+     0から連番で振った\q[]タグを生成する。メニューフォームの記述支援用である。
+   - $(Menu.q.id ＜選択肢の表示文字列＞ ＜ID＞)とすると、希望のIDの\q[]タグを
+     生成する。\q[]タグで直書きする場合との違いは、$(Menu.q)が生成するIDの
+     連番が、$(Menu.q.id)でもインクリメントする点。
+   サンプルはghost-keeps.kis中、トーク頻度の記述のコメントアウト部分にある。
+   (dict-keeps-baseevent.kis、ghost-keeps.kis)
+ * WinAmp反応トークに、ゴースト切替反応等と類似のシステムを機能追加。
+   ゴースト名がアーティスト名、コメントが曲名に相当する。
+   「TalkWinampplay.＜正規化したアーティスト名＞.＜正規化した曲名＞」形式の
+   エントリ群を理解する。アーティスト名を問わず特定の曲名で反応したい時、
+   正規化アーティスト名として「__other__」を使用する。アーティスト名が送られて
+   ない場合に反応したい時、正規化アーティスト名として「__noartist__」を使用
+   する。TalkWinampplayエントリだけを使えば、従来互換となる。
+   (dict-keeps-system.kis、dict-keeps-winlocal.kis、ghost-keeps-winlocal.kis)
+ * WinAmp反応で、アーティスト名を認識しないバグを修正(dict-keeps-winloca.kis)
+
+2004/09/05 Ver.3.0.10
+ * タスクの優先順位が機能していなかった問題を修正(ktm-kernel.kis)
+ * プラグイン「MicCom」による音声コミュニケートに対応。通常の対ユーザ用
+   コミュニケートの反応を使う。MessageWordsエントリに、音声入力された文章を
+   単語分解したもの(Reference2)が入っている。
+
+2004/08/08 Ver.3.0.9
+ * 自発トーク間隔を600秒など長く取った時、自発トークを実質的にしなくなる問題を
+   修正(dict-keeps-system.kis、dict-keeps-baseevent.kis)
+ * 多数のさくらスクリプトタグを含む文章を返した場合、動作が遅くなる問題を修正
+   (dict-keeps-baseevent.kis)
+ * デフォルトの自発トーク間隔の設定項目を追加
+   (openkeeps.kis、dict-keeps-default.kis)
+ * KTMをVer.1.0.3にバージョンアップ(ktm-kernel.kis)
+
+2004/07/25 Ver.3.0.8
+ * システム側通知の起動時間イベントが、再起動後初回のOnMinuteChangeイベントで必ず
+   発生していた問題を修正(dict-keeps-baseevent.kis)
+ * SSP上で使用時、システム側通知の起動時間が初回で分単位になっていた問題を修正
+   (dict-keeps-baseevent.kis)
+ * プラグイン辞書フォルダに置いたファイルのうち、拡張子が「.kis」のファイルのみ
+   読み込むように変更(loader.kis)
+ * Historicalコマンドを空エントリに設定した場合、無限ループになる問題を修正
+   (dict-keeps-survicefunc.kis)
+ * EntryOption.＜コマンド＞エントリにエントリ名を記述すると、辞書読み込みこみ
+   完了後、そのエントリに「＜コマンド＞ ＜エントリ名＞」を実行するよう変更
+   (dict-keeps-survicefunc.kis)
+ * KTMをVer.1.0.2にバージョンアップ(ktm-kernel.kis)
+
+2004/07/18 Ver.3.0.7
+ * インストール完了イベント処理を、現在の各ベースウェアの実装の合わせた形に
+   修正(dict-keeps-baseevent.kis)
+ * 上に合わせ、インストールイベントのテンプレートに追記(ghost-keeps.kis)
+ * CROWでの0/1オリジン修正に失敗していた問題を修正(dict-keeps-system.kis)
+ * サービス関数に、Sequentialと逆順で呼ぶコマンドRSequential、履歴を使って重複
+   回避するコマンドHistorical、イベント呼び出しに同期して履歴をリセットする
+   重複回避コマンドNonoverlap.Syncを追加(dict-keeps-survicefunc.kis)
+
+2004/07/10 Ver.3.0.6
+ * OnSSTBBreakイベントトークを呼んでいなかった問題を修正
+   (dict-keeps-baseevent.kis)
+ * インストールイベントで複数アイテム同時インストールのトークを呼んでいなかった
+   問題を修正(dict-keeps-baseevent.kis)
+ * OnKeyPressイベント処理が、Overrideモードで仕様と違う動きをする問題を修正
+   (dict-keeps-keypress.kis)
+ * OnCommunicateイベント処理が、Overrideモードで仕様と違う動きをする問題を修正
+   (dict-keeps-comm.kis)
+ * SSP上でクラッシュ後起動を検出すると、ゴーストキャッシュに入っている間、正常
+   終了後も必ずクラッシュ後起動扱いになる問題を修正(dict-keeps-baseevent.kis)
+ * OS稼働時間を、paraworkの設定に関わらず常時取得するよう変更。worktime.OS
+   エントリでOS稼働時間を取得できる。(dict-keeps-baseevent.kis)
+ * 上に伴い、ゴースト稼働時間も常時提示に変更。worktime.ghostエントリでゴースト
+   稼働時間を取得できる。(dict-keeps-system.kis)
+ * OS稼働時間の常時取得に伴い、OnNotifyOSInfoに対応(dict-keeps-baseevent.kis、
+   ghost-keeps-notify.kis)
+ * 既に対応していたOnNotifySelfInfoのテンプレート追加(ghost-keeps-notify.kis)
+ * OnMusicPlayイベント処理のコード整理(dict-keeps-winlocal.kis)
+ * OnMinuteChangeイベント処理のコード整理(dict-keeps-baseevent.kis)
+
+2004/07/04 Ver.3.0.5a
+ * Nonoverlapコマンドのバグ修正(dict-keeps-survicefunc.kis)
+
+2004/07/03 Ver.3.0.5
+ * 文字列正規化時、仕様と異なり1バイト記号を消さず、「_」に変換したバグを修正
+   (dict-keeps-system.kis)
+ * obsolateイベントであるOnFileDroppingへの対応廃止(dict-keeps-baseevent.kis)
+ * ベースウェアがninix系の場合、OnFileDroppedイベントをOnFileDrop2イベントへ
+   振り替えるよう修正(dict-keeps-baseevent.kis)
+ * テンプレート辞書でファイルドロップイベントが「廃止」扱いになっていたので、
+   現在の仕様に合せて加筆・修正(ghost-keeps.kis)
+ * 壁紙切り替えイベントトークを読まないバグを修正(dict-keeps-baseevent.kis)
+ * 幸水やSSTPボックスから「\![raise]」等、外部SSTPでは危険なタグを入力した時、
+   デバッグモードの場合はタグを無害化しないよう修正(dict-keeps-translate.kis)
+ * テンプレート辞書フォルダ、SAORIモジュール自動読み込みフォルダを、それぞれ
+   複数設定可能なように変更(loader.kis)
+ * テンプレート辞書の共通先頭名を設定可能なように変更。openkeeps.kis内で、
+   TemplatePrefixエントリに書くことで設定する。共通先頭名は複数設定することが
+   可能。(openkeeps.kis、loader.kis)
+ * ランダムトークするコマンド「Randomtalk」を追加
+   (dict-keeps-system.kis、ghost-keeps.kis、ghost-keeps-another.kis)
+
+2004/06/27 Ver.3.0.4
+ * OnFileDrop2イベントトークが出ないバグを修正(dict-keeps-baseevent.kis)
+ * 文字列正規化で空白文字が消えてなかったバグを修正(dict-keeps-system.kis)
+ * 自発トーク・見切れ・重なりトークの排他制御を調整(dict-keeps-baseevent.kis)
+ * 現在とは異なる記述があったテンプレート冒頭部分を削除(ghost-keeps.kis)
+ * URLリストサンプルを更新(ghost-keeps-url.kis)
+
+2004/06/20 Ver.3.0.3
+ * テンプレート辞書フォルダ名の変更が出来なくなっていたバグを修正(loader.kis)
+ * openkeeps.kis内のオプション設定で、OFF設定はエントリをコメントアウトする
+   他に、エントリを評価して0を返せばOFF設定になるように変更
+   (loader.kis、dict-keeps-baseevent.kis、dict-keeps-comm.kis)
+ * お勧めリスト、ポータルサイトリストをOFFにするオプションが効いていない問題を
+   修正(dict-keeps-baseevent.kis)
+
+2004/06/19 Ver.3.0.2
+ * SSPの開発パレット内栞リロード機能、\![reload,shiori]タグへの対応が不完全な
+   問題を修正(dict-keeps-baseevent.kis)
+ * テンプレート辞書のサブフォルダ内自動検索を選択式に変更(openkeeps.kis)
+ * 消滅指示ボタンが常に無効になるバグを修正(dict-keeps-baseevent.kis)
+
+2004/06/10 Ver.3.0.1
+ * ユーザ設定のセーブ項目の一部が、セーブされない場合があるバグを修正
+   (dict-keeps-system.kis)
+ * 一部の重要エントリのスペルミスを修正(dict-keeps-baseevent.kis)
+
+2004/06/05 Ver.3.0.0
+ * 内部構造を大幅刷新
+   - openkeepsフォルダにシステムファイルを集約
+   - templateフォルダにテンプレート辞書を集約、自動読み込み化
+   - セーブファイル(デフォルトではdict-keeps-savedata.txt)を自動読み込み化
+   - KTMを導入
+   - 旧shiori-essential.kisをdict-system.kisに改名、整理・高速化とKTM対応実施
+   - 旧dict-keeps-setting.kisをopenkeeps.kisに改名、これはghost\masterに置く
+   - openkeeps.kisのデフォルト値を保持するファイルdict-keeps-default.kisを新設
+   - 旧dict-keeps.kisをdict-keeps-system.kisとdict-keeps-baseevent.kisに分割。
+     前者は共用のフレームワークコマンド群、後者は基本イベント・リソース等。
+   - openkeeps\loader.kisを読み込むと、システムファイル、テンプレート辞書、
+     さおりを自動検出・ロードする。
+   - システムファイルフォルダ、テンプレート辞書フォルダ、さおりフォルダは、
+     openkeeps.kis内で名前を変更可能
+   - テンプレート辞書フォルダ以下にサブフォルダがあれば、その中の辞書も再帰
+     検索して読み込む。読む辞書は「ghost-keeps*.kis」にマッチする辞書。
+   - openkeeps.kis内の設定で、さおりとテンプレート辞書の自動検出・ロードは、
+     それぞれ個別に停止することが可能
+     従来通りに手動で読み込んでも、不具合は起きない。
+   - 起動後60秒以上起動イベントを経ずにFreezeフラグが設定され続けたら、異常と
+     見なしFreeze解除。\![reload,shiori]タグ対策。(KTM使用)
+   - OnKeyPress用キーバッファの更新を、KTM使用ルーチンに切り替え
+   - 自発トークと時報トーク衝突回避ルーチンを、KTM使用ルーチンに切り替え
+ * OnFirstBoot、OnBoot等、必ず何らかのサーフィス表示がないとMATERIAで問題が
+   起きるイベント用に、「\1\s[10]\0\s[0]\e」を保険として返すTalkSafeSearch
+   コマンドを新設。
+ * sslex_char_atコマンドを改修。最新のタグに対応し、内部コマンドに分割実施。
+ * SSPのはOnVanishedイベントが起動時以外にも来る仕様に対応
+ * Statusヘッダが「talking」の時、自発トークタイミングを遅らせるよう変更
+
+2003/09/21 Ver.2.3.0 snapshot0309211444
+ * dict-keeps.kis内の一時エントリ名を簡略化
+ * 関数・イベントレベルでアルゴリズム整理
+ * 関与するResource文字列の追加
+ * 「使わない機能はメニューにも表示しない」に(ようやく)対応
+ * 上に伴い、リソース設定の一部をghost-keeps.kisからdict-keeps.setting.kisに
+   移動。特にhomeurlはOpenKEEPSが管理するように変更になった。注意が必要。
+ * OnMouseMoveの動作を、
+   - OpenKEEPS Ver. 1.0系列と同じ動作(phase上限でストップ)
+   - OpenKEEPS Ver. 2.0系列と同じ動作(Phase上限でループ)
+   - phaseが完全にループする新動作
+   の3つから選択可能に。当たり判定領域ごとに選択可能。詳細はghost-keeps参照。
+ * \![reload,XXX]タグによる再起動に対応(まだ不完全)
+ * GetCloseParenthesisコマンド新設。さくらスクリプト解析の精度向上目的。
+ * Del1stPeriod、Integer高速化
+ * GetInteger、GetString簡略化
+
+2003/07/31 Ver.2.2.5
+ * dict-keeps.kisのバグfix
+   - 組み込みKISのピリオドによるエスケープ忘れ修正
+   - StringNormalizeが一部の2バイト文字をエスケープしていないバグ修正
+   - ゴースト起動時間/OS起動時間表示の判定が、仕様と異なっていたバグ修正
+   - OnFileDrop2で「ファイル」の判定が不完全だった問題を修正
+ * shiori-essential.kisのバグfix
+   - ゴーストをさおり化した時、Referenceヘッダを返せなかった問題を修正
+
+2003/06/16 Ver.2.2.4
+ * マルチキャラクタを使用した際、撫で反応リミッタが常にキャラクタモード無し
+   のリミッタを使ってしまう問題を修正。確実を帰すため、今後はキャラクタモード
+   切り替えを必ずchFlagModeで行うことを推奨。
+ * 上記に関連して、起動時のタイマ初期化関数のSetTimeを、実態に合わせInitCondに
+   改称。
+ * CROWの本体オンラインアップデート機能に対応。対応するエントリは以下の通り。
+   ・SystemupdateBegin     …本体オンラインアップデート開始
+   ・SystemupdateReady     …本体オンラインアップデート準備完了
+   ・SystemupdateNoupdate  …本体オンラインアップデート完了(更新無し)
+   ・SystemupdateCompleted …本体オンラインアップデート完了(更新有り)
+   ・SystemupdateFailed.*  …本体オンラインアップデート失敗(*は失敗理由)
+   MD5照合等は、ゴースト側のオンラインアップデートのトークを共用する。
+ * \-タグによる終了を異常終了と誤認する問題を修正
+
+2003/05/18 Ver.2.2.3
+ * SSPでトーク間隔を約30秒以上にした場合、OnSurfaceRestoreの処理と干渉して
+   発話しなくなっていた問題を修正。
+   内部的には、OnSurfaceRestoreでタグのみ出力した場合、トークカウントを
+   リセットしないことで対応。また、Talkコマンドを呼んだ場合でも、実際の発話が
+   無かった場合トークカウントをリセットしないことにした。
+ * コミュニケート機能で、該当ゴースト無しの時のトークを呼ばなくなっていた
+   バグを修正
+ * トークカウントのリセットを、常にコマンドを介して行うよう変更。
+ * トークカウントをダウンカウンタに変更。これで不規則な発話周期が可能に。
+ * SSPのゴーストキャッシュに対応していなかった問題を修正
+
+2003/05/01 Ver.2.2.2
+ * \![change,ghost]タグによるゴースト切替に、不正終了検出ルーチンが対応して
+   いないバグを修正
+
+2003/04/14 Ver.2.2.1
+ * OnKeyPressの応答がおかしかった問題を修正。
+
+2003/04/01 Ver.2.2
+ * 通算起動時間を記録するエントリ名のスペルミス修正。影響は無いと思われる。
+ * ゴーストをさおりとして起動する際のバグ修正。
+ * OnFileDrop2に対応。TalkFileDrop.<正規化した拡張子>エントリに拡張子に
+   対応したトークを処理する。複数のファイルがDnDされた場合、TalkFileDrop
+   エントリを読む。kp.FileDrop.NoSingleエントリに何か定義しておくと、
+   単独のファイルがDnDされた場合もTalkFileDropエントリだけを読む。
+   DnDされたファイル名はDroppedFilesエントリに格納されている。複数のファイル
+   がDnDされた場合も同じ。
+
+2003/03/03 Ver.2.1.2
+ * OpenKEEPS内部エントリの保護強化。起動後変更不要なものはwriteprotectする。
+   これはセキュリティ対策の他、ゴースト側の不用意な設定による誤動作防止が目的。
+ * トーク発話の際、検索対象エントリ一覧を記憶しているエントリの保護。同時に、
+   OpenKEEPS側コールバックエントリの保護。
+ * 前回に異常終了だったかの判定を、辞書読み込み完了時に行うよう変更
+ * メニュー構築支援機能として、メニューグループの概念を導入。
+   kp.MenuGroupエントリにメニューグループ名(総合、トーク頻度、キャラクタ等)を
+   設定すると、OnChoiceSelectでReference0の前にピリオドを挟んでメニューグループ
+   名を挿入。同一選択肢IDを返しても、メニューグループがあれば区別できる。
+   OnChoiceSelectが呼ばれた時点で、kp.MenuGroupの内容は自動的に消える。
+   メニューグループを使わないなら、従来のままでよい。
+ * メニューグループ概念と関連して、OnChoiceTimeoutでも、メニューグループが
+   設定あれば、TalkTimeout.＜メニューグループ名＞を先に検索する。
+   これに応答文がなければ、TalkTimeoutを検索する。
+   従って、特に設定しなければ従来互換の動作をする。
+ * メニューグループ設定用にsetMenuGroupコマンド追加。第1引数にメニューグループ
+   名を書くと、kp.MenuGroupに設定される。引数省略時はkp.MenuGroupをクリアする。
+ * OpenKEEPS側コールバック追加。OpenKEEPSのセーブファイル保存時に呼ばれる
+   kp.callback.OnSave、ネットワーク更新成功時の再起動直前に呼ばれる
+   kp.callback.OnBackup、ネットワーク更新完了(更新有)時の再起動後に呼ばれる
+   kp.callback.OnUpdateCompleteの3つを追加。
+   最初の2つは、暗号化等の理由でOpenKEEPSとは別のセーブファイルを作りたいが、
+   セーブの管理はOpenKEEPSに任せたい場合に使う。最後の1つは、アップデート成功
+   でも再起動がかかるのに、起動系コールバックが無かったので追加した。
+ * セーブ系コールバックの新設に伴い、辞書読み込み完了後、datasaveparamエントリ、
+   databackupparamエントリに追加できないよう変更。セーブファイルへ故意に
+   System.callback.*系の重要なエントリを改変記録させ、次回起動時にゴーストや
+   システムを壊す攻撃が想定される為。
+ * OpenKEEPS内部で使用している一時エントリではないエントリ(カウンタ等)を、
+   極力評価せずに参照するように変更。これも同じく攻撃対策。
+ * 上記実現の為、GetString、GetIntegerコマンド新設。getと似ているが、
+   GetStringは置換ブロックを殺してから評価、GetIntegerは整数として評価する。
+   主にマウス系イベントで使用。
+ * OpenKEEPS内部では、組み込みKISと同名のユーザ定義関数があっても、必ず
+   組み込みKISを使うよう変更。これも同じく攻撃対策。
+ * SSPのNOTIFY installedshellname/installedballoonnameに対応。それぞれ
+   System.InstalledShell/System.InstalledBalloonにシェル名/バルーン名が
+   列挙され、Execute.Installedshellname/Execute.Installedballoonnameが
+   コールバックされる。
+ * ログ出力コマンドLogMsgコマンド新設。時刻やイベント名を自動的に付加して
+   ログファイルに出力するので、デバッグの際に使用できる。
+ * SecurityLevel設定がhighより弱い場合、Requestヘッダ中の「$」を「_」に置換
+ * OnBIFFCompleteイベントでオリジン補正廃止
+ * dict-keeps-url.kisを実態に即してghost-keeps-url.kisへ名前変更
+
+2003/01/26 Ver.2.1.1
+ * セキュリティ対策。Referenceコマンドをサービス関数から標準変数へ変更し、
+   同時にセキュアなReference参照コマンドSReference、Referenceを整数のみ通す
+   IntReference、非負整数のみ通すNonNegReference、エントリ名に使える文字のみ
+   通すEntNamReference、Referenceを正規化して返すNormReferenceを追加。
+   危険タグを潰すKillDengerousTagコマンド追加。基幹エントリ構造を保護する
+   ProtectEntryStructure追加。今後、Reference結果をバルーンに出す場合、最低でも
+   SReferenceを使って参照することが望ましい。(dict/ghost-keeps,shiori-essential)
+ * 上記に伴ない、dict/ghost-keeps-*.kisファイルのReference参照箇所を、適切な
+   安全レベルのReference系コマンドを使ったものに変更。
+ * 上記に伴ない、「だぶるている」のメッセージは$(debugger on)の時のみ受け取る
+   ように変更。(dict-keeps)
+ * 上記に伴ない、外部SSTPと思われるメッセージを置換する際は、危険タグを潰すよう
+   変更。(dict-keeps-translate)
+ * 上記に関連して、外部SSTPではなくトークを内部生成した場合、
+   kp.internaltalkflagをセットし、OnTranslateイベントで内部・外部の区別を
+   出来るようにした。ただし、リソース要求は外部と同じ扱いとする。実質的に
+   困らない筈である。(dict-keeps/keypress/comm/translate)
+ * キャプションボタン用エントリ名が一部間違っていた点を修正(dict-keeps)
+ * KeyFilter関数が特殊記号を理解しなくなっていた問題を修正(dict-keeps-keypress)
+ * インストール開始用トークのエントリ名が間違っていたので修正(ghost-keeps)
+ * 毎分ごとのベースウェア取得に失敗していた問題を修正(dict-keeps)
+
+2003/01/03 Ver.2.1.0
+ * キャラクタモードの変更で従来通りの切替式加え、派生式を追加。
+   派生式を選択した場合、現在のキャラクタモードに存在しないトークエントリは、
+   <FlagMode>.InheritFromエントリの内容を派生元のキャラクタモードと考え、
+   再帰的に検索する。FlagModeのないエントリにまで辿り着くと、検索を終了する。
+   <FlagMode>.InheritFromの内容が「__self__」の場合、そこで検索を終了する。
+   $(OverrideOn)で派生式に、$(OverrideOff)で従来通りの切替式になる。
+   内部的にはEntryName、Del1stPeriod新設、EntryRefer、Talk、MakeList変更。
+   (dict-keeps)
+ * 自己クラッシュ検出機能を追加。
+   自分が異常終了すると、次の起動時にTalkCrashedのトークを読む。
+   ただし、OnVanishedでの起動は例外とする。
+   内部的にはBoottimeSearchをBootCondSearchに変更、ClearTimeでセーブするよう変更、
+   closemodeに関係するイベントを修正、関連コマンドの実行順番を入れ替え、
+   対称性の為にClosetimeSearchをCloseCondSearchに変更。
+   (dict-keeps)
+ * OnMinuteChangeにHourZone挿入、常にtimezoneエントリに時刻を表すキーワードが
+   入っている。(dict-keeps)
+ * 発言予約システムが基底キャラクタモード以外で動かなかった問題を修正。
+   内部的にはTalkEventコマンド、EntryReferコマンド変更。
+   (dict-keeps)
+ * OnFirstBoot時のコールバックエントリがkp.OnFirstBootになっていた問題を修正
+   正しくはkp.callback.OnFirstBoot。(dict-keeps)
+ * TalkSearchコマンド新設。頻出するEntrySearchの検索結果を話す動作をコマンド化。
+   これに伴い、kpで始まる検索エントリ名をイベント名準拠に変更。(dict-keeps)
+ * コミュニケート対応。コミュニケート支援ライブラリ「豊水」を改変して採用。
+   キャラクタモードを意識したコミュニケートを記述出来る。(dict/ghost-keeps-com)
+ * OnKeyPress処理をコミュニケート処理と共通したアルゴリズムに変更
+   (dict-keeps-keypress)
+ * MATERIAでOnVanishedのReference0が通知されないバグに対応。
+   vanishログ中で最も日付が新しいゴーストをbeforeghostエントリで提示。
+   (dict-keeps)
+ * メールチェック、ネットワーク更新のベースウェアによるオリジンの違いを吸収。
+   ネットワーク更新では、
+   ・UpdateFileTotal…更新ファイル総数
+   ・UpdateFileNo…現在のファイルが更新何番目か
+   メールチェックでは、
+   ・NewMail…新着メール数
+   のエントリでオリジンの違いを吸収した値を提示。
+   (dict-keeps)
+ * kp.BaseWareエントリに起動中の本体ソフト名を格納。
+   起動時のSenderヘッダから判断し、以後毎分Senderヘッダを取得。
+   (dict-keeps)
+
+2002/12/1 Ver.2.0
+ * 内容はRC3と同じ。バージョン表記のみ修正。
+
+2002/11/25 Ver.2.0 RC3
+ * OnUpdateReady対応を忘れていたバグを修正(dict-keeps)
+ * メールチェック関連のエントリ名が間違っていたのを修正(ghost-keeps)
+ * インストール関連のエントリ名が間違っていたのを修正(ghost-keeps)
+ * 消滅ボタン表示有無のエントリを新形式に変更(ghost-keeps)
+
+2002/11/10 Ver.2.0 RC2
+ * ヘッドライン読み上げ失敗でFreezeしつづけるバグ修正(dict-keeps)
+ * ボタン名キャプション等、環境によって新旧リソース名が混在するリソースを、
+   両方とも対応するように変更(dict-keeps)
+ * 簡易文字列判別関数の参照するエントリ名が誤っていたバグを修正
+   (dict-keeps-survicefunc)
+ * worktimeを加算しないバグを修正(dict-keeps)
+ * スペルミス修正(dict-keeps-setting)
+
+2002/10/31 Ver.2.0 RC1
+ * 汎用アプリイベントのスペルミス修正(dict-keeps-winlocal)
+ * バックアップ時保存エントリへ終了時保存エントリをコピーするタイミングを、
+   辞書読み込み完了時に変更(dict-keeps)
+ * MATERIAでOnSurfaceChangeイベントが来ない問題の対処として、こやま☆あきら氏
+   原作の簡易さくらスクリプトパーサをOnTranslateイベントに実装(dict-keeps)
+ * 対応する華和梨のバージョンを記録するLayer.KawariVersionエントリ追加
+   (dict-keeps-setting)
+ * FlagMode変更コマンドchFlagMode追加。同時に、FlagModeが変わった場合、
+   予約発言キューをクリアするように変更(dict-keeps)
+
+2002/10/12 Ver.2.0 beta2
+ * Ver1.1beta1のコメントアウト部分を消去(dict-keeps/keeps-winlocal)
+ * NOTIFYでExecute.*エントリを呼ぶ方式を、entryからgetに変更。
+   存在する全Execute.*を実行することにした。主にhwnd記述の容易化目的。
+ * shiori-essential.kisでevent/resource/notifyを呼ぶ方式を、エントリ
+   呼出からgetに変更。並列処理が可能に。
+ * 辞書読み込み完了時/Unload時の処理の一部を各イベントに再分散。
+   SSPのゴーストキャッシュ対策。(dict-keeps)
+ * OnSurfaceChangeで\0、\1以外があるケース対応(dict-keeps)
+ * SHIORI/3.0のIDで「\ms」等の単語区分が来る場合に対応(shiori-essential)
+   「\ms」なら「compatible.ms」エントリを呼ぶ。
+   「\m?」のみ特例で、「compatible.m_」エントリを呼ぶ。SSP対策。
+ * TEACH SHIORI/2.4をGET SHIORI/3.0 OnTeachに振り替え(shiori-essential)
+ * NOTIFY該当処理が見つからない場合、GET処理を検索(shiori-essential)
+ * joinコマンドをshiori-essentialに移動
+ * saorilistコマンド追加、saoriregist・saorieraseをオーバーライド。
+   さおり多重ロード問題対策。(shiori-essential)
+ * WinAMP反応をwinlocalに移動(dict/ghost-keeps/keeps-winlocal)
+ * OnKeyPress、OnTranslate対応(dict/ghost-keeps-keypress/keeps-translate)
+
+2002/10/6 Ver.2.0 beta1
+ * OnXXXFailureに対応するトークエントリをTalkXXXXXXfailに統一
+   MD5照合成功だけが例外。(dict/ghost-keeps/keeps-winlocal)
+ * 自発トークに発言予約機構搭載(dict/ghost-keeps)
+ * OnAnchorSelectイベント、OnChoiceEnterイベント対応(dict/ghost-keeps)
+ * \_aタグ使用を容易にするanchorコマンド追加(dict-survicefunc)
+ * OnGhostChangedイベントのキーワード検索がFlagModeに対応していなかった
+   問題を修正
+ * Talk関数の仕様追加、EntryCheck関数の隠れ仕様明記
+ * NOTIFY時のエントリの参照をentryに変更。NOTIFYは全キャラで1つの対応が妥当？
+ * datasaveparamとdatabackupparamの共通部分をコピーするよう変更
+ * OnFirstBootイベントでusernameを強制的にデフォルトにしないよう変更
+   (消滅指示後の再インストール時、手動でセーブファイルを渡すケースに対応)
+ * OnURLDropFailureイベントのエントリをOK2.0標準に統一
+
+2002/09/30 Ver.2.0 alpha5
+ * Windowsローカル辞書、別人格辞書、おすすめURL辞書を Ver2.0形式にした
+ * お触り反応をVer1.1beta1準拠＋触り続けで反応が継続するようにした

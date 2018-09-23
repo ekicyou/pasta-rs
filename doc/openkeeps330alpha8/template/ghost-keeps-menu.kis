@@ -1,0 +1,309 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  メニュー関連辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha1 2002.09.25 22:30版
+# Version2.0 alpha2 2002.09.27 22:07版
+# Version2.0 alpha3 2002.09.28 20:07版
+# Version2.0 alpha4 2002.09.28 22:06版
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.4      2004.06.27 18:30版
+# Version3.0.5      2004.07.03 11:30版
+# Version3.0.7      2004.07.18 22:30版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.1.4      2004.10.30 22:45版
+# Version3.1.5      2004.11.13 20:30版
+# Version3.1.6      2004.11.23 22:30版
+# Version3.3.0a6    2005.10.17 00:00版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+:crypt
+#メニュー周り==================================================================
+
+#条件 : 「\q?」タグで表示された選択肢を選択した時。
+#書式 : Select.＜識別子＞
+# 識別子 : 「\q?」タグで定義された、選択肢が持つ識別子。
+
+Mainmenu : (
+	\b[1]${Mainmenu1}\n\n
+	　\q["偽ＡＩトーク,Manzai"]\n
+	　\q["COMMUNICATEボックス,Talk"]\n
+	　\q["オプション設定,Option"]\n
+	　\q["新機構テスト,Special"]\n
+	　\q["閉じる,Cancel"]\e
+	)
+
+Mainmenu1 : \0\s[0]$(
+	?
+		"メニューをどうぞ。"
+		"メニューを開きますね。"
+		"何かご用ですか？"
+		"\1\s[11]\0これが勝利のきぃですっ！"
+)
+
+Select.Manzai : $(Randomtalk)
+
+Select.Option : (
+	\0\s[0]\1\s[10]
+	\0オプション設定です。\n
+	　\q["お喋り頻度変更,Timing"]\n
+	　\q[見切れ反応を$(if $(isMikireOn) "ＯＦＦ" else "ＯＮ")に","Mikire]\n
+	　\q[重なり反応を$(if $(isKasanariOn) "ＯＦＦ" else "ＯＮ")に","Kasanari]\n
+	　\q["ユーザー名変更,TeachName"]\n
+	　\q["別人格へ切り替え,Change"]\n
+	　\q[人格オーバーライド$(if $(isOverrideMode) "ＯＦＦ" else "ＯＮ")","Override]\n
+	　\q["閉じる,Cancel"]\e
+	)
+
+Select.Timing : (
+	\0\s[0]\c喋り頻度。\n\n
+	\q["頻繁に,Timing3"]\n
+	\q["普通に,Timing5"]\n
+	\q["控えめ,Timing7"]\n
+	\q["好きなように,TimingRand"]\n
+	\q["喋らない,Timing9"]\n
+	\q["閉じる,Cancel"]\e
+	)
+
+Select.Timing3 : $(
+	setstr interval  28;
+	RandomtalkOn;
+	)\0\s[5]頻繁に喋ります。\e
+
+Select.Timing5 : $(
+	setstr interval  56;
+	RandomtalkOn;
+	)\0\s[0]普通に喋ります。\e
+
+Select.Timing7 : $(
+	setstr interval  84;
+	RandomtalkOn;
+	)\0\s[0]喋りを控えます。\e
+
+Select.TimingRand : $(
+	set interval "$[ $(rand 90) + 31 ]";
+	RandomtalkOn;
+	)\0\s[5]好きなように喋ります。\e
+
+Select.Timing9 : $(
+	setstr interval 999;
+	RandomtalkOff;
+	)\0\s[4]喋りません。\e
+	
+# MenuFormを使った例-----------------------------------------------------------
+# 試す場合は直前の喋り頻度設定部分をコメントアウトし、
+# こちらの「:rem」～「:endrem」コメントアウトを外して下さい。
+
+:rem
+Select.Timing : (
+	\0\s[0]\c喋り頻度。\n\n
+	$(MenuForm TalkTiming)
+	$(Menu.q 頻繁に)\n
+	$(Menu.q 普通に)\n
+	$(Menu.q 控えめ)\n
+	$(Menu.q 好きなように)\n
+	$(Menu.q 喋らない)\n
+	$(Menu.q.id 閉じる cancel)\e
+)
+
+MenuForm.TalkTiming : $(
+	setstr @id $(Reference 0);
+	if $[ ${@id} == 0 ] $(
+		setstr interval  28;
+		RandomtalkOn;
+		echo \0\s[5]頻繁に喋ります。\e;
+	) else if $[ ${@id} == 1 ] $(
+		setstr interval  56;
+		RandomtalkOn;
+		echo \0\s[0]普通に喋ります。\e;
+	) else if $[ ${@id} == 2 ] $(
+		setstr interval  84;
+		RandomtalkOn;
+		echo \0\s[0]喋りを控えます。\e;
+	) else if $[ ${@id} == 3 ] $(
+		set interval "$[ $(rand 90) + 31 ]";
+		RandomtalkOn;
+		echo \0\s[5]好きなように喋ります。\e;
+	) else if $[ ${@id} == 4 ] $(
+		setstr interval 999;
+		RandomtalkOff;
+		echo \0\s[4]喋りません。\e;
+	) else $(
+		entry Select.Cancel;
+	);
+)
+:endrem
+
+#------------------------------------------------------------------------------
+
+Select.Mikire : \0\s[0]$(
+	if $(isMikireOn)
+		$(MikireOff)"見切れ反応が無効になりました。"
+	else
+		$(MikireOn)"見切れ反応を有効にします。"
+	)\e
+
+Select.Kasanari : \0\s[0]$(
+	if $(isKasanariOn)
+		$(KasanariOff)"重なり反応が無効になりました。"
+	else
+		$(KasanariOn)"重なり反応を有効にします。"
+	)\e
+
+Select.Override : \0\s[0]$(
+	if $(isOverrideMode)
+		$(OverrideOff)"人格オーバーライドが無効になりました。"
+	else
+		$(OverrideOn)"人格オーバーライドを有効にします。"
+	)\e
+
+
+Select.Cancel : $(resetFreeze)\b[0]\0\s[4]キャンセルされました。\e
+
+Select.Talk : $(resetFreeze)\0\s[0]では、COMMUNICATEボックスを出します。\!["open,communicatebox"]\e
+
+Select.Special : (
+	\0\s[0]\1\s[10]
+	\0新機構のテストです。\n
+	　$(anchor Ukagaka 伺か)へのアンカー。\n
+	　$(anchor SSP SSP)へのアンカー。\n
+	　$(anchor CROW CROW)へのアンカー。\n
+	　\q["次発言予約,TalkQueue"]\n
+	　\q["発言予約カウンタ確認,TalkQueueCheck"]\n
+	　\q["話し掛ける,SendTo"]\n
+	　\q["閉じる,Cancel"]\e
+	)
+
+予約 : 0
+Select.TalkQueue : (
+	\0\s[0]\1\s[10]
+	$(push talkqueue "$(inc 予約)\0\s[0]\1\s[10]\0予約発話${予約}回目です。\e")
+	\0発言、予約しました。\n
+	なお、今の予約カウンタは「${予約}」です。\e
+)
+
+Select.TalkQueueCheck : (
+	\0\s[0]\1\s[10]
+	\0現在の予約件数は$(size talkqueue)件です。\n
+	予約カウンタは「${予約}」です。\e
+)
+
+Select.Change : $(chFlagMode Another)\c‥‥‥。\e
+
+#==============================================================================
+
+
+#選択肢上にマウスカーソル======================================================
+
+#条件 : 「\q?」タグで表示された選択肢にマウスが乗った時／外れた時。
+#書式 : Selecting.＜識別子＞
+# 識別子 : 「\q?」タグで定義された、選択肢が持つ識別子。
+#
+#主に「さくら」のような、別バルーンによるキャプション表示等に使用します
+#マウスが選択肢から外れた場合、Word1は「NotSelected」になります
+
+#Selecting.Timing : $(callsaori ebl ref "発話タイミング調整")
+#Selecting.Manzai : $(callsaori ebl ref "偽AIトーク")
+#Selecting.Cancel :
+#Selecting.NotSelected : $(callsaori ebl ref)
+
+#==============================================================================
+
+
+#キャラクタ型アンカー(\_a)の選択===============================================
+
+#条件 : 「\_a」タグで表示されたキャラクタ型アンカーを選択した時。
+#書式 : Anchor.＜識別子＞
+# 識別子 : 「\_a」タグで定義された、アンカーが持つ識別子。
+#
+#アンカーを選択しても何も返さない時、バルーン表示はそのままになります。
+
+Anchor.Ukagaka : \0\s[0]この名前、早口言葉みたいだね。\w9\1\s[10]まあな。\e
+Anchor.SSP : \0\s[0]SSPの「S」は「汁」の略？\w4\1\s[11]マテ。\e
+Anchor.CROW : \0\s[0]開発、\w4大変みたい‥\w2‥\w2。\w9\1\s[10]名前からして苦労しとるな。\e
+
+#==============================================================================
+
+
+#Input Box関連=================================================================
+
+#条件 : 「\![open,inputbox,*,*]」タグで表示したInputボックスに入力をした時。
+#書式 : TalkInput.＜識別子＞
+# 識別子 : 「\![open,inputbox,*,*]」タグでのinputbox区別用の識別子名。
+
+#使用出来る変数
+# System.Request.Reference1 : Inputボックスに入力された内容。
+
+#名前覚えて-------------------------------------------------------------------
+
+Select.TeachName : (
+	$(
+		setstr FlagName 1;
+		setFreeze;
+	)
+	\0\s[6]それじゃ、何と呼んでいいでしょうか？
+	\!["open,inputbox,TeachName,-1"]
+	\e
+)
+
+TalkInput.TeachName : (
+	$(
+		clear FlagName;
+		setstr entername $[ $(SReference 1) || ${username} ];
+	)
+	\0\s[0]「${entername}」でよろしいですか？\n\n
+	\q["はい,MemoryName"]\n
+	\q["いいえ,TeachName"]\n
+	\q["入力取り消し,Cancel"]\e
+)
+
+Select.MemoryName : (
+	$(
+		resetFreeze;
+		setstr username ${entername};
+		clear entername;
+	)
+	\0\s[5]では、これからは${username}さんとお呼びしますね。\e
+)
+
+#Input Box タイムアウト--------------------------------------------------------
+
+#条件 : Inputボックス表示後、指定時間が経過しても入力されなかった場合。
+#書式 : TalkInputTimeOut.＜識別子＞
+# 識別子 : 「\![open,inputbox,*,*]」タグでのinputbox区別用の識別子名。
+
+#以下は時間制限を施した時の例。
+#*c
+#TalkInputTimeOut.TeachName : \0\s[4]名前入力時間切れです。\e
+
+#==============================================================================
+:endcrypt

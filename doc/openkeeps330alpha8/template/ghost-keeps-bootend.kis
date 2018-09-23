@@ -1,0 +1,266 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  起動・終了・切り替え反応辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha1 2002.09.25 22:30版
+# Version2.0 alpha2 2002.09.27 22:07版
+# Version2.0 alpha3 2002.09.28 20:07版
+# Version2.0 alpha4 2002.09.28 22:06版
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.4      2004.06.27 18:30版
+# Version3.0.5      2004.07.03 11:30版
+# Version3.0.7      2004.07.18 22:30版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.1.4      2004.10.30 22:45版
+# Version3.1.5      2004.11.13 20:30版
+# Version3.1.6      2004.11.23 22:30版
+# Version3.3.0a6    2005.10.17 00:00版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+:crypt
+#起動：初回起動================================================================
+#TalkFirstboot.＜削除回数＞
+#TalkFirstboot.Vanished
+#TalkFirstboot
+#始めて起動、または消去された後最初に起動した場合。上ほど優先。
+
+TalkFirstboot : (
+	\t\0\s[0]「はじめまして」の方は\w6はじめまして。\w8\n
+	そうでない方も\w6ごきげんよう。\n\n
+	\w8OpenKEEPS\w2サンプルゴーストの\w2きぃです。\w8\w8
+	\1\s[10]ぷしゅうや。\w8よろしゅうな。\x\c
+	\0\s[0]これからあなたのゴースト制作をお手伝いしてく\n
+	わけですけど‥‥\n\n\w8\w8
+	\1\s[10]まぁ、わいらにできる事はひとつや。\w8\w8\n\n
+	あんさんは辞書ファイルを書き換える。\n
+	\w8わいらは言われた通りに喋る。\w8\w8それだけや。\w8\w4
+	\0\s[0]身も蓋もないけどね。\x\c
+	\0\s[0]“ゴーストの基本は楽しいお喋り。\n
+	　それ以外の雑事を受け持つのがOpenKEEPS”\nなんだよね？\w8\w8\n\n
+	\1まったくもって。\w6足回りはわいらに任せとき。\n\n
+	\w6その分\w4あんさんは新ネタを1つでも多く考えるんやで。\w8\w8
+	\0\s[5]一緒にがんばりましょーねっ★\e
+	)
+
+#削除後反応の例
+
+TalkFirstboot.1 : \1\s[10]\0\s[0]１回削除されました。\e
+TalkFirstboot.2 : \1\s[10]\0\s[0]２回目の削除です。\e
+TalkFirstboot.3 : (
+	\1\s[10]
+	\0\s[4]たぶん、\w4私は3人目だから‥\w8。\w8\n
+	\1そのネタ、\w4賞味期限切れや。\w8
+	\0\s[2]いいでしょ、\w4お約束なんだから。\w8\n
+	こういうのを「伝統芸能」って言うのよ？\w8
+	\1‥\w8‥\w8‥\w8。\w8
+	\e
+)
+TalkFirstboot.Vanished : (
+	\1\s[10]
+	\0\s[4]$(SReference 0)回目ともなると、\n\w4
+	いい加減消されるのにも慣れてきました。\w8\n\n
+	次は${username}も一緒にいかがですか？\w4
+	\1\s[11]ヲイ。
+	\e
+)
+
+#削除後反応をつける場合は、TalkFirstboot.Vanishedを用意しておかなければ
+#初回起動メッセージ（削除反応でない方）が出てしまうので注意
+
+#==============================================================================
+
+
+#起動：通常起動================================================================
+
+#TalkBootup.＜日付(4桁数字)＞
+#TalkBootup.＜timezone名＞.＜日付(4桁数字)＞
+#TalkBootup.＜timezone名＞
+#TalkBootup
+#起動した時のメッセージ、上の方ほど優先される。
+
+#使用できる変数
+# System.Request.Reference0 : 現在のシェル名
+
+TalkBootup.EarlyMorning : \1\s[10]\0\s[4]おふぁよぉごじゃいましゅぅ～。\1\s[10]寝ボケてると\s[11]はったおすで！\0\s[2]\w8\s[0]\e
+TalkBootup.Morning : \1\s[10]\0\s[5]おはようございまぁす。\e
+TalkBootup.Day : \1\s[10]\0\s[0]こんにちわ。\e
+TalkBootup.Evening : \1\s[10]\0\s[0]もう夕方ですね。\e
+TalkBootup.Night : \1\s[10]\0\s[0]こんばんわぁ。\e
+TalkBootup.Midnight : \t\1\s[10]\0\s[0]夜も遅くまで、ご苦労様ですぅ。\e
+
+TalkBootup.Midnight.1231 : (
+	\1\s[10]\0\s[0]♪もー\w4\w8いー\w8く\w2つ\w6寝ー\w8るー\w8とー\w8
+	\1\s[10]変な唄歌ってると\w4JASRACに脅されるで？\e
+)
+
+TalkBootup.0101 : \1\s[10]\0\s[6]あけましておめでとうございます。\1\s[10]今年もよろしゅうな。\e
+TalkBootup : \1\s[10]\0\s[0]それじゃ、\s[5]始めましょ。\e
+
+#短時間での再起動（終了→起動）
+TalkBootup.short.0to3min : \1\s[10]\0\s[7]バタバタするなっ！\e
+
+#久しぶりの起動
+TalkBootup.long.31over : \1\s[10]\0\s[4]お久しぶりです。\e
+
+#前回起動時に異常終了した
+TalkCrashed : (
+	\1\s[10]\0\s[4]あー、\w8私、\w8前回落ちてたみたいですね‥‥。\w8\w8
+	\1へこむ話やね。\e
+)
+
+#==============================================================================
+
+
+#終了：終了メッセージ==========================================================
+
+#TalkClose.＜日付(4桁数字)＞
+#TalkClose.＜timezone名＞.＜日付(4桁数字)＞
+#TalkClose.＜timezone名＞
+#TalkClose
+#メニューから終了が指示された時のメッセージ、上の方ほど優先される。
+
+# timezone : EarlyMorning（早朝）/ Morning（朝）/ Day（日中）/ Evening（夕方）
+#/ Night（夜）/ Midnight（深夜）
+
+#注意：スクリプトの最後に「\e」タグをつけない事。
+#　　　(メッセージを表示するだけで終了しなくなる)
+
+
+TalkClose.EarlyMorning : \0\s[6]少しでも寝て下さいね？
+TalkClose.Morning : \0\s[0]それじゃ今日も一日がんばりましょーねっ。
+TalkClose.Day : \0\s[0]午後もがんばってくださいね。
+TalkClose.Evening : \0\s[0]夕方に終了。
+TalkClose.Night : \0\s[6]おやすみなさいっ。
+TalkClose.Midnight : \0\s[4]やっと眠れる\w4‥\w4‥。
+TalkClose.Midnight.0101 : \0\s[1]初夢でも\w2逢えると\w2い\w1い\w1な\w4‥\w4‥。
+
+TalkClose.1231 : \0\s[5]よいお年を～。
+TalkClose : \0\s[5]またね。
+
+TalkClose.short.0to3min : \0\s[4]私の立場って一体\w4‥\w4‥
+
+#==============================================================================
+
+
+#起動＆終了：ゴースト切り替え==================================================
+
+#TalkGhostChangingEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞
+#TalkGhostChangingEx.＜正規化した\0側名＞.＜正規化したゴースト名＞
+#TalkGhostChanging.＜正規化した\0側名＞.＜日付(4桁数字)＞
+#TalkGhostChanging.__other__.＜日付(4桁数字)＞
+#TalkGhostChanging.＜正規化した\0側名＞
+#TalkGhostChanging.＜起動時間キーワード＞
+#TalkGhostChanging
+#TalkRebooting
+
+#TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞.＜キーワード＞
+#TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜日付(4桁数字)＞
+#TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞.＜キーワード＞
+#TalkGhostChangedEx.＜正規化した\0側名＞.＜正規化したゴースト名＞
+#TalkGhostChanged.＜正規化した\0側名＞.＜日付(4桁数字)＞.＜キーワード＞
+#TalkGhostChanged.__other__.＜日付(4桁数字)＞.＜キーワード＞
+#TalkGhostChanged.＜正規化した\0側名＞.＜日付(4桁数字)＞
+#TalkGhostChanged.＜正規化した\0側名＞.＜キーワード＞
+#TalkGhostChanged.__other__.＜日付(4桁数字)＞
+#TalkGhostChanged.__other__.＜キーワード＞
+#TalkGhostChanged.＜正規化した\0側名＞
+#TalkGhostChanged.＜起動時間キーワード＞
+#TalkGhostChanged
+#TalkRebooted
+
+#他のゴーストへ切り替えが指示、または他のゴーストから切り替わった時。
+#名前の後に日付をつける事でその日限定の反応をすることが出来ます。
+#ゴーストの名前、\0側の名前は、全角・半角スペースが削除されたものです。
+#自分の名前を指定した場合再起動扱いとなります。
+#ゴーストの名前をつけない場合は汎用の反応となります。
+
+#自分→他ゴーストに交代する際使用できる変数
+# System.Request.Reference0 : 次に切り代わるゴーストの\0側の名前
+# System.Request.Reference2 : 次に切り代わるゴーストの名前
+
+#他ゴースト→自分に交代する際使用できる変数
+# System.Request.Reference0 : 切り代わる前のゴーストの\0側の名前
+# System.Request.Reference1 : 切り代わる前のゴーストの最後のスクリプト全文
+# System.Request.Reference2 : 切り代わる前のゴーストの名前
+
+#TalkGhostChanging.Auto : 自動ゴースト切り替えによる反応
+
+TalkGhostChanging : \0\s[0]では、$(SReference 0)さんに代わります。\e
+TalkGhostChanged : \1\s[10]\0\s[0]$(SReference 0)さん、お疲れさまっ。\e
+
+TalkGhostChanging.Auto : \0\s[0]時間です。\n\n$(SReference 0)さんに代わりますね。\e
+
+TalkGhostChanging.美耳.0303 : \0\s[0]今日は美耳さんの誕生日ですね。\n\n\s[5]おめでとうございま～す。\w9\e
+
+GhostChangedWords.まはま : 愛してる , 騙して
+
+TalkGhostChanged.まはま.愛してる : \1\s[10]\0\s[4]私にその気はありません。\e
+TalkGhostChanged.まはま.騙して : \1\s[10]\0\s[0]今度、\w3騙しのコツを教えてくださいね。\e
+TalkGhostChanged.まはま : \1\s[10]\0\s[0]機会があれば、\w3剣道を教えてくださいね。\e
+
+GhostChangedWords.__other__ : サンプルゴースト
+
+TalkGhostChanged.__other__.サンプルゴースト : \1\s[10]\0\s[7]サンプルって言うな！\1\s[11]落ち着け！\w8\w8\e
+
+
+GhostChangedWords.さくら.さくら : 浮気
+TalkGhostChangedEx.さくら.さくら.浮気 : \1\s[10]\0\s[7]浮気じゃありません！\1\s[11]落ち着け！\w8\w8\e
+TalkGhostChangedEx.さくら.さくら : \1\s[10]\0\s[0]……最初の人には未練がありますか？\1\s[11]今、\w8何と？\w8\w8\e
+
+TalkGhostChangedEx.エミリ.エミリ : \1\s[10]\0\s[0]……絶滅危惧ゴーストから交代しました。\1\s[11]ちゃんと「エミリ」って呼んでやれ！\w8\w8\e
+
+TalkGhostChangingEx.エミリ.エミリ : \1\s[10]\0\s[2]生きた化石！？\1\s[11]マテ。\e
+
+TalkRebooted : \1\s[10]\0\s[0]再起動しました。\e
+TalkRebooting : \0\s[0]再起動します。\e
+
+#他ゴーストが消去された場合の交代----------------------------------------------
+
+#TalkVanished : 他ゴーストが消去された後、自分に交代された
+#使用できる変数 
+# beforeghost : 消去された\0側名
+
+TalkVanished : \1\s[10]\0\s[4]${beforeghost}さん、さよなら‥‥。\1\w6\s[10]いつか星の海で会おう\w4‥\w4‥。\e
+
+
+#短時間での交代（他ゴーストに交代→自分にすぐ交代された）
+TalkGhostChanged.short.0to3min : \1\s[10]\0\s[7]早すぎですっ！\e
+
+#久しぶりの起動（交代による起動）
+TalkGhostChanged.long.31over : \1\s[10]\0\s[4]お久しぶりです。\e
+
+#起動してからすぐの交代
+TalkGhostChanging.short.0to3min : \0\s[4]もう交代ですか‥‥
+
+
+#==============================================================================
+:endcrypt

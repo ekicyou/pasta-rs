@@ -1,0 +1,381 @@
+#==============================================================================
+#
+#   「華和梨」KTM前提 栞制御辞書
+#   shiori-essential.kisから派生
+#
+# Version3.0.0      2004.06.06 00:00版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.3.0a3    2005.05.04 02:00版
+# Version3.3.0a4    2005.09.19 22:30版
+# Version3.3.0a8    2005.11.06 17:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+#==============================================================================
+
+
+#必須コールバック==============================================================
+
+# GET SHIORI/3.0 --------------------------------------------------------------
+System.Callback.OnGET : $(
+	.setstr @ID $(.encode_entryname ${System.Request.ID});
+	if $(.match_at ${System.Request.ID} On) $(
+		# イベントはヘッダを保護する
+		if $[ ${System.SecurityLevel} < 2 ] $(Sys.MakeRequestSecure);
+		# ヘッダの保存
+		Sys.SaveCurrentHeader;
+		# イベント呼び出し
+		if $(.size event.${@ID}) $(
+			.setstr @ans $(.get event.${@ID});
+			if $[ ${@ans} != "" ] $(return ${@ans});
+			# 応答があれば、この時点で返る。
+			# これ以降に処理が行くのは、イベント記述なしor応答なし
+		);
+		if $(.size System.Request.BaseID) $(
+			# 派生元イベント(イベントであることを仮定)
+			.split @IDs ${System.Request.BaseID} ",";
+			foreach @ID @IDs $(
+				.setstr @ID $(.encode_entryname ${@ID});
+				if $(.size event.${@ID}) $(
+					.setstr @ans $(.get event.${@ID});
+					if $[ ${@ans} != "" ] $(return ${@ans});
+				)
+			);
+		);
+	) else $(
+		if $(.match_at ${System.Request.ID} "\\") $(
+			# 単語
+			.entry compatible.$(.substr ${@ID} 1);
+			return;
+		) else $(
+			# リソース文字列
+			if $(.size resource.${@ID}) $(.get resource.${@ID});
+			return;
+		);
+	);
+)
+
+# 毎秒ごとにタスクマネージャを呼ぶ(KTM)、必須イベント処理
+event.OnSecondChange : $(KTM.Tick ; silent)
+
+#------------------------------------------------------------------------------
+
+# NOTIFY SHIORI/3.0 -----------------------------------------------------------
+System.Callback.OnNOTIFY : $(
+	if $(.size notify.$(.encode_entryname ${System.Request.ID})) $(
+		# ヘッダを保護する
+		if $[ ${System.SecurityLevel} < 2 ] $(Sys.MakeRequestSecure);
+		# ヘッダの保存
+		Sys.SaveCurrentHeader;
+		# 手続き呼び出し
+		.setstr @ans $(.get notify.$(.encode_entryname ${System.Request.ID}));
+		if $[ ${@ans} != "" ] $(return ${@ans});
+	);
+	if $(.size System.Request.BaseID) $(
+		# ヘッダを保護する
+		if $[ ${System.SecurityLevel} < 2 ] $(Sys.MakeRequestSecure);
+		# ヘッダの保存
+		Sys.SaveCurrentHeader;
+		# 派生元イベント(イベントであることを仮定)
+		.split @IDs ${System.Request.BaseID} ",";
+		foreach @ID @IDs $(
+			.setstr @ID $(.encode_entryname ${@ID});
+			if $(.size notify.${@ID}) $(
+				.setstr @ans $(.get notify.${@ID});
+				if $[ ${@ans} != "" ] $(return ${@ans});
+			);
+		);
+	);
+	# GETで来るべきものがNOTIFYで来るケースがある
+	# (「伺か」仕様書より)
+	.get System.Callback.OnGET;
+)
+
+#------------------------------------------------------------------------------
+
+# GET Sentence SHIORI/2.2 -----------------------------------------------------
+
+System.Callback.OnEvent : $(
+	if $(.size System.Request.Event) $(
+		.clear System.Request.ID;
+		.copy System.Request.Event System.Request.ID;
+	) else $(
+		# 単純GET Sentence
+		.setstr System.Request.ID "OnAITalk";
+	);
+	.get System.Callback.OnGET;
+)
+
+#------------------------------------------------------------------------------
+
+# GET String SHIORI/2.5 -------------------------------------------------------
+
+System.Callback.OnResource : $(.get System.Callback.OnGET)
+
+#------------------------------------------------------------------------------
+
+# GET Sentence SHIORI/2.3b ----------------------------------------------------
+# TBD
+#------------------------------------------------------------------------------
+
+# GET/NOTIFY以外 --------------------------------------------------------------
+# TEACH SHIORI/2.4のみ歴史的理由で、GET SHIORI/3.0 OnTeachに変換
+System.Callback.OnRequest : $(
+	if $[ ${System.Request} == "TEACH" ] $(
+		.setstr System.Request.ID "OnTeach";
+		.setstr @aistr $(.get System.Callback.OnGET);
+		if $[ $(.length ${@aistr}) != 0 ] $(
+			.setstr System.Response.Sentence ${@aistr};
+			.setstr System.Response 200;
+		);
+	);
+)
+
+#------------------------------------------------------------------------------
+
+# SAORI/1.0 -> SHIORI/3.0変換 -------------------------------------------------
+# 多段ゴーストをSAORIで実現する場合に対応
+#
+# 入力側:
+#   Argument0 -> ID
+#   Argument1 -> Reference0
+#   Argument2 -> Rererence1
+#   ...
+# 出力側:
+#   Value      -> Result
+#   Reference0 -> Value0
+#   Referemce1 -> Value1
+#   ...
+#   ※Valueが有ればResponse=200、無ければ204
+#------------------------------------------------------------------------------
+# SAORI/1.0
+System.Callback.OnSaoriExecute : $(
+	if $[ ! $(.size System.Request.Argument0) ] $(
+		# return if NOT exist "Argument0"
+		.setstr System.Response 400;
+		return;
+	);
+
+	# Argument0 -> ID convert
+	.clear System.Request.ID;
+	.move System.Request.Argument0 System.Request.ID;
+
+	# Argument[n] -> Reference[n-1] convert
+	.setstr @i 1;
+	.setstr @j 0;
+	while $(.size System.Request.Argument${@i}) $(
+		if $(.size System.Request.Reference${@j}) $(.clear System.Request.Reference${@j});
+		.move System.Request.Argument${@i} System.Request.Reference${@j};
+		.inc @i;
+		.inc @j;
+	);
+
+	# Request
+	.setstr @aistr $(.get System.Callback.OnNOTIFY);
+
+	# set status
+	# Reference[n] -> Value[n] convert
+	if $[ $(.length ${@aistr}) != 0 ] $(
+		.setstr System.Response 200;
+		.setstr System.Response.Result ${@aistr};
+		.setstr @i 0;
+		while $(.size System.Response.Reference${@i}) $(
+			.setstr System.Response.Value${@i} ${System.Response.Reference${@i}};
+			.clear System.Response.Reference${@i};
+			.inc @i;
+		);
+	) else $(
+		.setstr System.Response 204;
+		.setstr @i 0;
+		while $(.size System.Response.Reference${@i}) $(
+			.clear System.Response.Reference${@i};
+			.inc @i;
+		);
+	);
+	if $(.size System.Response.To) $(.clear System.Response.To);
+)
+
+#------------------------------------------------------------------------------
+
+#==============================================================================
+
+
+#Layer.Name、Layer.Versionをコンソールへ反映===================================
+# SHIORI/3.0によるID問い合わせ
+
+resource.name : $(
+	.split @vername $(.ver) "/";
+	.get @vername[0];
+	if $(.size Layer.Name) $(foreach @i Layer.Name "+"${@i});
+)
+
+resource.version : $(
+	.split @vername $(.ver) "/";
+	.get @vername[1];
+	if $(.size Layer.Version) $(foreach @i Layer.Version "/"${@i});
+)
+
+resource.craftman : $(
+	.ver author;
+	if $(.size Layer.Author) $(foreach @i Layer.Author "&"${@i});
+)
+
+#==============================================================================
+
+
+#ヘッダ操作(ヘッダの文字列化/保存/読み込み/復元)===============================
+
+#------------------------------------------------------------------------------
+# **MakeRequestSecure
+#
+# -機能: Requestヘッダエントリの内容の「$」を全て「_」に置換
+#------------------------------------------------------------------------------
+=kis
+function Sys.MakeRequestSecure $(
+	.listtree @list System.Request;
+	foreach @i @list $(
+		if $[ $(.getcode ${@i}) !~ "$" ] $(continue);
+		loop $(.size ${@i}) $(
+			.setstr @j ${-1};
+			.setstr ${@i}[${@j}] $(.eval $(.gsub $(.getcode ${@i}[${@j}]) "$" "_"));
+		);
+	);
+);
+=end
+
+#------------------------------------------------------------------------------
+# **CreateHeaderHandle
+#
+# -機能:    新しいヘッダスタックのハンドルを生成し、返す
+# -戻り値:  新しいヘッダスタックのハンドル
+#------------------------------------------------------------------------------
+=kis
+function Sys.CreateHeaderHandle $(
+	.cleartree System.Header.${System.HeaderPtr};
+	echo ${System.HeaderPtr};
+	.inc System.HeaderPtr;
+);
+=end
+
+System.HeaderPtr : 0
+
+#------------------------------------------------------------------------------
+# **ReleaseHeaderHandle
+#
+# -機能:    ハンドルで示したヘッダスタックを解放する
+# -第1引数: ヘッダスタックのハンドル
+#------------------------------------------------------------------------------
+=kis
+function Sys.ReleaseHeaderHandle $(
+	.cleartree System.Header.$@arg[1];
+);
+=end
+
+#------------------------------------------------------------------------------
+# **LoadHeader
+#
+# -機能:    ハンドルで示したヘッダスタックをSystem.Request以下に読み込む
+# -第1引数: ヘッダスタックのハンドル
+#------------------------------------------------------------------------------
+=kis
+function Sys.LoadHeader $(
+	.listsub @headerlist System.Header;
+	if $[ $(.find @headerlist System.Header.$@arg[1]) >= 0 ] $(
+		.cleartree System.Request;
+		.copytree System.Header.$@arg[1] System.Request;
+	);
+);
+=end
+
+#------------------------------------------------------------------------------
+# **SaveHeader
+#
+# -機能:    ハンドルで示したヘッダスタックにSystem.Request以下を保存
+# -第1引数: ヘッダスタックのハンドル
+#------------------------------------------------------------------------------
+=kis
+function Sys.SaveHeader $(
+	.cleartree System.Header.$@arg[1];
+	.copytree System.Request System.Header.$@arg[1];
+);
+=end
+
+#------------------------------------------------------------------------------
+# **RewindHeader
+#
+# -機能:    System.Request以下をイベント呼び出し時の状態に復元
+#------------------------------------------------------------------------------
+=kis
+function Sys.RewindHeader $(
+	.cleartree System.Request;
+	.copytree System.CurrentHeader System.Request;
+);
+=end
+
+#------------------------------------------------------------------------------
+# **SaveCurrentHeader
+#
+# -機能:    System.Request以下を専用ヘッダスタックに保存
+# -備考:    System.Callback.(OnGET,OnNOTIFY)直後に呼ぶこと
+#------------------------------------------------------------------------------
+=kis
+function Sys.SaveCurrentHeader $(
+	.cleartree System.CurrentHeader;
+	.copytree System.Request System.CurrentHeader;
+);
+=end
+
+#==============================================================================
+
+
+#基幹エントリ構造を保護(ProtectEntryStructure)=================================
+#・System.Callback.*
+#・event.*
+#・notify.*
+#・resource.*
+#のエントリを、起動中書き換え不可に設定する。
+#外部SSTPによる不正なスクリプトが侵入した場合の危険性を、多少軽減する。
+#kawarirc.kis最終行で実行のこと。
+
+=kis
+function ProtectEntryStructure $(
+	.listtree @ToProtect System.Callback;
+	.listtree @ToProtect event;
+	.listtree @ToProtect notify;
+	.listtree @ToProtect resource;
+	foreach @i @ToProtect $(.writeprotect ${@i});
+);
+=end
+
+#==============================================================================
+
+
+#kawarirc.kis読み込み終了時処理================================================
+
+=kis
+function KawariSystemBoot $(
+	# 一部の特殊処理用に、event2.*をevent.*の末尾に追加
+	.logprint "[create after-event tree]";
+	.listtree @event2 event2;
+	foreach @i @event2 $(.move ${@i} event.$(.substr ${@i} 7));
+	.logprint "[evaluate 'System.Callback.OnLoad']";
+	.get System.Callback.OnLoad;
+	.clear System.Callback.OnLoad;
+	.logprint "[protect entry structure]";
+	if $[ $(.ver) =~ "KAWARI.kdt" ] $(
+		.listtree @ToProtect System.Function.Sys;
+		foreach @i @ToProtect $(
+			.writeprotect ${@i};
+		);
+	);
+	ProtectEntryStructure;
+	rmfunc ProtectEntryStructure;
+	.logprint "[ready]";
+)
+=end
+
+#==============================================================================

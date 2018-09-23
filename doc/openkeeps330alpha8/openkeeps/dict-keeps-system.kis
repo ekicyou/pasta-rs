@@ -1,0 +1,1542 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  共通（汎用）サブルーチン群
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha1 2002.09.25 22:30版
+# Version2.0 alpha2 2002.09.27 22:07版
+# Version2.0 alpha3 2002.09.28 20:07版
+# Version2.0 alpha4 2002.09.28 22:06版
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.1      2004.06.10 21:00版
+# Version3.0.4      2004.06.27 11:00版
+# Version3.0.5      2004.07.03 11:30版
+# Version3.0.6      2004.07.10 13:30版
+# Version3.0.7      2004.07.18 22:30版
+# Version3.0.9      2004.08.08 18:45版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.1.4      2004.10.30 22:45版
+# Version3.1.5      2004.11.13 20:30版
+# Version3.1.9      2005.01.10 22:30版
+# Version3.1.10     2005.01.15 16:30版
+# Version3.3.0a6    2005.10.17 00:00版
+# Version3.3.0a7    2005.10.30 22:00版
+# Version3.3.0a8    2005.11.06 17:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+# デバッグ用関数群=============================================================
+# 「debugger on」だった場合、これらの機能が有効になる
+
+#KPdate ………… デバッグ用dateコマンドラッパー(引数はdateコマンドと同じ)
+#SetNowtime …… KPdate用の「現在時刻」設定(第1引数:1970/1/1 0:00:00からの秒数)
+#ResetNowtime … 「現在時刻」の設定を解除
+#IncNowtime …… 「現在時刻」を1秒進める
+#DecNowtime …… 「現在時刻」を1秒戻す
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : KPdate
+kp.FunctionToProtect.debug : date, SetNowtime, ResetNowtime
+kp.FunctionToProtect.debug :  IncNowtime, DecNowtime
+
+=kis
+if $[ ${System.Debugger} == "on" ] $(
+	function KPdate $(
+		.date
+			$[ $@arg[1] || "%y/%m/%d %H:%M:%S" ]
+			$[ $@arg[2] || $(GetInteger System.Nowtime) || $(.date %s) ];
+	);
+	.eval "$(function date "$(function KPdate)")";
+	function SetNowtime $(
+		.setstr System.Nowtime $(NonNegative $@arg[1]);
+		.logprint "SetNowtime : "$(.date "%y/%m/%d %H:%M:%S" ${System.Nowtime})"("${System.Nowtime}")";
+;
+	);
+	function ResetNowtime $(
+		.clear System.Nowtime;
+		.logprint "ResetNowtime : "$(.date "%y/%m/%d %H:%M:%S")"("$(.date %s)")";
+	);
+	function IncNowtime $(
+		SecureInc System.Nowtime;
+		.logprint "IncNowtime : "$(.date "%y/%m/%d %H:%M:%S" ${System.Nowtime})"("${System.Nowtime}")";
+	);
+	function DecNowtime $(
+		SecureDec System.Nowtime 1 0;
+		.logprint "DecNowtime : "$(.date "%y/%m/%d %H:%M:%S" ${System.Nowtime})"("${System.Nowtime}")";
+	);
+	.move kp.FunctionToProtect.debug kp.FunctionToProtect;
+	# OnSecondChangeで、自動的に「現在時刻」を進める
+	.push event2.OnSecondChange "$(if $(.size System.Nowtime) $(IncNowtime))";
+) else $(
+	function KPdate $(.clear @arg[0] ; .xargs @arg .date);
+	.clear kp.FunctionToProtect.debug;
+);
+=end
+
+#==============================================================================
+
+
+#各種時間計測==================================================================
+
+#西暦2001年1月1日から現在までのまでの経過分数 (MinCalc)------------------------
+
+=kis
+function DayCalc $(
+	.setstr @year $[ $(KPdate %y) - 2001 ];
+	return $[ 
+		${@year} * 365
+		+ ${@year} / 4
+		- ${@year} / 100
+		+ ${@year} / 400
+		+ $(KPdate %J)
+	];
+);
+function MinCalc $[ $(DayCalc) * 1440 + $(KPdate %k) * 60 + $(KPdate %N) ];
+=end
+
+#ゴーストが今回担当している時間[単位:分](ghosttime.now)------------------------
+ghosttime.now : $[ ${time.iconize} + ${time.desktop} ]
+
+#ゴーストが今回担当している時間[単位:時](worktime.ghost)-----------------------
+worktime.ghost : $[ ${ghosttime.now} / 60 ]
+
+#ゴーストがこれまで担当した時間の合計(ghosttime.total)-------------------------
+ghosttime.total : $[ ${time.iconize.total} + ${time.desktop.total} ]
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : ghosttime.now,worktime.ghost,ghosttime.total
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : DayCalc,MinCalc
+
+#==============================================================================
+
+
+##時間帯設定 (HourZone)========================================================
+
+=kis
+# timezoneが一部イベントでほぼ必ず評価されることを狙った攻撃対策で、
+# timezoneエントリに関数実体を移動した上でwriteprotectするよう変更。
+# オーバーヘッドは十分小さいと考えられる。
+# それに伴いHourZoneを有名無実化。従来互換のために関数としては残す。
+function HourZone $(NULL);
+=end
+
+timezone : $(ModifierSearch kp.timezone $(KPdate %k))
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : timezone
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : HourZone
+
+#==============================================================================
+
+
+#セーブ、バックアップルーチン(SaveData,Backup)=================================
+
+#セーブ(SaveData)--------------------------------------------------------------
+#終了時に保存されるエントリ
+
+=kis
+function SaveData $(
+	.xargs kp.datasaveparam .save ${kp.savefile};
+	GetifExist kp.callback.OnSave;
+);
+=end
+
+#この時点で既にユーザ設定のdatasaveparamが設定されているので、いったん退避
+#Ver.3.0.0移行に伴う修正(04/6/10 さとー)
+#内部で保存されるエントリを「kp.datasaveparam」に変更したため、この処理不要
+#Ver3.3.0 alpha7(2005/10/27 さとー)
+#=kis
+#.move datasaveparam kp.temp.datasaveparam;
+#=end
+
+kp.datasaveparam (
+	sw.mikire , sw.kasanari , sw.randomtalk , sw.talkworktime ,
+	interval ,
+	closemode ,
+	FlagMode , OverrideMode , username , worktime , freeze ,
+	count.boot , count.delete ,
+	endtime , endday ,
+	time.desktop.total , time.iconize.total ,
+	time.desktop.before , time.iconize.before
+)
+
+#バックアップ(Backup)----------------------------------------------------------
+#ネットワーク更新時のバックアップ
+
+=kis
+function Backup $(
+	.xargs kp.databackupparam .save ${kp.savefile};
+	GetifExist kp.callback.OnBackup;
+);
+=end
+
+#この時点で既にユーザ設定のdatabackupparamが設定されているので、いったん退避
+#Ver.3.0.0移行に伴う修正(04/6/10 さとー)
+#内部で保存されるエントリを「kp.databackupparam」に変更したため、この処理不要
+#Ver3.3.0 alpha7(2005/10/27 さとー)
+#=kis
+#.move databackupparam kp.temp.databackupparam;
+#.move dataclearparam kp.temp.dataclearparam;
+#=end
+
+#この時点では、kp.databackupparamとkp.dataclearparamは同じ内容で問題ない
+kp.databackupparam , kp.dataclearparam (
+	UpdateFileTotal ,
+	flagdisplay ,
+	DisplayDpp , DisplayWidth , DisplayHeight ,
+	AppliName , AppliMaker , AppliVersion ,
+	AppliCopyright , AppliURL , AppliFile
+)
+
+#datasaveparamとの共通部分をコピー (02/10/30 さとー コピーするタイミング変更)
+#Ver3.0.0移行に伴い、ユーザ設定に最後に追加する設定を追加(04/06/10 さとー)
+#内部で保存されるエントリを変更したため、処理内容を変更
+#Ver3.3.0 alpha7(2005/10/27 さとー)
+System.Callback.OnLoad : $(
+	# セーブ時とバックアップ時の共通データを同じ順序にしてコピー
+	.move kp.databackupparam @temp;
+	.copy kp.datasaveparam kp.databackupparam;
+	.copy @temp kp.databackupparam;
+
+	# ユーザ設定のデータをコピー
+	.copy datasaveparam kp.datasaveparam;
+	.move datasaveparam kp.databackupparam;
+	.move databackupparam kp.databackupparam;
+	.move dataclearparam kp.dataclearparam;
+
+	# セーブ内容の重複を排除
+	ToUnique kp.datasaveparam;
+	ToUnique kp.databackupparam;
+)
+
+# datasaveparamの内容は、databackupparamにそのままあってよい(位置づけ的に)
+# セーブパラメータの重複は怖い(セーブデータの爆発、不確実化につながる)
+# datasaveparamとdatabackupparamは、同じエントリ名が２重に登録されてはならない
+# 
+
+#バックアップ用データのクリア(ClearData)---------------------------------------
+#SSPのゴーストキャッシュ対応用
+
+=kis
+function ClearData $(
+	# 次回起動時には確実に消去したいパラメータを消去
+	foreach @i kp.dataclearparam $(.clear ${@i});
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SaveData,Backup,ClearData
+
+#==============================================================================
+
+
+#エントリのユニーク化(ToUnique)================================================
+#エントリ内の単語を重複のない状態する。
+#重複した単語は、添え字が後のものが消える。エントリ呼び出し等を含んでいても可。
+
+=kis
+# 第1引数: エントリ名
+# 戻り値:  なし
+function ToUnique $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	if $[ $(.size $@arg[1]) == 0 ] $(return);
+
+	.setstr @i 0;
+	while $[ ${@i} < ( $(.size $@arg[1]) - 1 ) ] $(
+		.setstr @pos $(.rfind $@arg[1] $(.getcode $@arg[1][${@i}]));
+		if $[ ${@pos} != ${@i} ] $(
+			.clear $@arg[1][${@pos}];
+		) else $(
+			.inc @i;
+		);
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : ToUnique
+
+#==============================================================================
+
+
+#存在するエントリならばget(GetifExist)=========================================
+#単なるgetとほとんど同じ動作だが、空エントリを呼んでもエラーを吐かない
+#ログファイルにOpenKEEPS側エラーを出さないための関数
+=kis
+function GetifExist $(if $(.size $@arg[1]) $(.get $@arg[1]));
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetifExist
+
+#==============================================================================
+
+
+#0による桁埋め(FillZero)=======================================================
+
+=kis
+# 第1引数: 右詰で0を埋めるべき文字
+# 第2引数: 桁数
+function FillZero $(
+	if $[ $(.size @arg) != 3 ] $(return);
+	return $(loop $[ $@arg[2] - $(.length $@arg[1]) ] "0")$@arg[1];
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : FillZero
+
+#==============================================================================
+
+
+#文字列の前後の空白を取り除く(TrimSpace)=======================================
+
+=kis
+# 第1引数: 空白を取り除くべき文字列
+# 戻り値:  空白を取り除いた文字列
+# 備考:    半角スペースとタブを取り除く
+function TrimSpace $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	.setstr @l $(.length $@arg[1]);
+	if $[ ! ${@l} ] $(return);
+	.setstr @b 0;
+	while $[ " 	" =~ $(.char_at $@arg[1] ${@b}) && ${@b} < ${@l} ] $(.inc @b);
+	if $[ ${@b} == ${@l} ] $(return);
+	.setstr @e $[ ${@l} - 1 ];
+	while $[ " 	" =~ $(.char_at $@arg[1] ${@e}) && ${@e} >= ${@b} ] $(.dec @e);
+	return $(.substr $@arg[1] ${@b} $[ ${@e} - ${@b} + 1 ]);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : TrimSpace
+
+#==============================================================================
+
+
+#ダブルクォート文字列を処理する(DeleteQuote)===================================
+#第1引数: ダブルクォートでクォートされた文字列
+=kis
+function DeleteQuote $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @len $(.length $@arg[1]);
+	.setstr @i 0;
+	while $[ ${@i} < ${@len} ] $(
+		.setstr @c $(.char_at $@arg[1] ${@i});
+		.inc @i;
+		if $[ ${@c} != "\"" && ${@c} != "\\" ] $(
+			.pushstr @stream ${@c};
+			continue;
+		) else if $[ ${@c} == "\\" ] $(
+			.setstr @c2 $(.char_at $@arg[1] ${@i});
+			.pushstr @stream $(if $[ ${@c2} != "\"" ] "\\")${@c2};
+			.inc @i;
+			continue;
+		);
+	);
+	return $(.join @stream);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : DeleteQuote
+
+#==============================================================================
+
+
+#バイト数指定で部分文字列を取得する(SubstrBytes)===============================
+
+=kis
+.clear kp.ascii;
+.setstr @i 32;
+while $[ ${@i} < 127 ] $(pushstr kp.ascii $(chr ${@i});inc @i);
+
+# 第1引数: 対象文字列
+# 第2引数: バイト数
+# 戻り値:  対象文字列を先頭から指定バイト数だけ切り取ったもの(文字に丸める)
+function SubstrBytes $(
+	if $[ $(.size @arg) != 3 ] $(return);
+	.setstr @lmax $(NonNegative $@arg[2]);
+
+	.setstr @l 0;
+	loop $(.length $@arg[1]) $(
+		.setstr @i ${-1};
+		.inc @l;
+		if $[ $(.find kp.ascii $(.char_at $@arg[1] ${@i})) < 0 ] $(.inc @l);
+		if $[ ${@l} >= ${@lmax} ] $(break);
+	);
+	return $(.substr $@arg[1] 0 $[ ${@i} +1 ]);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SubstrBytes
+
+#==============================================================================
+
+#記号除去ルーチン群(StringNormalize、StringStrongNormalize)====================
+#
+#このルーチンは、エントリ等に使えない文字を除去します（ＫＩＳで特別な文字として
+#使われているものがある為に誤動作の原因となる）
+
+# $(StringNormalize <STRING>)
+# $(StringStrongNormalize <STRING>)
+
+#除去される文字(StringNormalize)
+#全角スペース、半角スペース、
+#全て半角の「\"!#$%&'()*+,-./:;<=>?@[]^_`{|}~」
+
+#除去される文字(StringStrongNormalize)
+#全角スペース、半角スペース、
+#全角半角問わず「\"!#$%&'()*+,-./:;<=>?@[]^_`{|}~」
+
+#置換される文字(共通)
+#全角英字大小＆半角大文字⇒半角小文字
+#全角数字＆ローマ数字　　⇒半角数字
+#半角カナ＆カナ記号　　　⇒全角カナ＆カナ記号
+#一部特殊文字（単位）　　⇒それ相当の半角小文字
+
+# 排除したい記号
+kp.sn.delete   : ".　 ?@"
+kp.ssn.delete  : "￥＼”！＃＄％＆’（）＊＋，－．／：；＜＝＞？＠［］＾＿‘｛｜｝～"
+# 多バイト文字1字 -> 1バイト文字1字 置換テーブル
+kp.sn.mbupper  : "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
+kp.sn.mblower  : "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ"
+kp.sn.mbnum    : "０１２３４５６７８９"
+kp.sn.hankana  : "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ"
+kp.sn.hankana  : "ﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｧｨｩｪｫｯｬｭｮｰ｢｣､｡"
+kp.sn.lower    : "abcdefghijklmnopqrstuvwxyz"
+kp.sn.num      : "0123456789"
+kp.sn.zenkana  : "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ"
+kp.sn.zenkana  : "マミムメモヤユヨラリルレロワヲンァィゥェォッャュョー「」、。"
+
+# 特殊記号、1バイトカナ 置換テーブル
+kp.sn.ngsymbol : "㎜", "㎝", "㎞", "㎎", "㎏", "㏄", "㎡"
+kp.sn.ngsymbol : "ｶﾞ", "ｷﾞ", "ｸﾞ", "ｹﾞ", "ｺﾞ", "ｻﾞ", "ｼﾞ", "ｽﾞ", "ｾﾞ", "ｿﾞ"
+kp.sn.ngsymbol : "ﾀﾞ", "ﾁﾞ", "ﾂﾞ", "ﾃﾞ", "ﾄﾞ", "ﾊﾞ", "ﾋﾞ", "ﾌﾞ", "ﾍﾞ", "ﾎﾞ"
+kp.sn.ngsymbol : "ﾊﾟ", "ﾋﾟ", "ﾌﾟ", "ﾍﾟ", "ﾎﾟ"
+
+kp.sn.symbol   : "mm", "cm", "km", "mg", "kg", "cc", "m2"
+kp.sn.symbol   : "ガ", "ギ", "グ", "ゲ", "ゴ", "ザ", "ジ", "ズ", "ゼ", "ゾ"
+kp.sn.symbol   : "ダ", "ヂ", "ヅ", "デ", "ド", "バ", "ビ", "ブ", "ベ", "ボ"
+kp.sn.symbol   : "パ", "ピ", "プ", "ペ", "ポ"
+
+=kis
+# 置換対象文字一覧を生成
+.setstr kp.sn.search $(
+	.get kp.sn.mbupper;
+	.get kp.sn.mblower;
+	.get kp.sn.mbnum;
+	.get kp.sn.hankana;
+	.get kp.sn.delete;
+);
+
+# 置換後文字一覧を生成
+.setstr kp.sn.replace $(
+	.get kp.sn.lower;
+	.get kp.sn.lower;
+	.get kp.sn.num;
+	.get kp.sn.zenkana;
+);
+
+# 強い正規化用のテーブル生成
+.setstr kp.ssn.search $(.get kp.sn.search ; .get kp.ssn.delete);
+.copy kp.sn.replace kp.ssn.replace;
+.copy kp.sn.ngsymbol kp.ssn.ngsymbol;
+.copy kp.sn.symbol kp.ssn.symbol;
+
+# 専用エントリを保護
+.listtree @entries kp.sn;
+.listtree @entries kp.ssn;
+foreach @i @entries $(.writeprotect ${@i});
+
+# 基底正規化コマンド
+function StringNormalizeBase $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	.setstr @base $@arg[1];
+	# ASCII英文字を小文字に変換
+	.setstr @str $(.tolower $@arg[2]);
+
+	# 特殊記号を適正表現に置換
+	loop $(.size ${@base}.ngsymbol) $(
+		.setstr @i ${-1};
+		if $[ ${@str} =~ $${@base}.ngsymbol[${@i}] ] $(
+			.setstr @str $(.gsub ${@str} $${@base}.ngsymbol[${@i}] $${@base}.symbol[${@i}]);
+		);
+	);
+
+	# マルチバイト文字を1バイト文字に置換し、同時に排除したい記号を削除
+	.setstr @str $(.tr ${@str} ${${@base}.search} ${${@base}.replace});
+	return $(.tr $(.encode_entryname ${@str}) "_" "");
+);
+
+# 標準的な正規化
+function StringNormalize $(StringNormalizeBase kp.sn $@arg[1]);
+# 強い正規化(全角記号でも半角と同じ判断基準で削除)
+function StringStrongNormalize $(StringNormalizeBase kp.ssn $@arg[1]);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect (
+	StringNormalizeBase,
+	StringNormalize,
+	StringStrongNormalize
+)
+
+#==============================================================================
+
+
+#ユーザ定義正規化(StringUserNormalize)=========================================
+#ユーザの定義した正規化変換テーブルによる正規化コマンド
+#StringNormalizeBaseを内部で使用している
+
+=kis
+.listtree @userdeftable kp.usernormalize;
+if $[ ${kp.config.useusernormalize} && $(.size @userdeftable) ] $(
+	#ユーザ定義正規化テーブルを構築
+	.setstr kp.usern.search $(
+		if $[ ${kp.config.useusernormalize} < 3 ] $(
+			.get kp.sn.mbupper;
+			.get kp.sn.mblower;
+			.get kp.sn.mbnum;
+			.get kp.sn.hankana;
+		);
+		.get kp.usernormalize.from;
+		if $[ ${kp.config.useusernormalize} < 3 ] $(.get kp.sn.delete);
+		if $[ ${kp.config.useusernormalize} == 2 ] $(.get kp.ssn.delete);
+		.get kp.usernormalize.delete;
+	);
+	.setstr kp.usern.replace $(
+		if $[ ${kp.config.useusernormalize} < 3 ] $(.get kp.sn.replace);
+		.get kp.usernormalize.to;
+	);
+	if $[ ${kp.config.useusernormalize} < 3 ] $(
+		.copy kp.sn.ngsymbol kp.usern.ngsymbol;
+		.copy kp.sn.symbol kp.usern.symbol;
+	);
+	.copy kp.usernormalize.multisymbol_from kp.usern.ngsymbol;
+	.copy kp.usernormalize.multisymbol_to kp.usern.symbol;
+
+	# 専用エントリを保護
+	.listtree @entries kp.usern;
+	foreach @i @entries $(.writeprotect ${@i});
+
+	#関数を定義
+	function StringUserNormalize $(StringNormalizeBase kp.usern $@arg[1]);
+) else $(
+	# ユーザ定義正規化を使わない場合、正規化
+	function StringUserNormalize $(StringNormalizeBase kp.sn $@arg[1])
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : StringUserNormalize
+
+#==============================================================================
+
+#一部タグを無害化(KillDangerousTag)============================================
+#SSTP攻撃に対処する場合に使います
+
+=kis
+# 外部SSTPに存在した場合、危険なタグを無害化
+# 第1引数: 文字列
+# 戻り値:  タグを無害化した文字列
+function KillDangerousTag $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @str $@arg[1];
+	loop $(.size kp.dangeroustag) $(
+		.setstr @i ${-1};
+		if $[ $(.match ${@str} $kp.dangeroustag[${@i}]) == -1 ] $(continue);
+		# 危険タグが存在したら、無害化したタグに置換
+		.setstr @str $(.gsub ${@str} $kp.dangeroustag[${@i}] $kp.securedtag[${@i}]);
+	);
+	return ${@str};
+);
+=end
+
+# KillDangerousTag内部で参照している危険なタグのリスト
+# 必ず2文字以上からなるタグを書くこと
+kp.dangeroustag (
+	"\\![updatebymyself]",
+	"\\![vanishbymyself]",
+	"\\![enter,passivemode]",
+	"\\![leave,passivemode]",
+	"\\![lock,repaint]",
+	"\\![unlock,repaint]",
+	"\\![biff]",
+	"\\![open,browser",
+	"\\![open,mailer",
+	"\\![raise",
+	"\\j["
+)
+
+# 安全化したタグ列の生成(kp.securedtag)
+=kis
+if $(.size kp.securedtag) $(.clear kp.securedtag);
+loop $(.size kp.dangeroustag) $(
+	.setstr @i ${-1};
+	.pushstr kp.securedtag " _"$(.substr $kp.dangeroustag[${@i}] 2);
+);
+=end
+
+# タグリストが消されて無効化されないよう、エントリを保護
+=kis
+.writeprotect kp.dangeroustag;
+.writeprotect kp.securedtag;
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : KillDangerousTag
+
+#==============================================================================
+
+
+#「]」を見つける(GetCloseParenthesis)==========================================
+#さくらスクリプトの閉じ括弧を見つける場合に使います。
+#ダブルクオートでくくった中にある「]」は無視します。
+
+=kis
+# 書式   : $(GetCloseParenthesis ＜検索する文字列＞ ＜検索開始位置＞)
+# 第1引数: 検索する文字列
+# 第2引数: 検索開始位置、省略時は0として扱う
+# 戻り値 : 「]」の位置、該当無しの場合「-1」
+# 備考   : ダブルクオートでくくってあれば、「]」であっても無視
+function GetCloseParenthesis $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return "-1");
+
+	.setstr @str $@arg[1];
+	.setstr @i $(if $[ $(.size @arg) == 3 ] $@arg[2] else "0");
+	.setstr @length $(.length $@arg[1]);
+	if $[ ${@i} >= ${@length} ] $(return "-1");
+
+	.setstr @quotemode 0;
+	while $[ ${@i} < ${@length} ] $(
+		.setstr @c $(.char_at ${@str} ${@i});
+		if $[ ${@c} == "\"" ] $(
+			if $[ ${@quotemode} == 0 ] $(
+				.setstr @quotemode 1;
+			) else $(
+				.setstr @quotemode 0;
+			);
+		);
+
+		if $[ ! ${@quotemode} && ${@c} == "]" ] $(return ${@i});
+		.inc @i;
+	);
+	return "-1";
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetCloseParenthesis
+
+#==============================================================================
+
+
+#さくらスクリプトを意識した文字切り出し(sslex_char_at)=========================
+#文字列をさくらスクリプトを意識して解析し、指定位置がタグ以外ならそこの1文字、
+#タグならタグ全体を返します。
+
+=kis
+# 書式   : $(sslex_char_at ＜切り出し対象文字列＞ ＜切り出し位置＞)
+# 第1引数: 切り出し対象文字列
+# 第2引数: 切り出す位置
+# 戻り値 : 1文字もしくは1タグ
+# 備考   : 解析は指定位置から開始するので注意のこと
+function sslex_char_at $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	.setstr @c $(.char_at $@arg[1] $@arg[2]);
+	# 「\」ではないので、さくらスクリプトタグではない
+	if $[ ${@c} != "\\" ] $(return ${@c});
+
+	# これ以降、「\」で始まるさくらスクリプト
+	.setstr @str $(.substr $@arg[1] $@arg[2]);
+	.setstr @c1 $(.char_at ${@str} 1);
+	.setstr @c2 $(.char_at ${@str} 2);
+	if $[ ${@c1} == "w" ] $(
+		# \wタグ
+		return "\\w"${@c2};
+	) else if $[ $(.find sslex_char_at.onechar_maybracket ${@c1}) >= 0 ] $(
+		# []が後続するかもしれない1文字タグ
+		if $[ ${@c2} == "[" ] $(
+			# []があった
+			.setstr @len $(GetCloseParenthesis ${@str});
+			if $[ ${@len} == -1 ] $(.setstr @len $[ $(.length ${@str}) - 1 ]);
+			return "\\"$(.substr ${@str} 1 ${@len});
+		) else $(
+			# []なし
+			return "\\"${@c1};
+		);
+	) else if $[ $(.find sslex_char_at.onechar ${@c1}) >= 0 ] $(
+		# 1文字タグ
+		return "\\"${@c1};
+	) else if $[ $(.find sslex_char_at.bracket ${@c1}) >= 0 ] $(
+		# []で閉じる1文字タグ
+		.setstr @len $(GetCloseParenthesis ${@str});
+		if $[ ${@len} == -1 ] $(.setstr @len $[ $(.length ${@str}) - 1 ]);
+		return "\\"$(.substr ${@str} 1 ${@len});
+	) else if $[ ${@c1} == "_" ] $(
+		# 「_」で始まるタグ
+		return "\\"$(sslex_char_at.ub $(.substr ${@str} 1));
+	);
+
+	# 知らないタグだった場合、或いは想定外のタグ入力ミスがあった場合対策
+	return "\\"${@str};
+);
+=end
+
+=kis
+# 「_」で始まるタグを解析する
+# 第1引数: 切り出し開始位置からの部分文字列から、先頭の「\」を除いたもの
+# 戻り値 : 1タグ
+function sslex_char_at.ub $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @str $@arg[1];
+	.setstr @c1 $(.char_at ${@str} 1);
+	.setstr @c2 $(.char_at ${@str} 2);
+	if $[ $(.find sslex_char_at._onechar_maybracket ${@c1}) >= 0 ] $(
+		# []が後続するかもしれないタグ
+		if $[ ${@c2} == "[" ] $(
+			# []があった
+			.setstr @len $(GetCloseParenthesis ${@str});
+			if $[ ${@len} == -1 ] $(.setstr @len $[ $(.length ${@str}) - 1 ]);
+			return "_"$(.substr ${@str} 1 ${@len});
+		) else $(
+			# []なし
+			return  "_"${@c1};
+		);
+	) else if $[ $(.find sslex_char_at._onechar ${@c1}) >= 0 ] $(
+		# 「_」+1文字タグ
+		return "_"${@c1};
+	) else if $[ $(.find sslex_char_at._bracket ${@c1}) >= 0 ] $(
+		# 「_」+[]で閉じるタグ
+		.setstr @len $(GetCloseParenthesis ${@str});
+		if $[ ${@len} == -1 ] $(.setstr @len $[ $(.length ${@str}) - 1 ]);
+		return "_"$(.substr ${@str} 1 ${@len});
+	) else if $[ ${@c1} == "_" ] $(
+		# 「__」で始まるタグ
+		return "_"$(sslex_char_at.ubub $(.substr ${@str} 1));
+	);
+
+	# 知らないタグだった場合、或いは想定外のタグ入力ミスがあった場合対策
+	return ${@str};
+);
+=end
+
+=kis
+# 「__」で始まるタグを解析する
+# 第1引数: 切り出し開始位置からの部分文字列から、先頭の「\_」を除いたもの
+# 戻り値 : 1タグ
+function sslex_char_at.ubub $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @str $@arg[1];
+	.setstr @c1 $(.char_at ${@str} 1);
+	if $[ $(.find sslex_char_at.__onechar ${@c1}) >= 0 ] $(
+		# 「_」+1文字タグ
+		return "_"${@c1};
+	) else if $[ $(.find sslex_char_at.__bracket ${@c1}) >= 0 ] $(
+		# 「_」+[]で閉じるタグ
+		.setstr @len $(GetCloseParenthesis ${@str});
+		if $[ ${@len} == -1 ] $(.setstr @len $[ $(.length ${@str}) - 1 ]);
+		return "_"$(.substr ${@str} 1 ${@len});
+	);
+
+	# 知らないタグだった場合、或いは想定外のタグ入力ミスがあった場合対策
+	return ${@str};
+);
+=end
+
+# sslex_char_atコマンド内部で使用しているエントリ群
+sslex_char_at.onechar_maybracket :  c , n , x
+sslex_char_at.onechar : "\\" , e , t , v , z , "+" , "-" , "*" , 4 , 5
+sslex_char_at.onechar : h , u , 0 , 1 , C
+sslex_char_at.bracket : b , f , i , j , m , p , q , s , 8 , "!" , "&"
+sslex_char_at._onechar_maybracket : a , s
+sslex_char_at._onechar : V
+sslex_char_at._onechar : n , q , "+"
+sslex_char_at._bracket : b , l , m , u , w
+sslex_char_at.__onechar : t
+sslex_char_at.__bracket : w
+
+# タグリストが消されて無効化されないよう、エントリを保護
+kp.EntryToProtect (
+	sslex_char_at.onechar_maybracket,
+	sslex_char_at.onechar,
+	sslex_char_at.bracket,
+	sslex_char_at._onechar_maybracket,
+	sslex_char_at._onechar,
+	sslex_char_at._bracket,
+	sslex_char_at.__onechar,
+	sslex_char_at.__bracket
+)
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : sslex_char_at, sslex_char_at.ub, sslex_char_at.ubub
+
+#==============================================================================
+
+
+#さくらスクリプトの除いて平文を得る(GetPlainText)==============================
+#与えられた文からさくらスクリプトのみ取り除き、平文を返します。
+=kis
+# 第1引数: さくらスクリプトを取り除く対象の文
+# 戻り値:  桜スクリプトを取り除いた後の文
+function GetPlainText $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @i 0;
+	.setstr @length $(.length $@arg[1]);
+	while $[ ${@i} < ${@length} ] $(
+		.setstr @c $(sslex_char_at $@arg[1] ${@i});
+		if $[ $(.length ${@c}) == 1 ]
+			${@c}
+		else
+			$(if $[ ${@c} == "\\\\" ] "\\")
+		;
+		.inc @i $(.length ${@c});
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetPlainText
+
+#==============================================================================
+
+
+#文字列の数値化(Integer、NoNegative)===========================================
+#処理する文字を数字だけに限定したい場合に使います
+
+=kis
+# 文字列から整数字だけ抜き出す
+# 第1引数: 文字列
+# 戻り値:  文字列中の0～9、先頭のマイナス記号だけを抜き出した結果
+#          抜き出しか結果が$(NULL)ならば0を返す
+function Integer $(.inc @arg[1] 0 ; return $@arg[1]);
+=end
+
+=kis
+# 文字列から非負数字だけ抜き出す
+# 第1引数: 文字列
+# 戻り値:  文字列中の0～9だけを抜き出した結果
+#          抜き出しか結果が$(NULL)ならば0を返す
+#          文字列先頭にマイナス記号があった場合も0を返す
+function NonNegative $(.dec @arg[1] 0 0 ; return $@arg[1]);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : Integer,NonNegative
+
+#==============================================================================
+
+
+#Reference参照(Reference、SReference、IntReference、NonNegReference)===========
+#Referenceを簡単に参照する場合に使用します。
+
+=kis
+# Reference*参照
+# 第1引数: Reference番号
+# 戻り値:  Reference*の内容
+function Reference $(
+	if $(.size "System.Request.Reference"$@arg[1]) $(
+		.get "System.Request.Reference"$@arg[1][0];
+	)
+);
+
+# 危険なさくらスクリプトタグを無害化した上でReference*参照
+# 第1引数: Reference番号
+# 戻り値:  危険なさくらスクリプトタグをを無害化したReference*の内容
+function SReference $(KillDangerousTag $(Reference $@arg[1]));
+
+# 整数値としてReference*参照
+# 第1引数: Reference番号
+# 戻り値:  Referenceの内容が整数ならばその内容、それ以外なら0
+function IntReference $(Integer $(Reference $@arg[1]));
+
+# 非負整数としてReference*参照
+# 第1引数: Reference番号
+# 戻り値:  Referenceの内容が非負整数ならばその内容、それ以外なら0
+function NonNegReference $(NonNegative $(Reference $@arg[1]));
+
+# エントリ名に使える文字だけにしてReference*参照
+# 第1引数: Reference番号
+# 戻り値:  エントリ名に使える文字だけにしたReference*の内容
+function EntNamReference $(.encode_entryname $(Reference $@arg[1]));
+
+# 内容を正規化してReference*参照
+# 第1引数: Reference番号
+# 戻り値:  正規化したReference*の内容
+function NormReference $(StringNormalize $(Reference $@arg[1]));
+
+# 内容を強い正規化してReference*参照
+# 第1引数: Reference番号
+# 戻り値:  強い正規化したReference*の内容
+function StrongNormReference $(StringStrongNormalize $(Reference $@arg[1]));
+
+# 内容をユーザ定義正規化してReference*参照
+# 第1引数: Reference番号
+# 戻り値:  ユーザ正規化したReference*の内容
+function UserNormReference $(StringUserNormalize $(Reference $@arg[1]));
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect (
+	Reference,
+	SReference,
+	IntReference,
+	NonNegReference,
+	EntNamReference,
+	NormReference,
+	StrongNormReference,
+	UserNormReference
+)
+
+#==============================================================================
+
+
+#置換ブロックを無効化してから文字列として評価(GetString)=======================
+
+=kis
+# 第1引数: エントリ名
+# 第2引数: インデックス(省略可可能)
+# 戻り値:  評価前形式の状態で「$」を「_」に置換し、その結果を評価した結果
+function GetString $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.set @str $(.gsub $(
+		.getcode $@arg[1][$(
+			if $[ $(.size @arg) == 2 ]
+				$(.rand $(.size $@arg[1]))
+			else
+				$@arg[2]
+		)]
+	) "$" "_");
+	return ${@str};
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetString
+
+#==============================================================================
+
+
+#置換ブロックを無効化してから整数として評価(GetInteger)========================
+
+=kis
+# 第1引数: エントリ名
+# 第2引数: インデックス(省略可可能)
+# 戻り値:  評価前形式の状態から整数を取り出す
+function GetInteger $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.set @str $(.gsub $(
+		.getcode $@arg[1][$(
+			if $[ $(.size @arg) == 2 ]
+				$(.rand $(.size $@arg[1]))
+			else
+				$@arg[2]
+		)]
+	) "$" "_");
+	return $(Integer ${@str});
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetInteger
+
+
+#==============================================================================
+
+
+#置換ブロックを無効化してからインクリメント/デクリメント(SecureInc/SecureDec)==
+
+=kis
+# 第1引数: エントリ名
+# 第2引数: 増分(省略可能)
+# 第3引数: 上限(省略可能)
+# 戻り値:  なし
+function SecureInc $(
+	if $[ $(.size @arg) < 2 || $(.size @arg) > 4 ] $(return);
+
+	.set @str $(gsub $(.getcode $@arg[1][0]) "$" "_");
+	.setstr $@arg[1] ${@str};
+	.clear @arg[0];
+	.xargs @arg inc;
+);
+=end
+
+=kis
+# 第1引数: エントリ名
+# 第2引数: 減分(省略可能)
+# 第3引数: 下限(省略可能)
+# 戻り値:  なし
+function SecureDec $(
+	if $[ $(.size @arg) < 2 || $(.size @arg) > 4 ] $(return);
+
+	.set @str $(gsub $(.getcode $@arg[1][0]) "$" "_");
+	.setstr $@arg[1] ${@str};
+	.clear @arg[0];
+	.xargs @arg dec;
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SecureInc, SecureDec
+
+#==============================================================================
+
+
+#先頭のピリオドを削除した文字列を返す==========================================
+#EntryName内部で使います
+
+=kis
+# 第1引数: 文字列
+# 戻り値 : 先頭のピリオドを再帰的に取り除いた文字列
+function Del1stPeriod $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @i 0;
+	while $(.match_at $@arg[1] "." ${@i}) $(.inc @i);
+	return $(.substr $@arg[1] ${@i});
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : Del1stPeriod
+
+#==============================================================================
+
+
+#FlagModeを考慮したエントリ名の決定============================================
+#EntryRefer内部で使います
+
+=kis
+# 第1引数: 参照したいエントリ名
+# 戻り値 : FlagModeを考慮したエントリ名
+function EntryName $(
+	if $[ $(.size @arg) !=2 ] $(return);
+
+	if $(.match_at $@arg[1] "!") $(
+		# 先頭に「!」があった場合、FlagModeを無視する
+		return $(.substr $@arg[1] 1);
+	) else if $(.size OverrideMode) $(
+		# OverrideModeだった
+		.setstr @f ${FlagMode};
+		until $(.size $(Del1stPeriod ${@f}.$@arg[1])) $(
+			if $[ $(.length ${@f}) == 0 ] $(break);
+			.setstr @nextf ${$(Del1stPeriod ${@f}.InheritFrom)};
+			if $[ ${@nextf} == "__self__" ] $(break);
+			.setstr @f ${@nextf};
+		);
+		return $(Del1stPeriod ${@f}.$@arg[1]);
+	);
+	# OverrideModeではなかった
+	return $(Del1stPeriod ${FlagMode}.$@arg[1]);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : EntryName
+
+#==============================================================================
+
+
+#FlagModeを考慮したエントリの参照==============================================
+#Talkの内部で使用しています
+
+=kis
+# 第1引数: トークに使うエントリ
+# 第2引数: エントリの添え字(省略時はランダム)
+# 戻り値 : アクセス結果
+function EntryRefer $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.setstr @talkentry $(EntryName $@arg[1]);
+
+	# 第2引数が""でなければ、添え字と見なす
+	return $(
+		if $[ $(.length $@arg[2]) != 0 ]
+			$${@talkentry}[$@arg[2]]
+		else
+			${${@talkentry}}
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : EntryRefer
+
+#==============================================================================
+
+
+#長いトーク時、ランダムトークタイマを停止させる(MakeLongTalk)==================
+#SSP以外のstatusヘッダの来ない本体で、長いトークを話している最中に後のトークが
+#割り込まないよう、タイマを停止させる\![raise]タグを挿入します。
+#Talkコマンドの中で利用します。
+
+=kis
+function MakeLongtalk $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @s $@arg[1];
+	if $[ $(.length ${@s}) == 0 ] $(return);
+	# ランダムトークタイマが止まっているなら、バッティングの心配は無い
+	if $[ ! $(isRandomtalkOn) ] $(return ${@s});
+
+	if $(.match_at $(.reverse ${@s}) "e\\") $(
+		.setstr @s $(.substr ${@s} 0 $[ $(length ${@s}) - 2 ]);
+		.setstr @e "\\e";
+	) else $(
+		.setstr @e "";
+	);
+	return (
+		"\\![raise,OnOKTalkCtrl,"${kp.gid}",stop]"
+		${@s}
+		"\\![raise,OnOKTalkCtrl,"${kp.gid}",start]"
+		${@e}
+	);
+)
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : MakeLongtalk
+
+#==============================================================================
+
+
+#イベントによるトーク発動ルーチン==============================================
+
+#SHIORI3.0によるイベントのトークを発動する要のルーチンです
+#また、FlagMode（人格モード）が挟まれる事により、
+#人格別の反応を返すことが出来ます。
+
+#入力パラメータ
+# FlagMode : トークモード
+
+=kis
+# 第1引数: トークに使うエントリ
+# 第2引数: エントリの添え字(省略時はランダム)
+# 戻り値 : トーク
+function Talk $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	#デフォルトは自発トークフラグを消す
+	.clear kp.internaltalkflag;
+
+	.setstr @str $(EntryRefer $@arg[1] $@arg[2]);
+	if $[ $(.length ${@str}) != 0 ] $(
+		# 外部SSTPトークではない、自発トークである証拠のフラグを立てる
+		.setstr kp.internaltalkflag 1;
+		resetTalkcount;
+		if $(.size kp.longtalkmode) $(
+			.setstr @str $(MakeLongtalk ${@str});
+		);
+		return ${@str};
+	);
+);
+=end
+
+#OnTranslateイベントでフラグを消しておく
+
+event2.OnTranslate : $(
+	if $(.size kp.internaltalkflag) $(.clear kp.internaltalkflag);
+	if $(.size kp.longtalkmode) $(.clear kp.longtalkmode);
+)
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : Talk
+
+#==============================================================================
+
+
+#トークエントリ有無チェック====================================================
+
+#トーク発動を呼び出す判断に使われます
+#呼び出すトークエントリが存在すれば発話ルーチン（上を参考にしてください）を
+#呼び出す仕組みになっています
+#例 $(if $(EntrySize <Entry>) $(Talk <Entry>))
+
+#入力パラメータ
+# FlagMode : トークモード
+
+#戻り結果
+# 該当エントリ(キャラクターモード含む)がないと0、あればエントリの単語数
+
+=kis
+# 第1引数: 調べるエントリ
+# 戻り値 : キャラクタモード込みの該当エントリの単語数
+function EntrySize $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	return $(.size $(EntryName $@arg[1]));
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : EntrySize
+
+#==============================================================================
+
+
+#エントリ検索ルーチン(EntrySearch)=============================================
+
+=kis
+# 第1引数: 探すエントリ名群のエントリ名
+# 戻り値 : 該当するエントリ(FlagMode含まず)
+# 備考   : 検索時、FlagModeは意識する
+function EntrySearch $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	loop $(.size $@arg[1]) $(
+		.setstr @i ${-1};
+		.setstr @entry $$@arg[1][${@i}];
+		if $(EntrySize ${@entry}) $(return ${@entry});
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : EntrySearch
+
+#==============================================================================
+
+
+#エントリ修飾部検索ルーチン(ModifierSearch)====================================
+
+=kis
+# 第1引数: 探す修飾群のエントリ名
+# 第2引数: 修飾群を探すための基準（時間等）
+# 戻り値 : 修飾語
+function ModifierSearch $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	loop $(.size $@arg[1]) $(
+		.setstr @i ${-1};
+		.clear @modifier;
+		.split @modifier $$@arg[1][${@i}] "_";
+		if $[ $@modifier[0] > $@arg[2] ] $(return $@modifier[1]);
+	);
+	return $@modifier[1];
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : ModifierSearch
+
+#==============================================================================
+
+
+#トークエントリ群を検索して発話(TalkSearch)====================================
+
+=kis
+# 第1引数: 検索するトークエントリ群を記述したエントリ名
+# 戻り値:  トーク(該当無ければ無し)
+function TalkSearch $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @talkentry $(EntrySearch $@arg[1]);
+	if $[ $(.length ${@talkentry}) != 0 ] $(Talk ${@talkentry});
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : TalkSearch
+
+#==============================================================================
+
+
+#トークエントリ群を検索して発話(保険付)(TalkSafeSearch)========================
+
+=kis
+# 第1引数: 検索するトークエントリ群を記述したエントリ名
+# 戻り値:  トーク(該当無い場合TalkReturnのトークを返す、それも無ければデフォ)
+function TalkSafeSearch $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	.setstr @aistr $(TalkSearch $@arg[1]);
+	if $(.length ${@aistr}) $(return \t${@aistr});
+
+	# トークが見つからなかったので、保険トークを使う
+	if $(EntrySize "TalkReturn") $(return \t$(Talk "TalkReturn"));
+
+	# 保険すら見つからないので、デフォルトサーフィスを表示
+	Talk "kp.BaseState";
+);
+=end
+
+kp.BaseState : \t\1\s[10]\0\s[0]\e
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.BaseState
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : TalkSafeSearch
+
+#==============================================================================
+
+
+#オリジン補正(AdjustOrigin)====================================================
+#ネットワーク更新、メールチェックに存在するベースウェアによる数の数え方の
+#違いを吸収します。この関数を通すと、1オリジンの数を返します。
+
+kp.BaseWare.0origin : MATERIA , embryo , ninix-aya, crow
+
+=kis
+# 0オリジン系なら1を足す、1オリジン系ならそのまま返す
+function AdjustOrigin $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	if $[ $(.size kp.BaseWare) == 0 ] $(
+		.setstr kp.BaseWare $[ $(KillDangerousTag ${System.Request.Sender}) || "UNKNOWN" ];
+	);
+
+	if ${kp.BaseWare&kp.BaseWare.0origin} $(
+		return $[ $(Integer $@arg[1]) + 1 ];
+	) else $(
+		return $(Integer $@arg[1]);
+	);
+);
+=end
+
+# 0オリジン系以外の場合、1オリジンを指定
+resource.useorigin1 : $(
+	if $[ ! ${kp.BaseWare.0origin&System.Request.Sender} ] "1";
+)
+
+=kis
+.writeprotect resource.useorigin1;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.BaseWare.0origin
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : AdjustOrigin
+
+#==============================================================================
+
+
+#ログファイルへのメッセージ出力(LogMsg)========================================
+#ログファイルに時刻、発生イベント名等を付加して情報を記録します。
+#OpenKEEPSのエラー出力、警告等に使用します。
+
+=kis
+function LogMsg $(
+	if $[ $(.size @arg) < 2 ] $(return);
+
+	.logprint "  =============== [Message from OpenKEEPS] ===============";
+	if $(.size System.Request) $(
+		.logprint "    Request: "$(GetString System.Request)" SHIORI/3.0";
+	);
+	if $(.size System.Request.ID) $(
+		.logprint "    ID:      "$(GetString System.Request.ID);
+	);
+	.logprint "    Time:    "$(.date "%y/%m/%d %H:%M:%S");
+	.logprint "    Message: "$@arg[1];
+	.clear @arg[0..1];
+	foreach @i @arg $(.logprint "             "${@i});
+	.logprint "  =================== [End of Message] ===================";
+);
+=end
+
+#==============================================================================
+
+
+#FlagMode制御(chFlagMode)======================================================
+#FlagModeを変更する場合、この関数を使います。
+#例:
+#  $(chFlagMode Another)
+#  $(chFlagMode)
+
+=kis
+function chFlagMode $(
+	if $[ $@arg[1] != ${FlagMode} ] $(
+		.clear FlagMode;
+		if $[ $(.length $@arg[1]) != 0 ] $(.setstr FlagMode $@arg[1]);
+		.clear talkqueue;
+		.clear beforemousestate;
+		.clear tmp.stroke;
+		.clear stroke.limit;
+		.setstr mousecount 0;
+		.setstr res.phase 0;
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : chFlagMode
+
+#==============================================================================
+
+
+#汎用イベントトーク用イベント情報(EventInfo)===================================
+#現在発生しているイベントについて、簡単な説明文を参照できます。
+
+EventInfo : $(
+	entry
+	kp.eventinfo.$(.encode_entryname ${kp.locale}.${System.Request.ID})
+	${kp.eventinfo.$(.encode_entryname ${kp.locale}).UnknownEvent}
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : EventInfo
+
+#==============================================================================
+
+
+# フラグ関連処理、フラグ判定関数===============================================
+=kis
+
+# freezeフラグをセット
+function setFreeze $(.setstr freeze 1);
+
+# freezeフラグを解除
+function resetFreeze $(.setstr freeze 0);
+
+# freezeフラグがセットされていると真
+function isFreezing $[ $(GetInteger freeze) == 1 ];
+
+# freezeフラグがセットされていないと真
+function isNotFreezing $[ $(GetInteger freeze) == 0 || $(.size freeze) == 0 ];
+
+# 見切れ反応を有効に
+function MikireOn $(.setstr sw.mikire 0);
+
+# 見切れ反応を無効に
+function MikireOff $(.setstr sw.mikire 1);
+
+# 重なり反応を有効に
+function KasanariOn $(.setstr sw.kasanari 0);
+
+# 重なり反応を無効に
+function KasanariOff $(.setstr sw.kasanari 1);
+
+# 自発ランダムトークを有効に
+function RandomtalkOn $(.setstr sw.randomtalk 0);
+
+# 自発ランダムトークを無効に
+function RandomtalkOff $(.setstr sw.randomtalk 1);
+
+# マルチキャラクタモードをオーバーライド式に
+function OverrideOn $(.setstr OverrideMode true);
+
+# マルチキャラクタモードを切り替え式に
+function OverrideOff $(.clear OverrideMode);
+
+# 見切れ反応が有効だと真
+function isMikireOn $[ $(GetInteger sw.mikire) == 0 || $(.size sw.mikire) == 0 ];
+
+# 重なり反応が有効だと真
+function isKasanariOn $[ $(GetInteger sw.kasanari) == 0 || $(.size sw.kasanari) == 0 ];
+
+# 自発ランダムトークが有効だと真
+function isRandomtalkOn $[ $(GetInteger sw.randomtalk) == 0 || $(.size sw.randomtalk) == 0 ];
+
+# ランダムトーク
+function Randomtalk $(Talk "sentence");
+
+# キャラクタモード管理がオーバーライド式なら真
+function isOverrideMode $(.size OverrideMode);
+
+# クラッシュ後の起動だと真
+function isCrashed $[ $(GetInteger kp.iscrashed) == 1 ];
+
+# トークカウントをリセット
+function resetTalkcount $(
+	.setstr cnttalk ${interval};
+	.setstr kp.currentinterval ${cnttalk};
+);
+
+# 長話モードON(トーク中ランダムトークタイマ停止、発話ごとにリセット)
+function LongtalkMode $(.setstr kp.longtalkmode 1);
+
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect (
+	setFreeze,resetFreeze,isFreezing,isNotFreezing,
+	MikireOn,MikireOff,KasanariOn,KasanariOff,
+	RandomtalkOn,RandomtalkOff,
+	OverrideOn,OverrideOff,
+	isMikireOn,isKasanariOn,isRandomtalkOn,Randomtalk,
+	isOverrideMode,isCrashed,
+	resetTalkcount
+)
+
+#==============================================================================
+
+
+#起動時システム処理============================================================
+
+System.Callback.OnLoad : $(
+	LogMsg "Load at "$(.date %s);
+
+	# セーブファイル読み忘れ回避コード
+	foreach @i kp.datasaveparam $(.inc @entnum $(.size ${@i}));
+	if $[ ! ${@entnum} ] $(
+		# データエントリファイルを読み忘れているか、初回起動かの可能性高し
+		# 安全策として、セーブファイルを読み込む
+		.load ${kp.savefile};
+	);
+
+	# 辞書肥大現象対策
+	foreach @i kp.databackupparam $(
+		if $(.size ${@i}) $(.set @j $(.getcode ${@i}[-1]));
+		.clear ${@i};
+		if $(.size @j) $(.move @j ${@i});
+	);
+
+	# 保護対象エントリをwriteprotect
+	.move kp.EntryToProtect @protectlist;
+	.listtree @protectlist kp.callback;
+	foreach @i @protectlist $(.writeprotect ${@i});
+
+	# 保護対象関数をwriteprotect(kdt実装版華和梨に限る)
+	if $[ $(.ver) =~ "KAWARI.kdt" ] $(
+		foreach @i kp.FunctionToProtect $(
+			.writeprotect System.Function.${@i};
+		);
+	);
+	.clear kp.FunctionToProtect;
+)
+
+#==============================================================================

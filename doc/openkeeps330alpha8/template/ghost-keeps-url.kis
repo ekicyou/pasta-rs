@@ -1,0 +1,163 @@
+#==============================================================================
+#
+#  「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  「お勧め」サイトリスト辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00.00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.4      2004.06.27 11:00版
+# Version3.3.0a6    2005.10.17 00:00版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.0 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#「お勧め」サイトリスト書式説明================================================
+
+#エントリ名
+# URL.sakura : 本体側のおすすめサイト
+# URL.kero   : kero側のおすすめサイト
+# URL.portal : 本体側のポータルサイト
+
+##式
+# "(サイト名)(ＵＲＬ)(バナーＵＲＬ)"
+#　又は、
+# "(サイト名)"$(chr 1)"(ＵＲＬ)"$(chr 1)"(バナーＵＲＬ)"$(chr 2)
+#　又は
+# $(urllist "(サイト名)" "(ＵＲＬ)" "(バナーＵＲＬ)")
+#
+#区切り線は、
+# "-" 又は、"-"$(chr 2) 又は $(urllist - - -)
+#
+#バナーとして表示できるのはJPG・PNG形式のみでGIF形式は表示できないので注意。
+#予め「banner」フォルダにあるものを表示するには、
+#バナーＵＲＬを「(識別子)」、bannerフォルダ内のファイル名を
+#「(識別子).(拡張子)」とする。
+#バナーを表示させたくない時はスペース等を最低１文字入れておく。
+#例
+#URL.sakura : "example"$(chr 1)"http://www.nanntoka.net/"$(chr 1)"nanntoka_banner"$(chr 2)
+#bannerフォルダ内のバナー画像 nanntoka_banner.png
+
+#バナーを表示させたくないとき
+#URL.sakura : "example"$(chr 1)"http://www.nanntoka.net/"$(chr 1)" "$(chr 2)
+
+#==============================================================================
+
+
+#本体お勧めリスト：SHIORI/2.2 対応アプリケーション=============================
+
+URL.sakura : "SSTP Bottle"$(chr 1)"http://bottle.mikage.to/"$(chr 1)"http://bottle.mikage.to/banner.gif"$(chr 2)
+URL.sakura : "Winamp"$(chr 1)"http://www.winamp.com/"$(chr 1)"soft_winamp"$(chr 2)
+URL.sakura : "YunaSoft SexyFont Plug-in"$(chr 1)"http://yunasoft.nerv.org/"$(chr 1)"soft_yunasoft"$(chr 2)
+URL.sakura : "猫どりふ"$(chr 1)"http://members.jcom.home.ne.jp/umeici/"$(chr 1)"http://members.jcom.home.ne.jp/umeici/image/nd_b.png"$(chr 2)
+URL.sakura : "きのこ"$(chr 1)"http://homepage3.nifty.com/khsoft/cbs/"$(chr 1)"http://homepage3.nifty.com/khsoft/cbs/image/banner.png"$(chr 2)
+URL.sakura : "SAKURAスクリプトエディタ だぶるている"$(chr 1)"http://www.geocities.co.jp/SiliconValley-Cupertino/4430/"$(chr 1)"http://www.geocities.co.jp/SiliconValley-Cupertino/4430/hap_bnr.png"$(chr 2)
+URL.sakura : "『伺か』用のウカガか"$(chr 1)"http://www2.airnet.ne.jp/~sirataki/ukagaka/"$(chr 1)"http://www2.airnet.ne.jp/~sirataki/ukagaka/banner.png"$(chr 2)
+
+#==============================================================================
+
+
+#kero お勧めリスト：アンテナ、情報=============================================
+
+URL.kero : "さくらナビ.com"$(chr 1)"http://www.remus.dti.ne.jp/~j-o/skin/skin.htm"$(chr 1)"http://www.remus.dti.ne.jp/~j-o/skin/banner00.png"$(chr 2)
+URL.kero : "何かゴーストセンター"$(chr 1)"http://www.aqrs.jp/ngc/"$(chr 1)"http://homepage2.nifty.com/aqrs/ngc/ngc.png"$(chr 2)
+URL.kero : "GHOST TOWN"$(chr 1)"http://ghost.sakura.vg/"$(chr 1)"http://ghost.sakura.vg/banner/bannertown.png"$(chr 2)
+URL.kero : "ZIDAN"$(chr 1)"http://firetire.web.infoseek.co.jp/zidan/"$(chr 1)"-"$(chr 2)
+URL.kero : "何かアンテナ"$(chr 1)"http://sakura.nekome.net/antenna/"$(chr 1)" "$(chr 2)
+URL.kero : "やさぐれアンテナ"$(chr 1)"http://antenna.yasagure.net/"$(chr 1)"http://antenna.yasagure.net/ysgr_antenna.png"$(chr 2)
+URL.kero : "うにゅうアンテナ"$(chr 1)"http://www.betiz.nu/nanika/antenna/"$(chr 1)"http://www.betiz.nu/nanika/antenna/unyu_antenna.png"$(chr 2)
+URL.kero : "何か。の略歴"$(chr 1)"http://a1.st/nob/sakura/"$(chr 1)"http://a1.st/nob/sakura/r_banner.png"$(chr 2)
+
+#==============================================================================
+
+
+#本体ポータルサイト：本体・情報サイト・「華和梨」関係==========================
+
+URL.portal : "OpenKEEPS"$(chr 1)"http://keeps.sourceforge.jp"$(chr 1)"http://keeps.sourceforge.jp/banner.png"$(chr 2)
+URL.portal : "-"$(chr 2)
+URL.portal : "伺か"$(chr 1)"http://usada.sakura.vg/"$(chr 1)"http://sakura.mikage.to/banner.png"$(chr 2)
+URL.portal : "SSP BUGTTRAQ"$(chr 1)"http://ssp.shillest.net/"$(chr 1)" "$(chr 2)
+URL.portal : "CROW"$(chr 1)"http://crow.aqrs.jp/"$(chr 1)"http://homepage2.nifty.com/aqrs/crow/crow_bnr1.png"$(chr 2)
+URL.portal : "ninix"$(chr 1)"http://www.geocities.co.jp/SiliconValley-Cupertino/7565/"$(chr 1)"http://www.geocities.co.jp/SiliconValley-Cupertino/7565/image/ninix-banner.png"$(chr 2)
+URL.portal : "ninix-aya"$(chr 1)"http://ninix-aya.sourceforge.jp/"$(chr 1)"http://ninix-aya.sourceforge.jp/ninix-aya.png"$(chr 2)
+URL.portal : "偽林檎"$(chr 1)"http://ccm.sherry.jp/"$(chr 1)" "$(chr 2)
+URL.portal : "-"$(chr 2)
+URL.portal : "もどき板"$(chr 1)"http://nh.pv.to/"$(chr 1)"http://nh.pv.to/banner0.png"$(chr 2)
+URL.portal : "うぁー"$(chr 1)"http://da.pekori.to/wiki/"$(chr 1)"-"$(chr 2)
+URL.portal : "-"$(chr 2)
+URL.portal : "華和梨公式配布ページ"$(chr 1)"http://kawari.sf.net/"$(chr 1)"http://kawari.sf.net/images/banner.png"$(chr 2)
+URL.portal : "「あれ以外の何か以外の何か」掲示板"$(chr 1)"http://hpcgi1.nifty.com/creative-s/meister/wforum.cgi"$(chr 1)"http://homepage1.nifty.com/creative-s/meister/bbsbanner.png"
+URL.portal : "華和梨を使い倒す？"$(chr 1)"http://www27.tok2.com/home/kawarisp/"$(chr 1)"http://www27.tok2.com/home/kawarisp/banner/kawariplus.png"$(chr 2)
+URL.portal : "私設「華和梨」応援団"$(chr 1)"http://shobu.hp.infoseek.co.jp/"$(chr 1)"http://shobu.hp.infoseek.co.jp/images/kpcg_banner.png"$(chr 2)
+URL.portal : "偽華和梨さんの虫パレード"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?FakeKawariBts"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?plugin=attach&openfile=fake-kawaribts.png&refer=FakeKawariBts"$(chr 2)
+URL.portal : "偽かわりんくす"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?FakeKawaLinks"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?plugin=attach&openfile=fake-kawalinks.png&refer=FakeKawaLinks"$(chr 2)
+URL.portal : "偽かわりだね"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?KawariFrontPage"$(chr 1)"-"$(chr 2)
+URL.portal : "SPEAKEASY"$(chr 1)"http://www.yk.rim.or.jp/~suikyo/"$(chr 1)"kawari_speakeasy"$(chr 2)
+URL.portal : "後衛"$(chr 1)"http://meister0.hp.infoseek.co.jp/"$(chr 1)"-"$(chr 2)
+URL.portal : "-"$(chr 2)
+#URL.portal : "ＦＵＤＳ"$(chr 1)"http://www3.to/TinyPalace/"$(chr 1)"http://www.ah.wakwak.com/~deep/tinybana.jpg"$(chr 2)
+URL.portal : "8.x系華和梨でゴースト作る方法教えます"$(chr 1)"http://kemonomimisippo.hp.infoseek.co.jp/"$(chr 1)"  "$(chr 2)
+URL.portal : "Public Survice Announcement"$(chr 1)"http://psa.ange.ac/"$(chr 1)"http://psa.ange.ac/images/banner.png"$(chr 2)
+
+#==============================================================================
+
+
+#イベント：「お勧め」サイト選択時==============================================
+
+#TalkURL.＜正規化したお勧めサイト名＞
+#TalkURL
+
+# お勧めサイトリストのサイト名は、全・半角スペースは削除、英数は全て半角のこと
+#「お勧め」サイトリストから選択した時。上ほど優先する。
+
+# 使用可能な変数
+# System.Request.Reference0 : サイト名
+# System.Request.Reference1 : サイトのURL
+
+
+#TalkURL.clearbrainsystems : \0\s[0]エンターテインメントソフト「きのこ」配布元。\e
+#TalkURL.猫どりふ : \0\s[0]エンターテインメントソフト「猫どりふ」配布元。\e
+#TalkURL.winampcom : \0\s[0]ＭＰ３プレーヤ「Winamp」配布元。\w8\1YunaSexyFontとの組合せて曲紹介や歌詞表示ができるんや。\e
+#TalkURL.yunasoft : \0\s[0]「Winamp」用プラグイン「YunaSexyFont」配布元。\n\n「Winamp」で、曲紹介や歌詞表示などが可能に。\e
+#TalkURL.はぴかる▼せぶん : \0\s[0]SHIORIモジュール用テキストエディタ「だぶるている」配布元。\e
+#TalkURL.何か用のナニか : \0\s[0]「UD Agent」支援ソフト「UDSensor」配布元。\e
+TalkURL : \0\s[0]サイト「$(SReference 0)」です。\e
+
+#==============================================================================
+
+
+#リソース：「お勧め」サイトリストボタン名======================================
+
+#エントリ名 : Sakura.URLCaption : \0側のお勧め
+#　　　　　   Kero.URLCaption   : \1側のお勧め
+#　　　　　   Portal.URLCaption : 本体のポータル
+#書式 ： "右クリックメニューに表示されるサイトリスト名"
+#複数指定可能
+
+Sakura.URLCaption : "きぃのおすすめ(&R)"
+Kero.URLCaption   : "ぷしゅう推奨(&R)"
+Portal.URLCaption : "ポータル(&P)"
+
+#==============================================================================

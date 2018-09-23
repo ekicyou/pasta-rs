@@ -1,0 +1,853 @@
+#******************************************************************************
+# "華和梨" Phase 8.2.0以降汎用 タスク管理システム KTM(Kawari Task Manager)
+#
+#     Programmed by S.Sato (さとー)
+#
+#  2003/11/08                 製作開始
+#  2003/12/02                 カーネル基本構造実装
+#  2004/02/17                 OpenKEEP依存部分を廃止、汎用化
+#                             優先順位、コンストラクタ、デストラクタ実装
+#                             タスクローカルエントリ実装
+#  2004/02/18                 Mutex、semaphore実装
+#                             タスクの評価・実行を常に優先順位順に
+#  2004/02/19  Ver.0.1.0      コマンド群prefixをTaskからKTMに変更
+#                             mailbox実装
+#  2004/02/23                 タスクごとに占有Mutex/semaphoreリスト保持
+#                             タスク削除時、占有Mutex/semaphoreを自動返却
+#                             コマンドをエントリに定義、一括で関数化
+#                             ミューテックスとセマフォの参照コマンド実装
+#                             タスクの優先順位変更コマンド実装
+#  2004/02/24                 RunTask変更
+#                             Mailboxを、タスク固有空間から別空間へ変更
+#  2004/02/25                 タスクローカルエントリをタスク固有空間へ変更
+#                             定数類を動的に設定、事前起動済タスクを許可
+#                             優先順位を「小さな数字ほど優先度が上」に変更
+#                             タスクの優先順位参照コマンド実装
+#                             タスク状態の保存コマンド実装
+#  2004/02/26  Ver.0.2.0      デバッグ、動作テスト
+#  2004/02/27                 デバッグ、コメントフォーマット変更
+#  2004/02/28                 周期的実行条件の簡易記述導入
+#  2004/02/29  Ver.0.3.0      システム向けメールメッセージ仕様策定
+#                             毎時処理にメールメッセージ解釈部実装
+#                             特定時刻単発実行条件の簡易記述導入
+#  2004/03/01  Ver.1.0.0      メールメッセージ仕様追加(M_EXE_PRC,SELF)
+#                             同一Tick内発行のメールメッセージは全て処理、
+#                             ラウンドロビン方式協調マルチタスクが可能に
+#  2004/06/06  Ver.1.0.1      @nullリダイレクトをsilentコマンド使用に変更
+#  2004/07/21  Ver.1.0.2      華和梨終了時、起動済み全タスクをデストラクト
+#  2004/08/08  Ver.1.0.3      デストラクタが存在した時のみデストラクタをコール
+#  2004/09/02  Ver.1.0.4      優先度が機能していなかったバグを修正
+#  2005/06/16  Ver.1.1.0      activetask管理を構造化、Tick動作を軽くする
+#                             変更のあったコマンド：
+#                             Tick,StopTask,RunTask,ChangeTaskRank,SaveState
+#
+#  このソフトウェアはPublic Domain Softwareです。
+#  自由に利用・改変して構いません。
+#  改変の有無にかかわらず、自由に再配布することが出来ます。
+#  作者はこのソフトウェアに関して、全ての権利と全ての義務を放棄します。
+#
+#******************************************************************************
+
+
+#==============================================================================
+# *中枢部::タスク管理
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **Tick
+#
+# -機能:    毎時処理
+#------------------------------------------------------------------------------
+KTM.API.Tick : $(
+	# 優先順位別に、条件評価と実行
+	loop 5 $(
+		.setstr @tasklist KTM.activetask.rank${-1};
+		if $(.size ${@tasklist}) $(
+			foreach KTM.tid ${@tasklist} $(
+				# cond節を評価し、真だった場合はproc節を実行
+				if $(.get ${KTM.task.${KTM.tid}.cond}) $(
+					.get ${KTM.task.${KTM.tid}.proc};
+				);
+			);
+		);
+	);
+	# システムへのメッセージ処理
+	# そのまま処理しても、自動的に優先順位順になっている
+	# タスクが終わりきらない場合、タスク終端でM_EXE_SELF発行で
+	# ラウンドロビン方式の協調的マルチタスク動作になる
+	while $(KTM.GetMailNo "SYSTEM") $(
+		.clear @msg;
+		.split @msg $(KTM.GetMailMessage "SYSTEM") " ";
+		if $(.size "KTM.SYSMAIL."$@msg[0]) $(
+			.setstr KTM.sysmailparam $@msg[1];
+			.setstr KTM.tid $(KTM.GetMailSender "SYSTEM");
+			.get "KTM.SYSMAIL."$@msg[0];
+		);
+		KTM.DeleteMail "SYSTEM";
+	);
+	silent;
+	.clear KTM.sysmailparam;
+	.clear KTM.tid;
+)
+
+# 処理するメッセージの実行部
+KTM.SYSMAIL.M_RUN      : $(KTM.RunTask          ${KTM.sysmailparam})
+KTM.SYSMAIL.M_STOP     : $(KTM.StopTask         ${KTM.sysmailparam})
+KTM.SYSMAIL.M_DEL      : $(KTM.DeleteTask       ${KTM.sysmailparam})
+KTM.SYSMAIL.M_LCK_MTX  : $(KTM.LockMutex        ${KTM.sysmailparam})
+KTM.SYSMAIL.M_RLS_MTX  : $(KTM.ReleaseMutex     ${KTM.sysmailparam})
+KTM.SYSMAIL.M_GET_SEM  : $(KTM.GetSemaphore     ${KTM.sysmailparam})
+KTM.SYSMAIL.M_RLS_SEM  : $(KTM.ReleaseSemaphore ${KTM.sysmailparam})
+KTM.SYSMAIL.M_EXE_PRC  : $(.get ${KTM.sysmailparam})
+KTM.SYSMAIL.M_EXE_SELF : $(.get ${KTM.task.${KTM.tid}.proc})
+
+#------------------------------------------------------------------------------
+# **StopTask
+#
+# -機能:    タスク停止
+# -第1引数: tid
+#------------------------------------------------------------------------------
+KTM.API.StopTask : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	.setstr @i $(.find KTM.activetask $@arg[1]);
+	if $[ ${@i} >= 0 ] $(
+		.clear KTM.activetask[${@i}];
+		.setstr @j $(.find KTM.activetask.rank$(KTM.ReferTaskRank $@arg[1]) $@arg[1]);
+		.clear KTM.activetask.rank$(KTM.ReferTaskRank $@arg[1])[${@j}];
+	);
+)
+
+#------------------------------------------------------------------------------
+# **DeleteTask
+#
+# -機能:    タスク削除
+# -第1引数: tid
+# -備考1:   デストラクタがあれば実行
+# -備考2:   タスクローカルエントリ空間を削除
+# -備考3:   占有するミューテックス、セマフォを解放
+#------------------------------------------------------------------------------
+KTM.API.DeleteTask : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	KTM.StopTask $@arg[1];
+	.setstr @i $(.find KTM.alivetask $@arg[1]);
+	if $[ ${@i} >= 0 ] $(
+		# 一時的に削除するタスクに実行権を与える
+		.move KTM.tid @temptid;
+		.setstr KTM.tid $@arg[1];
+		.setstr @task "KTM.task."$@arg[1];
+		# デストラクタ実行
+		if $(.size ${${@task}.quit}) $(.get ${${@task}.quit});
+		# Mutex、セマフォを抱えていた場合、自動返却
+		if $(.size ${@task}.pmtx) $(
+			foreach @j ${@task}.pmtx $(KTM.ReleaseMutex ${@j});
+		);
+		if $(.size ${@task}.psem) $(
+			foreach @j ${@task}.psem $(KTM.ReleaseSemaphore ${@j});
+		);
+		silent;
+		# エントリ構造を削除
+		.clear KTM.alivetask[${@i}];
+		.cleartree ${@task};
+		# 実行権を元に戻す
+		.clear KTM.tid;
+		.move @temptid KTM.tid;
+	);
+)
+
+#------------------------------------------------------------------------------
+# **CreateTask
+#
+# -機能:    タスク生成
+# -第1引数: タスク名
+# -第2引数: condを記したエントリ名
+# -第3引数: procを記したエントリ名
+# -第4引数: 優先順位(0～4)、省略時は「2」、小さいほど優先順位が上
+# -第5引数: コンストラクタを記したエントリ名、省略可能
+# -第6引数: デストラクタを記したエントリ名、省略可能
+# -戻り値:  tid
+# -備考1:   コンストラクタがあれば実行
+# -備考2:   第2引数に「CYCLE=???」で、???秒ごとに発動
+# -備考3:   第2引数に「TIME=???」で、Epocからの経過秒数が???の時に単発発動
+#------------------------------------------------------------------------------
+KTM.API.CreateTask : $(
+	if $[ $(.size @arg) < 4 || $(.size @arg) > 7 ] $(return);
+
+	# 新しいtask id生成
+	.setstr @tid ${KTM.taskcount};
+	.inc KTM.taskcount;
+	# 起動済みタスクに登録
+	if $[ $(.find KTM.alivetask ${@tid}) < 0 ] $(
+		.pushstr KTM.alivetask ${@tid};
+	);
+
+	.setstr @tident "KTM.task."${@tid};
+	.cleartree ${@tident};
+	.setstr ${@tident}".name" $@arg[1];
+	if $(.match_at $@arg[2] "CYCLE=") $(
+		.setstr ${@tident}".cycle" $(.substr $@arg[2] 6);
+		.setstr ${@tident}".cond" "KTM.INTERVAL";
+	) else if $(.match_at $@arg[2] "TIME=") $(
+		.setstr ${@tident}".time" $(.substr $@arg[2] 5);
+		.setstr ${@tident}".cond" "KTM.ONTIME";
+	) else $(
+		.setstr ${@tident}".cond" $@arg[2];
+	);
+	.setstr ${@tident}".proc" $@arg[3];
+	if $[ $@arg[4] != "" ] $(
+		# 優先順位 デフォルトは「2」
+		.setstr ${@tident}".rank" $(
+			if $[ ${$@arg[4]} >= 0 && ${$@arg[4]} <= 4 ]
+				${$@arg[4]}
+			 else
+				2
+		);
+	);
+	if $[ $@arg[5] != "" ] $(
+		# コンストラクタ あれば即時実行
+		.move KTM.tid @temptid;
+		.setstr KTM.tid ${@tid};
+		.get $@arg[5];
+		silent;
+		.clear KTM.tid;
+		.move @temptid KTM.tid;
+		# 即時実行なのに記録する意味があるのだろうか…。一応記録。
+		.setstr ${@tident}".init" $@arg[5];
+	);
+	if $[ $@arg[6] != "" ] $(
+		# デストラクタ
+		.setstr ${@tident}".quit" $@arg[6];
+	);
+
+	return ${@tid};
+)
+
+#------------------------------------------------------------------------------
+# **RunTask
+#
+# -機能:    タスクの実行開始
+# -第1引数: tid
+#------------------------------------------------------------------------------
+KTM.API.RunTask : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	if $[ $(.find KTM.activetask $@arg[1]) < 0 && $(.find KTM.alivetask $@arg[1]) >= 0 ] $(
+		.pushstr KTM.activetask $@arg[1];
+		.pushstr KTM.activetask.rank$(KTM.ReferTaskRank $@arg[1]) $@arg[1];
+		if $(.size KTM.task.$@arg[1].cycle) $(
+			.setstr "KTM.task."$@arg[1]".time" $(.date %s);
+		);
+	);
+)
+
+#------------------------------------------------------------------------------
+# **ChangeTaskRank
+#
+# -機能:    タスクの優先順位変更
+# -第1引数: tid
+# -第2引数: 優先順位(0～4)
+#------------------------------------------------------------------------------
+KTM.API.ChangeTaskRank : $(
+	if $[ $(.size @arg) != 3 ] $(return);
+	if $[ $(.find KTM.alivetask $@arg[1]) < 0 ] $(return);
+
+	if $[ $@arg[2] >= 0 && $@arg[2] <= 4 ] $(
+		if $[ $@arg[2] == ${KTM.task.$@arg[1].rank} ] $(return);
+
+		if $[ $(.find KTM.activetask $@arg[1]) >= 0 ] $(
+			.setstr @oldrank ${KTM.task.$@arg[1].rank};
+			.setstr @i $(.find KTM.activetask.rank${@oldrank} $@arg[1]);
+			.clear KTM.activetask.rank${@oldrank}[${@i}];
+			.pushstr KTM.activetask.rank$@arg[2] $@arg[1];
+		);
+		.setstr "KTM.task."$@arg[1]".rank" $@arg[2];
+	);
+)
+
+#------------------------------------------------------------------------------
+# **ReferTaskRank
+#
+# -機能:    タスクの優先順位参照
+# -第1引数: tid
+#------------------------------------------------------------------------------
+KTM.API.ReferTaskRank : $(
+	if $[ $(.size @arg) != 2] $(return);
+	if $[ $(.find KTM.alivetask $@arg[1]) < 0 ] $(return);
+
+	return ${KTM.task.$@arg[1].rank};
+)
+
+
+#==============================================================================
+# *サービス::タスクリスト
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **Tasklist
+#
+# -機能:    タスクのリストを返す
+# -戻り値:  「[tid]/[タスク名](|...)」形式のタスクリスト
+#------------------------------------------------------------------------------
+KTM.API.Tasklist : $(
+	if $(.size KTM.alivetask) $(
+		foreach @i KTM.alivetask $(
+			.pushstr @list ${@i}"/"${KTM.task.${@i}.name};
+		);
+		return $(.join @list "|");
+	);
+)
+
+#------------------------------------------------------------------------------
+# **Activetasklist
+#
+# -機能:    実行中のタスクのリストを返す
+# 戻り値:  「[tid]/[タスク名](|...)」形式の実行中タスクリスト
+#------------------------------------------------------------------------------
+KTM.API.Activetasklist : $(
+	if $(.size KTM.activetask) $(
+		foreach @i KTM.activetask $(
+			.pushstr @list ${@i}"/"${KTM.task.${@i}.name};
+		);
+		return $(.join @list "|");
+	);
+)
+
+
+#==============================================================================
+# *サービス::Mutex
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **CreateMutex
+#
+# -機能:    Mutex生成
+# -第1引数: 生成するMutex名
+# -戻り値:  成功すれば真、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.CreateMutex : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	# Mutex名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @mutex "KTM.mutex."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	# 既にMutexが存在した場合、何もせずに帰る
+	if $[ $(.size ${@mutex}) ] $(return);
+	.setstr ${@mutex} "-1";
+	return "true";
+)
+
+#------------------------------------------------------------------------------
+# **LockMutex
+#
+# -機能:    Mutexのロック
+# -第1引数: Mutex名
+# -戻り値:  成功すれば真、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.LockMutex : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.find KTM.alivetask ${KTM.tid}) < 0 ] $(return);
+
+	# Mutex名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @mutex $(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.setstr @mutexentry "KTM.mutex."${@mutex};
+	# 存在しないMutexだった場合、何もせず帰る
+	if $[ $(.size ${@mutexentry}) == 0 ] $(return);
+	# 既にロックされていたMutexだった場合、何もせず帰る
+	if $[ ${${@mutexentry}} != -1 ] $(return);
+	# Mutexに現在のtask idをセット、ロックする
+	.setstr ${@mutexentry} ${KTM.tid};
+	# タスクに所有するMutexとして登録
+	.pushstr "KTM.task."${KTM.tid}".pmtx" ${@mutex};
+	return "true";
+)
+
+#------------------------------------------------------------------------------
+# **ReleaseMutex
+#
+# -機能:    Mutexの解放
+# -第1引数: Mutex名
+# -戻り値:  成功すれば真、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.ReleaseMutex : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.find KTM.alivetask ${KTM.tid}) < 0 ] $(return);
+
+	# Mutex名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @mutex $(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.setstr @mutexentry "KTM.mutex."${@mutex};
+	# 存在しないMutexだった場合、何もせず帰る
+	if $[ $(.size ${@mutexentry}) == 0 ] $(return);
+	# 現在のタスクが所有していないMutexだった場合、何もせず帰る
+	if $[ ${${@mutexentry}} != ${KTM.tid} ] $(return);
+	# Mutexを解放する
+	.setstr ${@mutexentry} "-1";
+	# タスクからMutex登録を削除
+	.setstr @i $(.find "KTM.task."${KTM.tid}".pmtx" ${@mutex});
+	if $[ ${@i} >= 0 ] $(.clear KTM.task.${KTM.tid}.pmtx[${@i}]);
+	return "true";
+)
+
+#------------------------------------------------------------------------------
+# **ReferMutex
+#
+# -機能:    Mutexの参照
+# -第1引数: Mutex名
+# -戻り値:  Mutexが存在すれば所有するtask id or -1、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.ReferMutex : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	# Mutex名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @mutex "KTM.mutex."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	# 既にMutexが存在した場合、task id or -1を返す
+	if $[ $(.size ${@mutex}) ] $(return ${${@mutex}});
+	return;
+)
+
+
+#==============================================================================
+# *サービス::Semaphore
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **CreateSemaphore
+#
+# -機能:    Semaphore生成
+# -第1引数: 生成するSemaphore名
+# -第2引数: 最大セマフォカウント(省略時は1)
+# -戻り値:  成功すれば真、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.CreateSemaphore : $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	# セマフォ名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @semaphore "KTM.semaphore."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	# 既にセマフォが存在した場合、何もせずに帰る
+	if $[ $(.size ${@semaphore}) ] $(return);
+	# セマフォ作成
+	.cleartree ${@semaphore};
+	.setstr ${@semaphore} "0";
+	.setstr ${@semaphore}".limit" $(
+		if $[ $@arg[2] + 0 >= 1 ] $@arg[2] else "1"
+	);
+	return "true";
+)
+
+#------------------------------------------------------------------------------
+# **GetSemaphore
+#
+# -機能:    Semaphoreの獲得
+# -第1引数: Semaphore名
+# -戻り値:  成功すれば真、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.GetSemaphore : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.find KTM.alivetask ${KTM.tid}) < 0 ] $(return);
+
+	# セマフォ名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @semaphore $(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.setstr @semaphoreentry "KTM.semaphore."${@semaphore};
+	# 存在しないセマフォだった場合、何もせず帰る
+	if $[ $(.size ${@semaphoreentry}) == 0 ] $(return);
+	# 既に上限まで使われていたセマフォだった場合、何もせず帰る
+	if $[ ${${@semaphoreentry}} >= ${${@semaphoreentry}.limit} ] $(return);
+	# セマフォを使用しているリソースとして登録
+	.pushstr ${@semaphoreentry}".tid" ${KTM.tid};
+	# セマフォカウンタ更新
+	.inc ${@semaphoreentry};
+	# タスクに所有するセマフォとして登録
+	.pushstr "KTM.task."${KTM.tid}".psem" ${@semaphore};
+	return "true";
+)
+
+#------------------------------------------------------------------------------
+# **ReleaseSemaphore
+#
+# -機能:    Semaphoreの解放
+# -第1引数: Semaphore名
+# -戻り値:  成功すれば真、失敗すれば無し
+#------------------------------------------------------------------------------
+KTM.API.ReleaseSemaphore : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.find KTM.alivetask ${KTM.tid}) < 0 ] $(return);
+
+	# セマフォ名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @semaphore $(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.setstr @semaphoreentry "KTM.semaphore."${@semaphore};
+	# 存在しないセマフォだった場合、何もせず帰る
+	if $[ $(.size ${@semaphoreentry}) == 0 ] $(return);
+	# 現在のタスクが所有していないセマフォだった場合、何もせず帰る
+	.setstr @i $(.find ${@semaphoreentry}".tid" ${KTM.tid});
+	if $[ ${@i} < 0 ] $(return);
+	# セマフォを解放する
+	.clear ${@semaphoreentry}".tid"[${@i}];
+	.dec ${@semaphoreentry} 1 0;
+	# タスクからセマフォ登録を削除
+	.setstr @i $(.find "KTM.task."${KTM.tid}".psem" ${@semaphore});
+	if $[ ${@i} >= 0 ] $(.clear KTM.task.${KTM.tid}.psem[${@i}]);
+	return "true";
+)
+
+#------------------------------------------------------------------------------
+# **ReferSemaphore
+#
+# -機能:    Semaphoreの参照
+# -第1引数: Semaphore名
+# -戻り値:  Semaphoreが存在すればセマフォカウント、存在しなければ無し
+#------------------------------------------------------------------------------
+KTM.API.ReferSemaphore : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	# セマフォ名は、ピリオド以外のエントリ名に使用できる文字からなる
+	.setstr @semaphore "KTM.semaphore."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	# 既にセマフォが存在した場合、セマフォカウントを返す
+	if $[ $(.size ${@semaphore}) ] $(return ${${@semaphore}});
+	return;
+)
+
+
+#==============================================================================
+# *サービス::タスクローカルエントリ
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **Local
+#
+# -機能:    タスクローカルエントリ名を返す
+# -第1引数: ローカルエントリ名
+# -戻り値:  tidがあれば真のエントリ名、なければ""
+#------------------------------------------------------------------------------
+KTM.API.Local : $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.find KTM.alivetask ${KTM.tid}) < 0 ] $(return);
+	return "KTM.task."${KTM.tid}".ns."$@arg[1];
+)
+
+
+#==============================================================================
+# *サービス::メール
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **PostMail
+#
+# -機能:    メールを投函する
+# -第1引数: 投函する先のmailbox名
+# -第2引数: メッセージ内容
+#------------------------------------------------------------------------------
+KTM.API.PostMail : $(
+	if $[ $(.size @arg) < 3 ] $(return);
+	.setstr @to_mbox "KTM.mbox."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+
+	# タスク以外が投函した場合、tid=-1
+	.setstr @sender $(if $(.size KTM.tid) ${KTM.tid} else "-1");
+	.clear @arg[0..1];
+	# メールボックスは「[時刻],[投函したtask id],[メッセージ]」の形式
+	.setstr @msg $(.date %s)","${@sender}","$(.join @arg " ");
+	# 投函
+	.pushstr ${@to_mbox} ${@msg};
+)
+
+#------------------------------------------------------------------------------
+# **GetMailNo
+#
+# -機能:    メール件数を返す
+# -第1引数: mailbox名
+# -戻り値: メールの件数
+#------------------------------------------------------------------------------
+KTM.API.GetMailNo : $(
+	if $[ $(.size @arg) != 2  ] $(return 0);
+	return $(.size "KTM.mbox."$(.tr $(.encode_entryname $@arg[1]) "." "_"));
+)
+
+#------------------------------------------------------------------------------
+# **GetMailMessage
+#
+# -機能:    メールのメッセージを読む
+# -第1引数: mailbox名
+# -第2引数: 読むメールの番号(省略時は0番)
+# -戻り値:  メールのメッセージ
+#------------------------------------------------------------------------------
+KTM.API.GetMailMessage : $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.setstr @mid $(
+		if $[ $@arg[2] + 0 == $@arg[2] ]
+			$@arg[2]
+		else
+			"0"
+	);
+	.setstr @mbox "KTM.mbox."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.split @message $${@mbox}[${@mid}] ",";
+	.clear @message[0..1];
+	return $(.join @message ",");
+)
+
+#------------------------------------------------------------------------------
+# **GetMailSender
+#
+# -機能:    メールの送信者を読む
+# -第1引数: mailbox名
+# -第2引数: 読むメールの番号(省略時は0番)
+# -戻り値:  メールを送ってきたtask id
+#------------------------------------------------------------------------------
+KTM.API.GetMailSender : $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.setstr @mid $(
+		if $[ $@arg[2] + 0 == $@arg[2] ]
+			$@arg[2]
+		else
+			"0"
+	);
+	.setstr @mbox "KTM.mbox."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.split @message $${@mbox}[${@mid}] ",";
+	return $@message[1];
+)
+
+#------------------------------------------------------------------------------
+# **GetMailTimestamp
+#
+# -機能:    メールの送信時刻を読む
+# -第1引数: mailbox名
+# -第2引数: 読むメールの番号(省略時は0番)
+# -戻り値:  メールの送信された時刻(Epocからの経過秒数)
+#------------------------------------------------------------------------------
+KTM.API.GetMailTimestamp : $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.setstr @mid $(
+		if $[ $@arg[2] + 0 == $@arg[2] ]
+			$@arg[2]
+		else
+			"0"
+	);
+	.setstr @mbox "KTM.mbox."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.split @message $${@mbox}[${@mid}] ",";
+	return $@message[0];
+)
+
+#------------------------------------------------------------------------------
+# **DeleteMail
+#
+# -機能:    メールの削除
+# -第1引数: mailbox名
+# -第2引数: 削除するメールの番号(省略時は0番)
+#------------------------------------------------------------------------------
+KTM.API.DeleteMail : $(
+	if $[ $(.size @arg) != 2 && $(.size @arg) != 3 ] $(return);
+
+	.setstr @mid $(
+		if $[ $@arg[2] + 0 == $@arg[2] ]
+			$@arg[2]
+		else
+			"0"
+	);
+	.setstr @mbox "KTM.mbox."$(.tr $(.encode_entryname $@arg[1]) "." "_");
+	.clear ${@mbox}[${@mid}];
+)
+
+
+#==============================================================================
+# *サービス::ファイルI/O
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **SaveState
+#
+# -機能:    状態をファイルに保存
+# -第1引数: 保存するファイル名
+#------------------------------------------------------------------------------
+KTM.API.SaveState : $(
+	if $[ $(.size @arg) != 2] $(return);
+
+	.listtree @savelist KTM.activetask;
+	.listtree @savelist KTM.task;
+	.listtree @savelist KTM.mutex;
+	.listtree @savelist KTM.semaphore;
+	.listtree @savelist KTM.mbox;
+	.xargs @savelist .save $@arg[1];
+)
+
+
+#==============================================================================
+# *サービス::タイマ補助用
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# **Interval
+#
+# -機能:    設定周期経過していた場合、真を返す
+#------------------------------------------------------------------------------
+KTM.API.Interval : $(
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.date %s) >= ${KTM.task.${KTM.tid}.time} + ${KTM.task.${KTM.tid}.cycle} ] $(
+		KTM.PostMail "SYSTEM" "M_EXE_PRC" "KTM.RESETTIMER";
+		return "true";
+	);
+)
+
+#------------------------------------------------------------------------------
+# **ResetTimer
+#
+# -機能:    基準時刻を現在に再設定する
+#------------------------------------------------------------------------------
+KTM.API.ResetTimer : $(
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	.setstr "KTM.task."${KTM.tid}".time" $(.date %s);
+)
+
+#------------------------------------------------------------------------------
+# **OnTime
+#
+# -機能:    設定時刻を過ぎた場合、真を返し自タスクを停止する
+#------------------------------------------------------------------------------
+KTM.API.OnTime : $(
+	if $[ ! (${KTM.tid}+1) ] $(return);
+	if $[ $(.date %s) >= ${KTM.task.${KTM.tid}.time} ] $(
+		KTM.PostMail "SYSTEM" "M_STOP" ${KTM.tid};
+		return "true";
+	);
+)
+
+
+#==============================================================================
+# *初期化
+#==============================================================================
+=kis
+	## 定数の設定
+	# 常に空
+	.setstr KTM.NULL "";
+	# 常に真
+	.setstr KTM.TRUE "true";
+	# タスク優先順位
+	loop 5 $(
+		.setstr @i ${-1};
+		.setstr KTM.RANK${@i} ${@i};
+	);
+	# 周期的実行条件
+	.set    KTM.INTERVAL "$(KTM.Interval)";
+	# 特定時刻単発実行条件
+	.set    KTM.ONTIME "$(KTM.OnTime)";
+	# タイマリセット用
+	.set    KTM.RESETTIMER "$(KTM.ResetTimer)";
+	# 事前起動済タスクをalivetaskに登録、task idカウンタを設定
+	.listsub @task KTM.task;
+	.setstr KTM.taskcount "-1";
+	loop $(.size @task) $(
+		.setstr @i ${-1};
+		.setstr @tid $(.substr $@task[${@i}] 9);
+		.pushstr KTM.alivetask ${@tid};
+		if $[ ${@tid} > ${KTM.taskcount} ] $(.setstr KTM.taskcount ${@tid});
+	);
+	.inc KTM.taskcount;
+
+	# APIを関数化
+	if $[ $(.ver author) == "KawariDeveloperTeam" ] $(
+		# kdt実装版華和梨なら、これで関数一括定義が可能
+		.copytree KTM.API System.Function.KTM;
+	) else $(
+		# 互換華和梨の場合、KIS仕様に則り1つずつ関数定義
+		.listtree @funclist KTM.API;
+		foreach @f @funclist $(
+			if $[ ! $(.size @f) ] $(continue);
+			.eval "$(function KTM."$(.substr ${@f} 8)" "$(.getcode ${@f})")";
+		);
+	);
+=end
+
+
+#==============================================================================
+# *システム終了
+#==============================================================================
+System.Callback.OnUnload : $(
+	if $(.size KTM.alivetask) $(
+		foreach @i KTM.alivetask $(KTM.DeleteTask ${@i});
+	);
+)
+
+
+#==============================================================================
+# *付録:システム構造
+#
+# **エントリツリー構造
+#
+# -KTM.API.[function] : フレームワークコマンド群の実体
+# -KTM.NULL : 何もしない
+# -KTM.TRUE : 常に真
+# -KTM.RANK[0-4] : タスク優先順位の即値
+# -KTM.INTERVAL : タスク固有の一定周期で真
+# -KTM.ONTIME : タスク固有の時刻(以上)で真
+# -KTM.RESETTIMER : タスク固有のタイマー初期化
+# -KTM.SYSMAIL.* : メールボックス「SYSTEM」に届いたメールの処理部
+# -KTM.SYSMAIL : メールボックス「SYSTEM」に届いたメール処理部一覧
+# -KTM.sysmailparam : メールボックス「SYSTEM」に届いたメールのパラメータ部
+# -KTM.activetask : Run状態のtask idのリスト(idのみでprefixは無い)
+# -KTM.activetask.rank[0-4] : 優先順位別Run状態のtask idのリスト(idのみでprefixは無い)
+# -KTM.alivetask  : 起動済のtask idのリスト(idのみでprefixは無い)
+# -KTM.taskcount  : task idカウンタ
+# -KTM.tid: 実行中のtask id
+# -KTM.task.* : タスクツリー
+# --KTM.task.[tid].cond : タスクの実行条件を記したエントリ名
+# --KTM.task.[tid].proc : タスクの実行を記したエントリ名
+# --KTM.task.[tid].name : タスクの名前
+# --KTM.task.[tid].rank : タスクの優先順位(0-4)
+# --KTM.task.[tid].init : タスクのコンストラクタを記したエントリ名
+# --KTM.task.[tid].quit : タスクのデストラクタを記したエントリ名
+# --KTM.task.[tid].pmtx : タスクの占有するミューテックス名(複数可)
+# --KTM.task.[tid].psem : タスクの占有するセマフォ名(複数可)
+# --KTM.task.[tid].time : タスクのカウント開始時刻
+# --KTM.task.[tid].cycle : タスクの発動周期
+# --KTM.task.[tid].ns.[entry name] : タスクローカルエントリ空間
+# -KTM.mutex.[mutex name] : mutex、ロックされていればtask id、なければ-1
+# -KTM.semaphore.[semaphore name] : セマフォカウント
+# -KTM.semaphore.[semaphore name].limit : セマフォのリソース上限
+# -KTM.semaphore.[semaphore name].tid : 該当セマフォを占有中のtask id(複数可)
+# -KTM.mbox.[mbox name] : メールボックス
+#
+# **コマンド群
+#
+# -KTM.Tick                : 毎時ごとの処理
+# -KTM.StopTask            : タスクを停止する
+# -KTM.DeleteTask          : タスクを削除する
+# -KTM.CreateTask          : タスクを生成する
+# -KTM.RunTask             : タスクを起動する
+# -KTM.ChangeTaskRank      : タスクの優先順位を変更する
+# -KTM.ReferTaskRank       : タスクの優先順位を参照する
+# -KTM.Tasklist            : 存在するタスクリストを返す
+# -KTM.Activetasklist      : 起動中のタスクリストを返す
+# -KTM.CreateMutex         : ミューテックスを生成する
+# -KTM.LockMutex           : ミューテックスをロックする
+# -KTM.ReleaseMutex        : ミューテックスを解放する
+# -KTM.ReferMutex          : ミューテックスを参照する
+# -KTM.CreateSemaphore     : セマフォを生成する
+# -KTM.GetSemaphore        : セマフォを獲得する
+# -KTM.ReleaseSemaphore    : セマフォを解放する
+# -KTM.ReferSemaphore      : セマフォを参照する
+# -KTM.Local               : タスクローカルエントリ名を返す
+# -KTM.PostMail            : メールを投函する
+# -KTM.GetMailNo           : 届いているメール総数を返す
+# -KTM.GetMailMessage      : メールのメッセージを読む
+# -KTM.GetMailSender       : メールの送信者を読む
+# -KTM.GetMailTimestamp    : メールの送信時刻を読む
+# -KTM.DeleteMail          : メールを削除する
+# -KTM.SaveState           : 状態をファイルに保存
+# -KTM.Interval            : 周期的実行条件記述用
+# -KTM.OnTime              : 特定時刻単発実行条件記述用
+#
+# **メッセージ
+# -M_RUN      [tid] : 指定タスクの実行開始を要求
+# -M_STOP     [tid] : 指定タスクの停止を要求
+# -M_DEL      [tid] : 指定タスクを削除を要求
+# -M_LCK_MTX  [mtx] : 指定ミューテックスのロックを要求、要求tid権限
+# -M_RLS_MTX  [mtx] : 指定ミューテックスの解放を要求、要求tidが所有なら実行
+# -M_GET_SEM  [sem] : 指定セマフォの獲得を要求、要求tid権限
+# -M_RLS_SEM  [sem] : 指定セマフォの解放を要求、要求tidが所有なら実行
+# -M_EXE_PRC  [prc] : プロシージャ(エントリ)実行を要求、要求tid権限
+# -M_EXE_SELF       : 自タスク実行を要求、要求tid権限
+# -M_MSG      [msg] : 汎用メッセージ伝達
+#
+#==============================================================================

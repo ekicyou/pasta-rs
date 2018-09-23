@@ -1,0 +1,402 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   ＊コミュニケート制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.3      2004.06.20 18:30版
+# Version3.0.6      2004.07.10 13:30版
+# Version3.0.10     2004.09.05 18:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.1.0 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#コミュニケート処理用共有部====================================================
+
+# ゴースト該当無しの場合のキーワード
+kp.comm.other : __other__
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.comm.other
+
+#==============================================================================
+
+
+#辞書読み込み完了時処理(System.Callback.OnLoad)================================
+#コミュニケートの記述を探して、対応記述があるゴースト一覧を作ります。
+#自力でFlagModeを探し出し、記述があれば<FlagMode>.TalkCommGhostListを
+#作ります。
+
+System.Callback.OnLoad : $(
+	# FlagModeList作成
+	.listtree @AllEntryList ".";
+	foreach @i @AllEntryList $(
+		if $[ ${@i} =~ ".TalkComm." ] $(
+			.setstr @matchpos $(.match ${@i} ".TalkComm.");
+			.setstr @localFlagMode $(.substr ${@i} 0 ${@matchpos});
+			if $[ $(.size FlagModeList) == 0 || $(.find FlagModeList ${@localFlagMode}) < 0 ] $(
+				.pushstr FlagModeList ${@localFlagMode};
+			);
+		);
+	);
+	# @LocalFlagModeListは、基底モードを含むモードリスト
+	.copy FlagModeList @LocalFlagModeList;
+	.pushstr @LocalFlagModeList $(NULL);
+	# <FlagMode>.TalkCommGhostList作成
+	foreach @i @LocalFlagModeList $(
+		.clear @ghostlist;
+		.clear $(Del1stPeriod ${@i}".TalkCommGhostList");
+		.listsub @ghostlist $(Del1stPeriod ${@i}".TalkComm");
+		foreach @j @ghostlist $(
+			.setstr @k $(.substr ${@j} $(.length $(Del1stPeriod ${@i}".TalkComm.")));
+			if $[ ${@k} != ${kp.comm.other} ] $(
+				.pushstr $(Del1stPeriod ${@i}".TalkCommGhostList") ${@k};
+			);
+			# 継承をEntryNameに認識させる為、<FlagMode>.TalkComm.${@ghostlist}に
+			# ダミー単語を登録
+			#.setstr ${@j} "true";
+		);
+	);
+	# OverrideMode用のGhostist作成
+	foreach @i @LocalFlagModeList $(
+		.setstr @f ${@i};
+		until $[ ${@f} == "__self__" ] $(
+			.copy $(Del1stPeriod ${@f}".TalkCommGhostList") $(Del1stPeriod ${@i}".TalkCommGhostList2");
+			if $[ ${@f} == "" ] $(break);
+			# ここに来る時は基底モードではないので、ピリオド削除不要
+			.setstr @f ${${@f}.InheritFrom};
+		);
+	);
+)
+
+#==============================================================================
+
+
+#OnCommunicateイベント=========================================================
+#Senderエントリに話し掛けてきたゴースト、Messageエントリに話し掛けてきた内容が
+#入っています。StopCommunicateコマンドを使った場合、トークがない場合を除き、
+#話し掛けてきた相手に返事をします。
+
+event.OnCommunicate : $(
+	# 話し掛けてきた相手とメッセージをユーザに提示
+	.setstr Sender $(SReference 0);
+	.setstr Message $(Reference 1);
+	# デフォルトでは対ユーザ以外なら、話し掛けてきた相手に自動的に返事
+	if $[ ${Sender} != "user" ] $(SendTo ${Sender});
+	# コミュニケートツリーから該当するトークを検索
+	.setstr @aistr $(
+		if $[ $(SReference 2) == "ECHO/1.0" && ${kp.config.usescriptcomm} ] $(
+			# 台本コミュニケートでかつ、機能が使用選択されている
+			.setstr EchoMessage $(SReference 3);
+			.setstr @null $(GetifExist $(EntryName "TalkCommEcho"));
+			.pop EchoMessage;
+		) else $(
+			# 通常コミュニケートだった
+			CommTalk "TalkComm" $(StringNormalize ${Sender}) ${Message};
+		);
+	);
+	if $[ $(length ${@aistr}) != 0 ] $(
+		# 該当トークがあった
+		resetTalkcount;
+		.setstr kp.internaltalkflag 1;
+		.entry @aistr;
+	) else $(
+		# 該当無し
+		StopCommunicate;
+		#話さないならフラグは消す
+		.clear kp.internaltalkflag;
+	);
+	.clear Sender;
+	.clear Message;
+)
+
+#==============================================================================
+
+
+#OnMicCommunicateイベント======================================================
+#プラグイン「MicCom」による、対ユーザ音声コミュニケートイベント処理です。
+#MessageWordsエントリに単語を提示する以外、通常の対ユーザOnCommunicateイベント
+#と同じ処理を行います。
+
+event.OnMicCommunicate : $(
+	# Reference0が識別子「MicCom」でなければ帰る
+	if $[ $(Reference 0) != "MicCom" ] $(return);
+
+	# メッセージと単語をユーザに提示
+	# 対ユーザが基本なので、Toヘッダは設定しない
+	.setstr Sender "user";
+	.setstr Message $(Reference 1);
+	.clear MessageWords;
+	.split MessageWords $(Reference 2) " ";
+
+	# コミュニケートトークを検索
+	CommTalk "TalkComm" $(StringNormalize ${Sender}) ${Message};
+	if $[ $(length ${@aistr}) != 0 ] $(
+		# 該当トークがあった
+		resetTalkcount;
+		.setstr kp.internaltalkflag 1;
+		.entry @aistr;
+	) else $(
+		#話さないならフラグは消す
+		.clear kp.internaltalkflag;
+	);
+	.clear Sender;
+	.clear Message;
+	.clear MessageWords;
+)
+
+#==============================================================================
+
+
+#コミュニケート用発話コマンド(CommTalk)========================================
+#宣言的記述サポートライブラリを使い、エントリツリーからトークを検索します。
+
+=kis
+# 第1引数: ベースエントリ名
+# 第2引数: ゴースト名
+# 第3引数: 話し掛けてきたトーク内容
+# 戻り値:  トーク
+function CommTalk $(
+	if $[ $(size @arg) != 4 ] $(return);
+
+	.setstr @ghostlist $(EntryName $@arg[1]GhostList$(if $(isOverrideMode) "2"));
+
+	if $[ $(.find ${@ghostlist} $@arg[2]) >= 0 ] $(
+		# 対応記述のあるゴーストだった
+		.setstr @aistr $(decl.solve_rule_flagmode $@arg[1].$@arg[2] $@arg[3]);
+		if $[ $(.length ${@aistr}) != 0 ] $(
+			return ${@aistr};
+		);
+	);
+
+	# ここに来るのは、対応外ゴーストの場合、対応ゴーストで該当条件無しの場合
+	setstr @aistr $(decl.solve_rule_flagmode $@arg[1].${kp.comm.other} $@arg[3]);
+	if $[ $(.length ${@aistr}) != 0 ] $(
+		return ${@aistr}
+	);
+
+	# ここに来るのは、上記で該当無しの場合
+	EntryRefer $@arg[1];
+);
+=end
+
+=kis
+# FlagMode、OverrideModeを意識するdecl.solve_rule
+# 第1引数: プレフィクスエントリ名
+# 第2引数: マッチ対象文字列
+# 戻り値:  トーク
+function decl.solve_rule_flagmode $(
+	if $[ $(size @arg) != 3 ] $(return);
+
+	if $(isOverrideMode) $(
+		.setstr @f ${FlagMode};
+		until $[ ${@aistr} != "" ] $(
+			.setstr @aistr $(decl.solve_rule $(Del1stPeriod ${@f}.$@arg[1]) $@arg[2]);
+			if $[ ${@f} == "" ] $(break);
+			.setstr @f ${$(Del1stPeriod ${@f}.InheritFrom)};
+			if $[ ${@f} == "__self__" ] $(break);
+		);
+		return ${@aistr};
+	) else $(
+		return $(decl.solve_rule $(Del1stPeriod ${FlagMode}.$@arg[1]) $@arg[2]);
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : CommTalk,delc_solve_rule_flagmode
+
+#==============================================================================
+
+
+#送信先変更/確認コマンド(SendTo)===============================================
+#引数があると、その内容を話し掛けるゴーストに変更します。
+#引数がない場合、現在の話し掛ける相手を返します。
+
+=kis
+# 第1引数: 送信先
+# 戻り値:  引数無しの場合は現在の送信先、引数がある場合は無し
+# 機能:    送信先ゴーストを設定する
+function SendTo $(
+	if $[ $(.size @arg) == 1 ] $(
+		return ${System.Response.Reference0};
+	) else if $[ $(.size @arg) > 2 ] $(
+		return;
+	);
+
+	.setstr System.Response.Reference0 $@arg[1];
+	if $[ ${System.Request.Sender} == "embryo" ] $(
+		.setstr System.Response.To $@arg[1];
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SendTo
+
+#==============================================================================
+
+
+#コミュニケートを止める(StopCommunicate)=======================================
+#このコマンドを使うと、トークを相手ゴーストに伝えません。
+#一連のトーク連鎖を止める時に使います。
+
+=kis
+# 引数:   無し
+# 戻り値: 無し
+# 機能:   トークを相手ゴーストに伝えない
+function StopCommunicate $(
+	.clear System.Response.Reference0;
+	if $[ ${System.Request.Sender} == "embryo" ] $(
+		.clear System.Response.To;
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : StopCommunicate
+
+#==============================================================================
+
+
+#宣言的記述サポートライブラリ(decl.solve_rule)=================================
+#コミュニケート支援ライブラリ「豊水」のコア部分を改造したものです。
+
+#---------------------------------------------------------------------------
+#
+# 宣言的記述サポートライブラリ version 1.1
+# Declarative notation support library.
+#
+#---------------------------------------------------------------------------
+#
+# 2002-06-20 1.0 Created by suikyo@yk.rim.or.jp
+# 2002-11-03 1.1 Modified by shobu@mail.goo.ne.jp
+#
+# 改変・再配布は自由です。連絡の必要はありません。
+
+=kis
+
+#---------------------------------------------------------------------------
+# ルール解決
+# decl.solve_rule
+#
+# 概要 : ルールベースの動作を実現する。
+#
+#
+# 「プレフィクス.ルールタグ名」形式のエントリをルールエントリとし、
+# 指定したプレフィクスで始まる全てのルールエントリについて、
+# 前件部(後述)の条件判定で真となったルールを収集し、
+# その中から一つをランダムに選んで実際に実行する。
+# 前件部を持たないルールは無視される。
+#
+# 全ての条件判定に失敗した場合、「プレフィクス.failed」
+# エントリを評価する。
+# 
+# 前件部としては、「ルールエントリ.cond」と「ルールエントリ.match」
+# を使うことができる。condが優先されるため、condエントリが存在する場合、
+# matchは無視される。
+#
+# condには、自由な条件が記述できる。最終的に真か偽(false/0/"")を
+# 返すことを期待される。真が返った場合、そのルールエントリは
+# 評価候補となる。
+#
+# matchは、そのエントリに存在する全ての単語が、solve_ruleの第二引数
+# として渡された文字列に含まれるか否かが判定され、含まれていた場合、
+# そのルールエントリは評価候補となる。
+#
+# matchと同等の機能はcondの中に手で書くこともできるが、できるだけ
+# KISを書かずにルールベース動作を利用するために、特別に用意された。
+#
+# @arg[1] : プレフィクスエントリ名
+# @arg[2] : マッチ対象文字列 (マッチを使わない場合は無くても良い)
+#
+#
+# 02/11/03 さとー追加: ルールエントリ.rank
+#
+# 複数のcond、matchが真だった場合、Ver.1.0は該当ルールエントリをランダムに
+# 選択している。これはdecl.solve_ruleを複雑なif節をルールベースで書く目的で
+# 使用する場合、適当ではない。条件はしばしば重複するからだ。
+# 「ルールエントリ.rank」に与えた数字の大きさで、条件の優先順が決められれば
+# この問題は解決する。
+# rankが存在しない場合を「0」として扱えば、従来と互換動作になる。
+
+function decl.solve_rule $(
+	# 引数チェック
+	if $[$(size @arg)<2||$(size @arg)>3] $(return);
+
+	# ルールリスト -> @rules
+	.listsub @rules $@arg[1];
+
+	# @rulesから、failed(解決失敗時に呼ばれる)を削除
+	.setstr @idx $(.find @rules $@arg[1].failed);
+	if $[${@idx}!=-1] $(.clear @rules[${@idx}]);
+
+	# 重みの初期値は0
+	setstr @rank 0;
+
+	# 各ルールについて……
+	foreach @e @rules $(
+		if $(.size ${@e}.cond) $(
+			# cond節があるならば
+			if ${${@e}.cond} $(
+				# 前件部がtrue
+				# 優先ランクをrank節から読む(なければ0)
+				.setstr @w 0;
+				if $(.size ${@e}.rank) $(.setstr @w ${${@e}.rank});
+				if $[ ${@w} > ${@rank} ] $(
+					# 現在の優先ランクより大きいので、ルール名を候補にset
+					.setstr @cands ${@e};
+					.setstr @rank ${@w};
+				) else if $[ ${@w} == ${@rank} ] $(
+					# 現在の優先ランクと同じなので、ルール名を候補にpush
+					.pushstr @cands ${@e};
+				);
+				# 現在の優先ランクより小さいルールは無視される
+			);
+		) else if $[$(size ${@e}.match)&&$(size @arg)==3] $(
+			# match節とマッチ対象文字列があるならば
+			# (ほぼコミュニケート専用)
+			if $(.xargs ${@e}.match .matchall $@arg[2]) $(
+				# マッチ成功
+				# 優先ランクをrank節から読む(なければ0)
+				.setstr @w 0;
+				if $(.size ${@e}.rank) $(.setstr @w ${${@e}.rank});
+				if $[ ${@w} > ${@rank} ] $(
+					# 現在の優先ランクより大きいので、ルール名を候補にset
+					.setstr @cands ${@e};
+					.setstr @rank ${@w};
+				) else if $[ ${@w} == ${@rank} ] $(
+					# 現在の優先ランクと同じなので、ルール名を候補にpush
+					.pushstr @cands ${@e};
+				);
+				# 現在の優先ランクより小さいルールは無視される
+			);
+		);
+	);
+
+	# 候補が存在すればそれを評価、なければ「プレフィクス.failed」を評価。
+	if $(.size @cands) ${${@cands}} else ${$@arg[1].failed};
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : decl.solve_rule
+
+#==============================================================================

@@ -1,0 +1,410 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   Windowsローカルアプリケーションイベント スクリプト辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#ＳＳＰ特有イベント============================================================
+
+#TalkSchedule5Min.ToGo : スケジュールの時間の５分前
+# IconType : イベントのタイプ
+# System.Request.Reference1 : イベントの内容(caption)
+# System.Request.Reference2 : 追加データ(subtitle)
+# System.Request.Reference3 : スクリプト(script)
+
+#TalkScheduleRead : カレンダーアイコンの上にマウスをしばらく置いた時
+# IconType : イベントのタイプ
+# System.Request.Reference1 : イベントの内容(caption)
+# System.Request.Reference2 : 追加データ(subtitle)
+# System.Request.Reference3 : スクリプト(script)
+
+#TalkScheduleSenseBegin : スケジュールセンサが接続開始する時
+# System.Request.Reference0 : スケジュールセンサの名前
+
+#TalkScheduleSenseComplete : スケジュールセンサの処理が完了した時
+# System.Request.Reference0 : スケジュールセンサの名前
+# System.Request.Reference1 : スケジュールセンサの返したスケジュールデータの数
+
+#TalkScheduleSenseFailed.{Word1} : スケジュール取得結果(情報が取得されない場合)
+# Word1 : noupdate / cantdownload / cantanalyze / etc
+# スケジュールセンス失敗理由 (更新なし / 受信失敗 / 解析失敗 / その他)
+
+#TalkSchedulePostBegin : スケジュールセンサが投稿モードで接続開始する時
+# System.Request.Reference0 : スケジュールセンサの名前
+
+#TalkSchedulePostComplete : スケジュールセンサが投稿処理を完了した時
+# System.Request.Reference0 : スケジュールセンサの名前
+
+#TalkMateriaExist : 起動時にMATERIAが既に起動していた時。
+# OnBootイベントと同じタイミングでやってきます。
+# このトークを設定しない場合、OnBootイベントのトークを使います。
+
+
+TalkSchedule5Min.ToGo : (
+	\0\s[0]"（"${IconType}"）"\n
+	$(SReference 1)\n\n
+	予定時刻、５分前です。$(
+		if $[ $(SReference 2) || $(SReference 3) ] (
+			\n－－－－－－－－－－\n
+			$(SReference 2)\n
+			$(SReference 3)
+		)
+	)\e
+)
+
+TalkScheduleRead : (
+	\0\s[0]"（"${IconType}"）"\n
+	$(SReference 1)$(
+		if $[ $(SReference 2) || $(SReference 3) ] (
+			\n－－－－－－－－－－\n
+			$(SReference 2)\n
+			$(SReference 3)
+		)
+	)\e
+)
+
+TalkScheduleSenseBegin : \0\s[0]$(SReference 0) スケジュールを取得します。\e
+
+TalkScheduleSenseComplete : \0\s[0]$(SReference 0) スケジュールを取得しました。\n\nスケジュールデータは、$(SReference 1)ありました。\e
+
+TalkScheduleSensefail.noupdate : \0\s[4]スケジュールは更新されていませんでした。\e
+
+TalkScheduleSensefail.cantdownload : \0\s[4]スケジュール情報が取得できませんでした。\e
+
+TalkSchedualSencefail.cantanalyze : \0\s[4]スケジュール情報の解析に失敗しました。\e
+
+TalkSchedualSencefail.etc : \0\s[2]「$(SReference 0)」エラーが発生しました。\e
+
+TalkSchedulePostBegin : \0\s[0]$(SReference 0) スケジュールへ投稿します。\e
+
+TalkSchedulePostComplete : \0\s[5]$(SReference 0) スケジュールへの投稿処理が完了しました。\e
+
+TalkMateriaExist : \1\s[10]\0\s[0]あ、\w8MATERIAも起動してますね。\w8\w8\e
+
+#==============================================================================
+
+
+#UD Sensor データ更新イベント==================================================
+
+# TalkUDSensor : 「UD Agent」及び「UD Sensor」使用時、データが更新された時
+
+# System.Request.Reference0 : 現在の解析度 (単位：％)
+# System.Request.Reference1 : １％の解析にかかった時間の「時間」部分
+# System.Request.Reference2 : １％の解析にかかった時間の「分」部分
+# System.Request.Reference3 : 前回の通知からの経過時間の「時間」部分
+# System.Request.Reference4 : 前回の通知からの経過時間の「分」部分
+# System.Request.Reference5 : タスク全体の経過時間の「時間」部分
+# System.Request.Reference6 : タスク全体の経過時間の「分」部分
+# System.Request.Reference7 : 書式化された文字列
+# UDSTime1Per       : １％の解析にかかった時間 (単位：分)
+# UDSTimePast       : 前回の通知からの経過時間 (単位：分)
+# UDSTimeTotal      : タスク全体の経過時間 (単位：分)
+
+TalkUDSensorA : (
+	\0\s[5]「UD Agent」のデータが更新されました！
+	\1\s[10]Snoozeして終了するなら今がベスト。
+	\0\n\n
+	解析率：$(SReference 0)％\n
+	${TalkUDSensor0}\e
+)
+
+TalkUDSensorB : (
+	\0\s[5]「UD Agent」が解析データを送ります。
+	\1\s[10]インターネットに接続して下さい。
+	\0\n
+	${TalkUDSensor0}\e
+)
+
+TalkUDSensor : \t$(
+	if $[ $(IntReference 0) == 0 ]
+		${TalkUDSensorB}
+	else
+		${TalkUDSensorA}
+)
+
+TalkUDSensor0 : (
+	\n${TalkUDSensor1}
+	\n${TalkUDSensor2}
+	\n${TalkUDSensor3}
+	$(if $(SReference 7)
+		"\n----------\n"$(SReference 7)
+	)\e
+)
+
+TalkUDSensor1 : (
+	１％の解析時間：${UDSTime1Per}"分（"
+	$(if ${System.Request.Reference1} $(SReference 1)"時間")
+	$(if ${System.Request.Reference2} $(SReference 2)"分")
+	"）"
+)
+
+TalkUDSensor2 : (
+	前回の通知から：${UDSTimePast}"分（"
+	$(if ${System.Request.Reference3} $(SReference 3)"時間")
+	$(if ${System.Request.Reference4} $(SReference 4)"分")
+	"）"
+)
+
+TalkUDSensor3 : (
+	トータル時間　：${UDSTimeTotal}"分（"
+	$(if ${System.Request.Reference5} $(SReference 5)"時間")
+	$(if ${System.Request.Reference6} $(SReference 6)"分")
+	"）"
+)
+
+#==============================================================================
+
+
+#SHIORI/2.2 Notify対応アプリ汎用イベント=======================================
+
+#・共通の変数
+# AppliName      : 稼動中のアプリケーション名
+# AppliMaker     : 稼動中のアプリケーションの製造元
+# AppliVersion   : 稼動中のアプリケーションのバージョン
+# AppliCopyright : 稼動中のアプリケーションの著作権
+# AppliURL       : 稼動中のアプリケーションに関するＵＲＬ
+# Word1          : アプリケーション名(全・半角スペース、半角記号は削除、
+#                  全・半角アルファベットは全て半角小文字に変換）
+#ただし「AppliName」以外は情報が送られない(「NoData」)場合もある。
+
+#TalkAppliBoot(.{Word1}) : アプリケーションが起動した。
+#TalkAppliClose(.{Word1}) : アプリケーションが終了した。
+#  System.Request.Reference0 : アプリケーション名
+#  System.Request.Reference1 : アプリケーションの情報(内容はアプリケーションによる)
+
+#TalkAppliExist(.{Word1}) : 起動しているアプリケーションからの汎用通知
+#  System.Request.Reference0 : アプリケーション名
+#  System.Request.Reference1 : アプリケーションの情報(内容はアプリケーションによる)
+
+#TalkAppliFinish(.{Word1}) : アプリケーションで、特定の処理が終了した時
+#  System.Request.Reference0 : アプリケーション名
+#  System.Request.Reference1 : 処理の内容(内容はアプリケーションによる)
+#  System.Request.Reference2 : 処理の対象(内容はアプリケーションによる)
+
+#TalkAppliOpen(.{Word1}) : アプリケーションが、ファイルを開いた時
+#  System.Request.Reference0 : アプリケーション名
+#  System.Request.Reference1 : 開いたファイル名(フルパス)
+#  AppliFile : 開いたファイル名(ファイル名のみ)
+#  AppliType : 開いたファイル名(拡張子のみ)
+
+#TalkWebsite : ウェブサイトからの情報を受信。
+#  System.Request.Reference0 : ウェブサイト名
+#  System.Request.Reference1 : 最終更新日時
+#  System.Request.Reference2 : サイトからのデータ
+#  WebNews : さくらスクリプトに変換した、サイトからのデータ
+
+TalkAppliBoot : \0\s[0]「${AppliName}」が起動しました。\e
+
+TalkAppliBoot.udsensor : (
+	\0\s[5]「UDSensor」が起動しました。\n\n
+	「UNITED DEVICES」の解析状況を報告します。\e
+)
+
+TalkAppliClose : \0\s[0]「${AppliName}」が終了しました。\e
+
+TalkAppliClose.udsensor : \0\s[3]「UDSensor」が終了しました。\e
+
+TalkAppliExist : (
+	\0\s[0]「$(SReference 0)」からの情報です。\n\n
+	－－－－－－－－－－\n\n
+	$(SReference 1)\e
+)
+
+TalkAppliFinish : (
+	\0\s[5]「$(SReference 0)」の、
+	$(SReference 1)が
+	$(SReference 2)しました。\e
+)
+
+#＝
+
+file_extension : bmp , jpg , png , gif
+
+TalkAppliOpen : $(if $[ $(find file_extension ${AppliType}) >= 0 ]
+		${TalkAppliOpen1}
+	else 
+		${TalkAppliOpen2}
+)
+
+TalkAppliOpen1 : \0\s[0]画像ファイル「${AppliFile}」を「$(SReference 0)」で開いていますね。\e
+
+TalkAppliOpen2 : \0\s[0]「${AppliFile}」を「$(SReference 0)」で開いていますね。\e
+
+TalkWebsite : (
+	\0\s[0]「$(SReference 0)」からの更新情報です。\n\n
+	最終更新日：$(SReference 1)\n
+	－－－－－－－－－－\n${WebNews}\e
+)
+
+#==============================================================================
+
+
+#「きのこ」反応================================================================
+
+#TalkKinoko{Word1}.{Word2}.{Word3} :「きのこ」が起動している時
+# {Word1} : Create / Destroy / Installed
+# それぞれ、生えた / 消えた / 自動インストールされた
+# {Word2} : Name / Type
+# 「Name」は名前、「Type」はカテゴリ
+# (名前→カテゴリで優先されます。複数カテゴリは最初の記述のみ有効)
+# (全角・半角スペース、及び半角記号は削除された名前になります)
+# {Word3} : 名前・カテゴリ名
+
+# kinokoname : きのこの名前
+# kinokotype : きのこのカテゴリ
+# 名前・カテゴリに該当がない場合「Type.Etc」となります。必ず記述してください。
+
+#TalkKinokoBatteryLow : バッテリー残量が４０％を切った時
+#TalkKinokoBatteryCritical : バッテリー残量が２０％を切った時
+# kinokobattery : 現在のバッテリー残量 (単位：％)
+
+#TalkKinokoSystemLow : システムリソースが５０％を切った時
+#TalkKinokoSystemCritical : システムリソースが３０％を切った時
+# kinokoresource : 現在のシステムリソース残量 (単位：％)
+
+
+TalkKinokoCreate.Name.1UPきのこ60 : \0\s[4]小さい１ＵＰきのこが生えました。
+TalkKinokoCreate.Name.クスミタケ : \0\s[4]クスミタケが生えました。
+
+TalkKinokoCreate.Type.きのこ : \0\s[4]「${kinokoname}」というきのこが生えました。
+TalkKinokoCreate.Type.アンテナ : \0\s[4]「${kinokoname}」というアンテナが生えました。
+TalkKinokoCreate.Type.植物 : \0\s[4]「${kinokoname}」という植物が生えました。
+TalkKinokoCreate.Type.建造物 : \0\s[4]「${kinokoname}」という建造物が建ちました。
+TalkKinokoCreate.Type.ヘッドマーク : \0\s[4]「${kinokoname}」というヘッドマークがつきました。
+TalkKinokoCreate.Type.Etc : \0\s[4]「${kinokoname}」という「${kinokotype}」が生えました。
+
+TalkKinokoDestroy.Name.どりふで潰れるきのこ : \0\s[5]つぶれるきのこが狩られました。\e
+
+TalkKinokoDestroy.Type.きのこ : \0\s[5]「${kinokoname}」というきのこが狩られました。\e
+TalkKinokoDestroy.Type.Etc : \0\s[5]「${kinokoname}」という「${kinokotype}」が狩られました。\e
+
+TalkKinokoInstalled.Type.Etc : \0\s[0]「${kinokoname}」という「${kinokotype}」がインストールされました。\e
+
+TalkKinokoBatteryLow : \0\s[3]バッテリー残量が${kinokobattery}％に低下しています。\e
+TalkKinokoBatteryCritical : \0\s[2]バッテリー残量が${kinokobattery}％に低下しました。\e
+
+TalkKinokoSystemLow : \0\s[3]システムリソースの残りが${kinokoresource}％しかありません。\e
+TalkKinokoSystemCritical : \0\s[4]システムリソースが${kinokoresource}％しか残っていません。\e
+
+#==============================================================================
+
+
+#「猫どりふ」反応(SHIORI2.2モード)=============================================
+
+#TalkNekodrif{Word1}{Word2}.{Word3}.{Word4} :「猫どりふ」より物を落下された時。
+# {Word1} : Emerge / Hit / Defend / Drop / Vanish / Dodge
+# それぞれ、落下開始/当たった/「きのこ」に当たった/落下中/画面外/避けた
+# {Word2} : Sakura / Kero
+# 「Sakura」はメインゴースト、「Kero」はサブゴーストがターゲット
+# {Word3} : Name / Type
+# 「Name」は名前、「Type」はカテゴリ
+# (名前→カテゴリで優先されます。複数カテゴリは最初の記述のみ有効)
+# (スペースや記号は、全角･半角問わず省かれます)
+# {Word4} : 名前・カテゴリ名
+
+#・使用できる変数
+# drifname : 落下物の名前
+# driftype : 落下物のカテゴリ
+
+# 名前・カテゴリに該当がない場合、「Type.Etc」となります。
+# 該当する動作が無い場合、「Type.Etc」も記述する必要はありません。
+
+# 落下物がきのこに当たった場合、その後の「Vanish」は無効となります。
+
+#TalkNekodrifExist : 起動時に「猫どりふ」が既に起動していた時。
+# OnBootイベントと同じタイミングでやってきます。
+# このトークを設定しない場合、OnBootイベントのトークを使います。
+
+
+#猫どりふ落下対象判定用サブゴースト名
+Keroname : うにゅう
+
+TalkNekodrifEmergeSakura.Type.Etc : \_q\0\s[2]私が狙われています。\e
+TalkNekodrifEmergeKero.Type.Etc : \_q\1\s[11]私が狙われています。\e
+
+TalkNekodrifHitSakura.Name.かえる : \0\s[0]‥‥\s[2]きぃやぁあぁぁああぁぁぁっ！\e
+TalkNekodrifHitSakura.Name.loveletter : \0\s[2]‥\w4‥\w4手紙？\e
+
+TalkNekodrifHitSakura.Type.surprise : \0\s[0]‥‥\s[2]きぃやぁあぁぁああぁぁぁっ！\e
+TalkNekodrifHitSakura.Type.hate : \0\s[0]‥‥\s[2]きぃやぁあぁぁああぁぁぁっ！\e
+TalkNekodrifHitSakura.Type.pretty : \0\s[1]あ‥\w4‥\w4‥。\e
+TalkNekodrifHitSakura.Type.love : \0\s[1]あ‥\w4‥\w4‥。\e
+TalkNekodrifHitSakura.Type.elegant : \0\s[1]あ‥\w4‥\w4‥。\e
+TalkNekodrifHitSakura.Type.Etc : \0\s[4]\_qいたっ！\_q\e
+
+TalkNekodrifHitKero.Type.stub : \1\s[11]\_qびっ！\_q\e
+TalkNekodrifHitKero.Type.Etc : \1\s[11]\_qぴっ！\_q\e
+
+TalkNekodrifDefendSakura.Type.Etc : \0\s[5]きのこに当たりました。\e
+#TalkNekodrifDefendKero.Type.Etc : \1\s[10]きのこに当たりました。\e
+
+#TalkNekodrifDropSakura.Type.Etc : \0\s[4]‥‥。\e
+
+TalkNekodrifVanishSakura.Name.かえる : \0\s[4]かえるぴょこぴょこみぴょこぴょこ。\e
+TalkNekodrifVanishSakura.Name.loveletter : \0\s[5]手紙を受け取りました。\e
+
+TalkNekodrifVanishSakura.Type.Etc : \0「${drifname}」という「${driftype}」でした。\e
+TalkNekodrifVanishKero.Type.Etc : \1「${drifname}」という「${driftype}」でした。\e
+
+TalkNekodrifDodgeSakura.Type.Etc : \0\s[5]${drifname}を避けました。\e
+TalkNekodrifDodgeKero.Type.Etc : \1\s[10]${drifname}を避けました。\e
+
+TalkNekodrifExist : \1\s[10]\0\s[0]${username}、\w8\s[2]\nね、\w8猫どりふ！？\e
+
+#==============================================================================
+
+
+#イベント：ＷｉｎＡＭＰ========================================================
+
+# TalkWinampplay.＜正規化したアーティスト名＞.＜正規化した曲名＞
+# TalkWinampplay.__other__.＜正規化した曲名＞  ←曲名のみで反応する時
+# TalkWinampplay.＜正規化したアーティスト名＞  ←アーティスト名のみで反応する時
+# TalkWinampplay.__noartist__                  ←アーティスト名が無かった時
+# TalkWinampplay                               ←上記に該当が無い場合
+#ＳＳＴＰ対応のプレーヤーで、演奏が開始された時。
+#現在はWinAMP＆YunaSexyFont+SSTP対応パッチ
+
+#・使用出来る変数
+# Wartist : アーティスト名
+# Wtitle : 曲のタイトル
+
+TalkWinampplay.tsquare.truth : \0\s[5]T-SQUAREの「TRUTH」です。\w8\w8名曲です。\w8\w8\e
+TalkWinampplay.__other__.風の辿り着く場所 : \0\s[5]「風の辿り着く場所」ですね。\w8\w8いい曲です。\w8\w8\e
+TalkWinampplay.__other__.みこみこナースop : \1\s[11]\0\s[5]\_sみこみこナ～ス！\_s\e
+TalkWinampplay.casiopea : \0\s[0]あら、\w8CASIOPEAの「${Wtitle}」ですね。\w8\w8\e
+TalkWinampplay.ive : \1\s[10]\0\s[0]この「${Wtitle}」って曲、\w8I"'"ve作曲なんですねぇ。\w8\w8\1最近多いな。\w8\w8\nワイは好きやからエエが。\w8\w8\e
+TalkWinampplay.__noartist__ : \0\s[0]今、流れているのは、\n\n「${Wtitle}」\n\nです。\e
+TalkWinampplay : \0\s[0]今、流れているのは、\n\n${Wartist} の「${Wtitle}」\n\nです。\e
+
+#==============================================================================

@@ -1,0 +1,75 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   ＊トランスレータ
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.5      2004.07.03 11:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.1.0 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#トランスレートイベント(OnTranslate)===========================================
+#従来makoto.dllが行っていた仕事を、栞で行うことが出来ます。
+#System.Request.Reference0に置換対象の文章が入っています。
+
+event.OnTranslate : $(
+	.copy System.Request.Reference0 @Reference0;
+	# 置換対象は、System.Request.Reference0に入っている
+	# 評価結果が戻り値で、、次の単語の評価の直前に、
+	# その戻り値がSystem.Request.Reference0に入る
+	# 一番最後の評価結果を本体に返す
+	foreach @i $(EntryName "Translate") $(
+		# @iに単語が代入された瞬間に評価は完了している
+		.setstr System.Request.Reference0 ${@i};
+	);
+	# 置換結果を返す
+	if $[ $(.tolower ${System.Request.SecurityLevel}) == "local"
+		&& ( $(.size kp.internaltalkflag) || ${System.Debugger} == "on" ) ] $(
+		# ローカルで、内部発話フラグが立っていれば(一応)信用してそのまま返す
+		# 「debugger on」の場合は、ローカルであればそのまま返す
+		if $[ $(Reference 0) != ${@Reference0} ] $(Reference 0);
+	) else $(
+		# ローカルでなければ、危険タグを潰してから返す
+		# 本体側で弾く筈だが、念には念を入れて対策
+		if $[ $(SReference 0) != ${@Reference0} ] $(SReference 0);
+	);
+	# 他のOnTranslateイベント記述の為、Reference0を復元
+	#.setstr System.Request.Reference0 ${@Reference0};
+)
+
+=kis
+# トランスレータ記述を容易にするgsubラッパー「Makoto」
+function Makoto $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	return $(.gsub ${System.Request.Reference0} $@arg[1] $@arg[2]);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : Makoto
+
+#==============================================================================

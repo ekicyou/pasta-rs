@@ -1,0 +1,2574 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  基本イベント制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.0 alpha1 2002.09.25 22:30版
+# Version2.0 alpha2 2002.09.27 22:07版
+# Version2.0 alpha3 2002.09.28 20:07版
+# Version2.0 alpha4 2002.09.28 22:06版
+# Version2.0 alpha5 2002.09.30 21:45版
+# Version2.0 beta1  2002.10.07 00:03版
+# Version2.0 beta2  2002.10.12 00:30版
+# Version2.0 RC1    2002.10.31 23:00版
+# Version2.0 RC2    2002.11.10 22:00版
+# Version2.0 RC3    2002.11.25 00:00版
+# Version2.0        2002.12.01 00:00版
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+# Version3.0.1      2004.06.10 21:00版
+# Version3.0.2      2004.06.19 23:30版
+# Version3.0.3      2004.06.20 18:30版
+# Version3.0.4      2004.06.27 11:00版
+# Version3.0.5      2004.07.03 11:30版
+# Version3.0.6      2004.07.10 13:30版
+# Version3.0.7      2004.07.18 22:30版
+# Version3.0.8      2004.07.25 21:45版
+# Version3.0.9      2004.08.08 18:45版
+# Version3.1.0      2004.09.12 14:00版
+# Version3.1.1      2004.09.19 23:00版
+# Version3.1.2      2004.09.26 23:15版
+# Version3.1.3      2004.10.16 16:15版
+# Version3.1.4      2004.10.30 22:45版
+# Version3.1.5      2004.11.13 20:30版
+# Version3.1.6      2004.11.23 22:30版
+# Version3.1.9      2005.01.10 22:30版
+# Version3.3.0a1    2005.04.29 23:30版
+# Version3.3.0a2    2005.05.01 12:00版
+# Version3.3.0a3    2005.05.04 02:00版
+# Version3.3.0a4    2005.05.22 21:30版
+# Version3.3.0a5    2005.09.29 23:45版
+# Version3.3.0a6    2005.10.17 00:00版
+# Version3.3.0a7    2005.10.30 22:00版
+# Version3.3.0a8    2005.11.06 17:30版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.2.2 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+
+#==============================================================================
+#以下 GET SHIORI/3.0イベント
+#==============================================================================
+
+
+#起動時(辞書データ読込後)処理==================================================
+
+System.Callback.OnLoad : $(
+	# セーブ情報の有無から初回起動か否か推定する
+	foreach @i kp.datasaveparam $(.inc @entnum $(.size ${@i}));
+	if $[ ! ${@entnum} ] $(
+		# 辞書ファイルロード後もセーブデータがないので、推定で初回起動
+		.setstr kp.isfirstboot 1;
+	);
+
+	# 前回に不正な終了だった場合、専用トークを話す
+	.setstr kp.iscrashed 0;
+	if $[ ($(GetInteger closemode) == 0 || $(.size closemode) == 0) && ${kp.isfirstboot} != 1 ] $(
+		.setstr kp.iscrashed 1;
+		LogMsg "This ghost terminated abnormally at the previous session.";
+	);
+
+	# パラメータのデフォルト値設定
+	.setstr cntwork $(MinCalc);
+	.setstr worktime.OS 0;
+
+	if $[ $(.size Character0) == 0 ] $(GetDescript);
+	if $[ $(.size freeze) == 0 ] $(resetFreeze);
+	if $[ $(.size sw.randomtalk) == 0 ] $(RandomtalkOn);
+	.setstr kp.bootmutex 0;
+
+	# メールチェック用エントリの初期化
+	.setstr BeforeMailNo 0;
+	.setstr BeforeMailByte 0;
+
+	# ユーザ側起動時処理
+	GetifExist kp.callback.OnLoad;
+)
+
+#==============================================================================
+
+
+#時間系処理群******************************************************************
+
+#分単位処理(OnMinuteChange)====================================================
+
+#分が変わったときに（つまり１分ごと）に実行されます。
+#時報(TalkTime)と経過時間(TalkWorkTime)の判断に使われています
+
+event.OnMinuteChange : $(
+	if ${iconizing} $(
+		# アイコン化中
+		SecureInc minimizedtime;
+		SecureInc time.iconize;
+		SecureInc time.iconize.total;
+	) else $(
+		# 通常の起動中
+		SecureInc time.desktop;
+		SecureInc time.desktop.total;
+	);
+	.setstr worktime.OS $(IntReference 0);
+	.setstr kp.BaseWare $(KillDangerousTag ${System.Request.Sender});
+	if $(isNotFreezing) $(TalkSearch "kp.onminutechange");
+)
+
+kp.onminutechange (
+	$(TimeTalk),
+	$(Worktime)
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onminutechange
+
+#時限イベントトーク(TimeTalk)--------------------------------------------------
+
+=kis
+function TimeTalk $(
+	.setstr kp.nowtime $(KPdate %s);
+	.setstr @talkentry $(EntrySearch "kp.timetalk");
+	if $[ $(.length ${@talkentry}) != 0 ] $(.entry @talkentry);
+	.clear kp.nowtime;
+);
+=end
+
+kp.timetalk (
+	TalkTime.$(KPdate %Y_%m%d_%H%M ${kp.nowtime}),
+	TalkTime.$(KPdate %m%d_%H%M ${kp.nowtime}),
+	TalkTime.$(KPdate %w_%H%M ${kp.nowtime}),
+	TalkTime.$(KPdate %H%M ${kp.nowtime})
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.timetalk
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : TimeTalk
+
+#経過時間(WorkTime)------------------------------------------------------------
+
+=kis
+function Worktime $(
+	if $(GetString parawork) $(
+		# WorktimeB
+		# ゴースト側計測時間で計算
+		.setstr cntwork $(GetInteger cntwork);
+		.setstr worktime $(GetInteger worktime);
+		# 記録時刻との差が1時間以内なら帰る
+		if $[ ( $(MinCalc) - ${cntwork} ) < 60 ] $(return);
+		.inc worktime $[ ( $(MinCalc) - ${cntwork} ) / 60 ];
+		.inc cntwork $[ $(MinCalc) - ${cntwork} ];
+	) else $(
+		# WorktimeA
+		# システム通知時間で計算
+		.setstr @cntwork.OS $(GetInteger cntwork.OS);
+		.setstr worktime ${worktime.OS};
+		if $[ $(.size cntwork.OS) == 0 ] $(
+			# OS起動時間初取得なら、情報取得のみで終了
+			.setstr cntwork.OS ${worktime.OS};
+			return;
+		);
+		.setstr cntwork.OS ${worktime.OS};
+		# 記録時刻との差が1時間以内なら帰る
+		if $[ ( ${worktime.OS} - ${@cntwork.OS} ) < 1 ] $(return);
+	);
+	# WorktimeX
+	# 記録時刻より1時間(以上)経過した
+	.setstr kp.modifier $(ModifierSearch "kp.worktime" ${worktime});
+	.setstr @talkentry $(EntrySearch "kp.worktimetalk");
+	# 内部発話フラグを立てていたが、不要な筈なので記述削除(03\07/01)
+	if $[ $(.length ${@talkentry}) != 0 ] $(.entry @talkentry);
+	.clear kp.modifier;
+);
+=end
+
+kp.worktimetalk (
+	TalkWorktime.${kp.modifier},
+	TalkWorktime,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.worktimetalk
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : Worktime
+
+#OS起動時間取得タスク(OSworktime)----------------------------------------------
+
+System.Callback.OnLoad : $(
+	KTM.RunTask $(
+		KTM.CreateTask
+		"OSworktime"
+		KTM.TRUE
+		task.OSworktime.proc
+		KTM.RANK4
+	);
+)
+
+task.OSworktime.proc : $(
+	# 最初のOnSecondChangeでOS起動時間を取得、その後タスク停止
+	# ゴーストキャッシュを出入りする場合、何らかの時間情報は既に持っている
+	# よって、このタスクを再RUNする必要は無い
+	if $[ ! $(.size cntwork.OS) ] $(.setstr cntwork.OS ${worktime.OS});
+	KTM.PostMail "SYSTEM" "M_STOP" ${KTM.tid};
+	return;
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : task.OSworktime.proc
+
+#==============================================================================
+
+
+#秒単位処理(OnSecondChange)====================================================
+
+#秒が変わるごと（つまり１秒ごと）に実行されます
+
+#重なり(TalkKasanari)、見切れ(TalkMikire)
+#自発トーク(Talkevent)の処理に使われています
+
+event.OnSecondChange : $(
+	# OS起動時間を取得
+	.setstr worktime.OS $(IntReference 0);
+	# 実際の発話コールはここの責任で行う。
+	if $[ $(isNotFreezing) && $(KTM.GetMailNo AITalk) ] $(
+		# メールボックスに何かあれば、そのエントリを発話する
+		Talk $(KTM.GetMailMessage AITalk);
+		while $(KTM.GetMailNo AITalk) $(
+			KTM.DeleteMail AITalk;
+		);
+	);
+)
+
+#関連タスクの起動
+
+System.Callback.OnLoad : $(
+	# 時報との重複回避
+	KTM.RunTask $(
+		KTM.CreateTask
+		"TimeTalkCheck"
+		task.timetalkcheck.cond
+		task.timetalkcheck.proc
+		KTM.RANK1
+	);
+	# 自発トーク
+	KTM.RunTask $(
+		KTM.CreateTask
+		"AITalk"
+		task.TalkEvent.cond
+		task.TalkEvent.proc
+		KTM.RANK1
+		task.TalkEvent.init
+	);
+	# 見切れ
+	KTM.RunTask $(
+		KTM.CreateTask
+		"MikireTalk"
+		task.TalkMikire.cond
+		task.TalkMikire.proc
+		KTM.RANK1
+		task.TalkMikire.init
+	);
+	# 重なり
+	KTM.RunTask $(
+		KTM.CreateTask
+		"KasanariTalk"
+		task.TalkKasanari.cond
+		task.TalkKasanari.proc
+		KTM.RANK1
+		task.TalkKasanari.init
+	);
+	# 自発トークMutex生成
+	KTM.CreateMutex AITalk;
+	silent;
+)
+
+#自発トーク(TalkEvent)---------------------------------------------------------
+
+task.TalkEvent.init : $(
+	if $[ ${interval} < 1 || $(.size interval) == 0 ] $(
+		.setstr interval ${interval.default};
+	);
+	resetTalkcount;
+	.setstr kp.cnttalkevent 0;
+)
+
+task.TalkEvent.cond : $[ $(isNotFreezing) && $(isRandomtalkOn) && $(KTM.ReferMutex AITalk) < 0 ]
+
+task.TalkEvent.proc : $(
+	# トーク途中であれば、カウントをクリアして帰る
+	if $[ ${System.Request.Status} == "talking" ] $(resetTalkcount; return);
+	SecureDec cnttalk 1 0;
+	.setstr @interval $(GetInteger kp.currentinterval 0);
+	SecureInc kp.cnttalkevent 1 ${@interval};
+	# 自発トークが割り込みで延期された場合、割り込み終了後57秒で自発トーク
+	if $[ ${kp.cnttalkevent} >= ${@interval} && ${cnttalk} > 57 ] $(
+		.setstr cnttalk 57;
+	);
+	# 発話タイミングでなければ帰る
+	if ${cnttalk} $(return);
+	if $(KTM.LockMutex AITalk) $(
+		# 発話タイミングで、AITalk Mutex確保成功
+		if $(.size talkqueue) $(
+			# 一旦文字列に変換
+			.setstr tempsentence $(.shift talkqueue);
+			.setstr @talk "!tempsentence";
+		) else $(
+			# ここに来る場合、予約発言は消化しており、tempsentenceは不要
+			if $(.size tempsentence) $(.clear tempsentence);
+			.setstr @talk "sentence";
+		);
+		KTM.PostMail AITalk ${@talk};
+		KTM.PostMail SYSTEM M_RLS_MTX AITalk;
+		.setstr kp.cnttalkevent 0;
+	);
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	task.TalkEvent.init,
+	task.TalkEvent.cond,
+	task.TalkEvent.proc
+)
+
+#見切れ(TalkMikire)------------------------------------------------------------
+
+task.TalkMikire.init : $(.setstr flagmikire 0 ; .setstr cntmikire 5)
+
+task.TalkMikire.cond : $[ $(isNotFreezing) && $(isMikireOn) && $(KTM.ReferMutex AITalk) < 0 ]
+
+task.TalkMikire.proc : $(
+	if ${System.Request.Reference1} $(
+		# mikire1
+		# 見切れている
+		SecureDec cntmikire 1 0;
+		# まだ猶予があれば帰る
+		if ${cntmikire} $(return);
+		# 見切れトーク
+		.setstr flagmikire 1;
+		.setstr cntmikire 60;
+		.setstr @talk "TalkMikire";
+	) else $(
+		# mikire2
+		# 見切れ解消?
+		.setstr cntmikire 5;
+		# そもそも見切れてなければ帰る
+		if $[ ! $(GetInteger flagmikire) ] $(return);
+		# 見切れ解消
+		.setstr flagmikire 0;
+		.setstr @talk "TalkMikirez";
+	);
+	if $(KTM.LockMutex AITalk) $(
+		KTM.PostMail AITalk ${@talk};
+		KTM.PostMail SYSTEM M_RLS_MTX AITalk;
+	);
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	task.TalkMikire.init,
+	task.TalkMikire.cond,
+	talk.TalkMikire.proc
+)
+
+#重なり(TalkKasanari)----------------------------------------------------------
+
+task.TalkKasanari.init : $(.setstr cntkasanari 8)
+
+task.TalkKasanari.cond : $[ $(isNotFreezing) && $(isKasanariOn) && $(KTM.ReferMutex AITalk) < 0 ]
+
+task.TalkKasanari.proc : $(
+	if $[ ! ${System.Request.Reference2} ] $(
+		# 重なっていない
+		.setstr cntkasanari 8;
+		return;
+	);
+	# 重なっている?
+	SecureDec cntkasanari 1 0;
+	# まだ猶予があれば帰る
+	if ${cntkasanari} $(return);
+	# 重なっている
+	.setstr cntkasanari 60;
+	if $(KTM.LockMutex AITalk) $(
+		KTM.PostMail AITalk "TalkKasanari";
+		KTM.PostMail SYSTEM M_RLS_MTX AITalk;
+	);
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	task.TalkKasanari.init,
+	task.TalkKasanari.cond,
+	task.TalkKasanari.proc
+)
+
+#時限イベントトーク存在チェック------------------------------------------------
+#次のOnMinuteChangeでトークが発生するのなら、トークカウンタをクリアする
+#トークが連続することを回避している
+
+# フリーズ中ではなく、毎分40秒の時にチェック
+task.timetalkcheck.cond : $[ $(isNotFreezing) && $(KPdate %r) == 40 ]
+
+task.timetalkcheck.proc : $(
+	.setstr kp.nowtime $[ $(KPdate %s) + 20 ];
+	.setstr @talkentry $(EntrySearch "kp.timetalk");
+	if $[ $(.length ${@talkentry}) != 0 ] $(resetTalkcount);
+	.clear kp.nowtime;
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : task.timetalkcheck.cond, task.timetalkcheck.proc
+
+#==============================================================================
+
+
+#ランダムトーク制御イベント(OnOKTalkCtrl)======================================
+#長いトークの場合等で、ランダムトークタイマーやフリーズフラグを\![raise]タグで
+#制御する際に使う、独自定義イベントです。OpenKEEPSが持つGhost ID(kp.gid)と、
+#Reference0が等しい場合にのみ機能します。
+
+event.OnOKTalkCtrl : $(
+	if $[ $(Reference 0) != ${kp.gid} ] $(return);
+	#if $[ $(.tolower ${System.Request.SecurityLevel}) != "local" ] $(return);
+
+	.setstr @cmd $(Reference 1);
+	if $[ ${@cmd} == "stop" ] $(
+		RandomtalkOff;
+	) else if $[ ${@cmd} == "start" ] $(
+		RandomtalkOn;
+	) else if $[ ${@cmd} == "freeze" ] $(
+		RandomtalkOff;
+		setFreeze;
+	) else if $[ ${@cmd} == "reset" ] $(
+		RandomtalkOn;
+		resetFreeze;
+	);
+	silent;
+)
+
+#==============================================================================
+
+
+# 起動/終了に関する覚書(2005/11/3)
+# -InitCondでカウンタの類のエントリを、イベントレベルで初期化
+# -タグによる再起動など、イベント名で起動かどうか分からない場合、
+#  FreezeCheckタスクとInheritCondコマンドの連携でInitCond相当を行う
+# -BootCondSearchでkp.modifierなど、トーク用の修飾条件をセットする
+# -起動したら、kp.bootmutexを真にする。今の所はInitCond/InheritCondの責任下
+# -OpenKEEPSレベル起動時コールバックは、イベント記述の責任で行う
+# -UnLoad/ゴーストキャッシュ入りの時点でセーブファイル保存
+# -ゴーストキャッシュに入ったら、バックアップ時にのみ保存するデータは消す
+
+
+#起動系処理群******************************************************************
+
+#初回起動(OnFirstBoot)=========================================================
+
+event.OnFirstBoot : $(
+	if ${kp.isfirstboot} $(
+		# 推定で真の初回起動なのでパラメータ初期化
+		FirstInitCond;
+		.setstr kp.isfirstboot 0;
+	);
+	InitCond;
+	# 今までに消されたことがあるか判定
+	if $(NonNegReference 0) $(
+		.setstr kp.modifier "Vanished";
+		.setstr count.delete $(NonNegReference 0);
+	);
+	# 初回挨拶
+	GetifExist kp.callback.OnFirstBoot;
+	TalkSafeSearch "kp.onfirstboot";
+	.clear kp.modifier;
+)
+
+=kis
+function FirstInitCond $(
+	# パラメータの初期設定
+	.setstr count.boot 0;
+	.setstr count.delete 0;
+	.setstr time.desktop.total 0;
+	.setstr time.iconize.total 0;
+	if $[ $(.size username) == 0 ] $(.setstr username ${username.default});
+);
+=end
+
+kp.onfirstboot (
+	TalkFirstboot.${count.delete}.${timezone},
+	TalkFirstboot.${count.delete},
+	TalkFirstboot.${kp.modifier}.${timezone},
+	TalkFirstboot.${kp.modifier},
+	TalkFirstboot.${timezone},
+	TalkFirstboot,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onfirstboot
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : FirstInitCond
+
+#==============================================================================
+
+
+#通常起動(OnBoot)==============================================================
+
+event.OnBoot : $(
+	if $[ ! ${kp.bootmutex} ] $(
+		# OnGhostCalledで反応がなくてOnBootし直した場合、既に起動処理済み
+		InitCond;
+		GetifExist kp.callback.OnBoot;
+	);
+	BootCondSearch;
+	TalkSafeSearch "kp.onboot"$(if $(isCrashed) "2");
+	.clear kp.modifier;
+)
+
+kp.onboot (
+	TalkBootup.${timezone}.$(KPdate %m%d),
+	TalkBootup.$(KPdate %m%d),
+	TalkBootup.${kp.modifier},
+	TalkBootup.${timezone},
+	TalkBootup,
+	TalkGeneral
+)
+
+# クラッシュ後の起動
+# TalkCrashed以外はkp.onbootと共通
+=kis
+.setstr kp.onboot2 "TalkCrashed";
+.copy kp.onboot kp.onboot2;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onboot,kp.onboot2
+
+#==============================================================================
+
+
+#他のゴーストからの変更(OnGhostChanged/OnGhostCalled)==========================
+
+event.OnGhostChanged : $(
+	# 再起動か否かを判定出来るのは、InitCondの前だけ(closemodeが変わるから)
+	.setstr @isRebooted $(isRebooted);
+	if ${@isRebooted} $(
+		# 再起動だった(前回のゴーストが自分だった)
+		resetFreeze;
+		InheritCond;
+		.setstr kp.BaseWare $(KillDangerousTag ${System.Request.Sender});
+	) else $(
+		# 通常の切替起動
+		InitCond;
+	);
+	BootCondSearch;
+	GhostChangedCommon "ghostchanged" ${@isRebooted};
+	.clear kp.modifier;
+)
+
+event.OnGhostCalled : $(
+	#ゴースト呼び出しの場合、再起動は有り得ない
+	InitCond;
+	BootCondSearch;
+	GhostChangedCommon "ghostcalled" 0;
+	.clear kp.modifier;
+)
+
+=kis
+# OnGhostChanged/OnGhostCalled共通処理
+# 第1引数: ghostchanged/ghostcalled
+# 第2引数: 再起動なら真、違うなら偽
+function GhostChangedCommon $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	.setstr beforeghost $(NormReference 0);
+	if $[ $(Reference 2) != "" ] $(
+		.setstr beforename $(NormReference 2);
+	);
+	SearchKeyword "kp."$@arg[1]"words" $(Reference 1);
+	GetifExist kp.callback.OnGhostChanged;
+	TalkSafeSearch "kp.on"$@arg[1]$(
+		if $(isCrashed)
+			"2"
+		else if $@arg[2]
+			"3"
+	);
+	.clear scriptwords;
+	.clear beforeghost;
+	.clear beforename;
+);
+=end
+
+# ゴースト切り替え系イベント共通 キーワード反応検索
+# 第1引数: 検索するエントリ名
+# 第2引数: 伝えられたメッセージ
+# 備考:    ***ghost,***nameは事前にセットのこと
+#          該当があれば、scriptwordsエントリにキーワードをセットする
+=kis
+function SearchKeyword $(
+	if $[ $(.size @arg) != 3 ] $(return);
+
+	# キーワード反応
+	.setstr @ghostwords $(EntrySearch $@arg[1]);
+	if $[ $(.length ${@ghostwords}) != 0 ] $(
+		# script1
+		# 直前のゴーストへのコメントが存在する
+		.setstr @ghostscript $(StringUserNormalize $@arg[2]);
+		# script2
+		loop $(EntrySize ${@ghostwords}) $(
+			.setstr @i ${-1};
+			.setstr scriptwords $(EntryRefer ${@ghostwords} ${@i});
+			if $[ ${@ghostscript} =~ ${scriptwords} ] $(break);
+			.clear scriptwords;
+		);
+	);
+);
+=end
+
+# ゴーストのフルネームを使った切り替え反応
+kp.onghostchanged.ghostname (
+	TalkGhostChangedEx.${beforeghost}.${beforename}.$(KPdate %m%d).${scriptwords},
+	TalkGhostChangedEx.${beforeghost}.${beforename}.$(KPdate %m%d),
+	TalkGhostChangedEx.${beforeghost}.${beforename}.${scriptwords},
+	TalkGhostChangedEx.${beforeghost}.${beforename}
+)
+kp.onghostcalled.ghostname (
+	TalkGhostCalledEx.${beforeghost}.${beforename}.$(KPdate %m%d).${scriptwords},
+	TalkGhostCalledEx.${beforeghost}.${beforename}.$(KPdate %m%d),
+	TalkGhostCalledEx.${beforeghost}.${beforename}.${scriptwords},
+	TalkGhostCalledEx.${beforeghost}.${beforename}
+)
+
+# 通常の切り替え反応
+kp.onghostchanged.normal (
+	TalkGhostChanged.${beforeghost}.$(KPdate %m%d).${scriptwords},
+	TalkGhostChanged.__other__.$(KPdate %m%d).${scriptwords},
+	TalkGhostChanged.${beforeghost}.$(KPdate %m%d),
+	TalkGhostChanged.${beforeghost}.${scriptwords},
+	TalkGhostChanged.__other__.$(KPdate %m%d),
+	TalkGhostChanged.__other__.${scriptwords},
+	TalkGhostChanged.${beforeghost}
+)
+kp.onghostcalled.normal (
+	TalkGhostCalled.${beforeghost}.$(KPdate %m%d).${scriptwords},
+	TalkGhostCalled.__other__.$(KPdate %m%d).${scriptwords},
+	TalkGhostCalled.${beforeghost}.$(KPdate %m%d),
+	TalkGhostCalled.${beforeghost}.${scriptwords},
+	TalkGhostCalled.__other__.$(KPdate %m%d),
+	TalkGhostCalled.__other__.${scriptwords},
+	TalkGhostCalled.${beforeghost}
+)
+
+# 汎用的な切り替え反応
+kp.onghostchanged.general (
+	TalkGhostChanged
+)
+kp.onghostcalled.general (
+	TalkGhostCalled
+)
+
+# 時間関係の切り替え反応
+kp.onghostchanged.timetalk (
+	TalkGhostChanged.${kp.modifier}
+)
+kp.onghostcalled.timetalk (
+	TalkGhostCalled.${kp.modifier}
+)
+
+# フルネームを使ったキーワードリスト
+kp.ghostchangedwords.ghostname (
+	GhostChangedWords.${beforeghost}.${beforename}
+)
+kp.ghostcalledwords.ghostname (
+	GhostCalledWords.${beforeghost}.${beforename}
+)
+
+# 通常のキーワードリスト
+kp.ghostchangedwords.normal (
+	GhostChangedWords.${beforeghost},
+	GhostChangedWords.__other__
+)
+kp.ghostcalledwords.normal (
+	GhostCalledWords.${beforeghost},
+	GhostCalledWords.__other__
+)
+
+#オプション設定に応じて、ゴースト切替時トークの優先順位を設定
+=kis
+if ${kp.config.useghostchangetimefirst} $(
+	.copy kp.onghostchanged.timetalk kp.onghostchanged;
+	.copy kp.onghostcalled.timetalk kp.onghostcalled;
+);
+if ${kp.config.useghostchangeghostname} $(
+	.copy kp.onghostchanged.ghostname kp.onghostchanged;
+	.copy kp.ghostchangedwords.ghostname kp.ghostchangedwords;
+	.copy kp.onghostcalled.ghostname kp.onghostcalled;
+	.copy kp.ghostcalledwords.ghostname kp.ghostcalledwords;
+);
+.copy kp.onghostchanged.normal kp.onghostchanged;
+.copy kp.onghostcalled.normal kp.onghostcalled;
+if $[ ! ${kp.config.useghostchangetimefirst} ] $(
+	.copy kp.onghostchanged.timetalk kp.onghostchanged;
+	.copy kp.onghostcalled.timetalk kp.onghostcalled;
+);
+# changed/called系反応がなかった場合、OnBoot反応による代用を試みる
+.copy kp.onghostchanged.general kp.onghostchanged;
+.copy kp.onboot kp.onghostchanged;
+.copy kp.ghostchangedwords.normal kp.ghostchangedwords;
+.copy kp.onghostcalled.general kp.onghostcalled;
+.copy kp.onboot kp.onghostcalled;
+.copy kp.ghostcalledwords.normal kp.ghostcalledwords;
+=end
+
+# クラッシュ時
+# TalkCrashed以外はkp.onghostchangedと共通
+=kis
+.setstr kp.onghostchanged2 "TalkCrashed";
+.copy kp.onghostchanged kp.onghostchanged2;
+.setstr kp.onghostcalled2 "TalkCrashed";
+.copy kp.onghostcalled kp.onghostcalled2;
+=end
+
+# 再起動時
+# TalkRebootedが優先される以外はkp.onghostchangedと共通
+=kis
+.setstr kp.onghostchanged3 "TalkRebooted";
+.copy kp.onghostchanged kp.onghostchanged3;
+# OnGhostCalledは再起動で来る事が有り得ないので、エントリ生成の必要なし
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onghostchanged,
+	kp.onghostchanged2,
+	kp.onghostchanged3,
+	ghostchangedwords,
+	kp.onghostcalled,
+	kp.onghostcalled2,
+	ghostcalledwords
+)
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GhostChangedCommon, SearchKeyword
+
+#==============================================================================
+
+
+#他のゴースト呼び出し完了(OnGhostCallComplete)=================================
+
+event.OnGhostCallComplete : $(
+	.setstr nextghost $(NormReference 0);
+	if $[ $(Reference 2) != "" ] $(
+		.setstr nextname $(NormReference 2);
+	);
+	SearchKeyword "kp.ghostcallcompletewords" $(Reference 1);
+	if $[ ${System.Request.Status} == "talking" ] $(
+		# 推定でOnGhostCallingが終わってない
+		.setstr @talkentry $(EntrySearch "kp.onghostcallcomplete");
+		if $[ $(.length ${@talkentry}) != 0 ] $(
+			Sys.SaveHeader ${kp.onghostcallcompleteheader};
+			KTM.PostMail OnGhostCallComplete ${@talkentry};
+			KTM.RunTask ${kp.onghostcallcompletetask};
+			return;
+		);
+	) else $(
+		# トーク中ではないので普通に応答
+		TalkSearch "kp.onghostcallcomplete";
+	);
+	.clear scriptwords;
+	.clear nextghost;
+	.clear nextname;
+)
+
+# 表示が終わったのを見計らって応答トークを投入するタスク
+task.GhostCallComplete.init : $(.setstr $(KTM.Local counter) 5)
+
+task.GhostCallComplete.cond : $[ ${System.Request.Status} != "talking" ]
+
+task.GhostCallComplete.proc : $(
+	# トークフラグが解除になって5秒後まで待つ
+	SecureDec $(KTM.Local counter) 1 0;
+	if ${$(KTM.Local counter)} $(return);
+
+	# トーク投入可能
+	if $(KTM.LockMutex AITalk) $(
+		KTM.PostMail AITalk "!task.GhostCallComplete.procsub";
+		# 5秒待機カウンタを復活
+		.setstr $(KTM.Local counter) 5;
+		KTM.PostMail SYSTEM M_RLS_MTX AITalk;
+		KTM.PostMail SYSTEM M_STOP ${kp.onghostcallcompletetask};
+	);
+)
+
+# 実際にトークするサブプロシージャ
+task.GhostCallComplete.procsub : $(
+	# ゴースト名情報は最後のものだけが有効なので、それ以外を読み飛ばす
+	while $(KTM.GetMailNo OnGhostCallComplete) $(
+		.setstr @talk $(KTM.GetMailMessage OnGhostCallComplete);
+		KTM.DeleteMail OnGhostCallComplete;
+	);
+	# ヘッダをOnGhostCallCompleteイベント時の状態に復元し、発話する
+	Sys.LoadHeader ${kp.onghostcallcompleteheader};
+	EntryRefer ${@talk};
+	Sys.RewindHeader;
+	.clear scriptwords;
+	.clear nextghost;
+	.clear nextname;
+)
+
+# タスクの生成とヘッダスタック生成
+=kis
+.setstr kp.onghostcallcompletetask $(
+	KTM.CreateTask
+	"DelayedOnGhostCallComplete"
+	task.GhostCallComplete.cond
+	task.GhostCallComplete.proc
+	KTM.RANK0
+	task.GhostCallComplete.init
+);
+.setstr kp.onghostcallcompleteheader $(Sys.CreateHeaderHandle);
+=end
+
+# ゴーストのフルネームを使った切り替え反応
+kp.onghostcallcomplete.ghostname (
+	TalkGhostCallCompleteEx.${nextghost}.${nextname}.$(KPdate %m%d).${scriptwords},
+	TalkGhostCallCompleteEx.${nextghost}.${nextname}.$(KPdate %m%d),
+	TalkGhostCallCompleteEx.${nextghost}.${nextname}.${scriptwords},
+	TalkGhostCallCompleteEx.${nextghost}.${nextname}
+)
+
+# 通常の切り替え反応
+kp.onghostcallcomplete.normal (
+	TalkGhostCallComplete.${nextghost}.$(KPdate %m%d).${scriptwords},
+	TalkGhostCallComplete.__other__.$(KPdate %m%d).${scriptwords},
+	TalkGhostCallComplete.${nextghost}.$(KPdate %m%d),
+	TalkGhostCallComplete.${nextghost}.${scriptwords},
+	TalkGhostCallComplete.__other__.$(KPdate %m%d),
+	TalkGhostCallComplete.__other__.${scriptwords},
+	TalkGhostCallComplete.${nextghost}
+)
+
+# 汎用的な切り替え反応
+kp.onghostcallcomplete.general (
+	TalkGhostCallComplete,
+	TalkGeneralComplete
+)
+
+# フルネームを使ったキーワードリスト
+kp.ghostcallcompletewords.ghostname (
+	GhostCallCompleteWords.${nextghost}.${nextname}
+)
+
+# 通常のキーワードリスト
+kp.ghostcallcompletewords.normal (
+	GhostCallCompleteWords.${nextghost},
+	GhostCallCompleteWords.__other__
+)
+
+#オプション設定に応じて、ゴースト切替時トークの優先順位を設定
+=kis
+if ${kp.config.useghostchangeghostname} $(
+	.copy kp.onghostcallcomplete.ghostname kp.onghostcallcomplete;
+	.copy kp.ghostcallcompletewords.ghostname kp.ghostcallcompletewords;
+);
+.copy kp.onghostcallcomplete.normal kp.onghostcallcomplete;
+.copy kp.onghostcallcomplete.general kp.onghostcallcomplete;
+.copy kp.ghostcallcompletewords.normal kp.ghostcallcompletewords;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onghostcallcomplete,
+	kp.ghostcallcompletewords,
+	task.GhostCallComplete.init,
+	task.GhostCallComplete.cond,
+	task.GhostCallComplete.proc,
+	task.GhostCallComplete.procsub,
+	kp.onghostcallcompletetask,
+	kp.onghostcallcompleteheader
+)
+
+#==============================================================================
+
+
+#通常起動、ゴースト交代起動共通================================================
+#短時間で再呼び出しされたとき、あるいは久しぶりに起動した場合の処理
+
+# 起動した際の各種条件を調べる
+=kis
+function BootCondSearch $(
+	.setstr kp.modifier $(ModifierSearch "kp.boot.short" $[ $(MinCalc) - ${endtime} ]);
+	if $[ ${kp.modifier} == "nothing" ] $(
+		.setstr kp.modifier $(ModifierSearch "kp.boot.long" $[ $(DayCalc) - ${endday} ]);
+	);
+);
+=end
+
+# 起動イベント時(!=ロード時)のタイマ・カウンタ等の初期化
+=kis
+function InitCond $(
+	resetFreeze;
+	KTM.PostMail "FreezeCheck" "M_MSG" ${System.Request.ID};
+	# ベースウェアを格納
+	.setstr kp.BaseWare $(KillDangerousTag ${System.Request.Sender});
+	# 多重起動イベント処理防止用のmutexチェック
+	if $(GetString kp.bootmutex) $(return);
+	.setstr kp.bootmutex 1;
+	.inc count.boot;
+	.setstr time.desktop 0;
+	.setstr time.iconize 0;
+	.setstr minimizedtime 0;
+	.setstr worktime 0;
+	.setstr closemode 0;
+	.setstr mousecount 0;
+	.setstr res.phase 0;
+	SaveData;
+);
+=end
+
+# OnGhostChangedで再起動かどうか判定する(再起動なら1)
+=kis
+function isRebooted $(
+	if $[ $(Reference 0) == ${Character0} && ${closemode} == 3 ] $(
+		if $[ $(Reference 2) == ${System.SelfName} ] $(
+			return 1;
+		) else if $[ $(Reference 2) == "" && $(MinCalc) - ${endtime} <= 3 ] $(
+			return 1;
+		);
+	);
+	return 0;
+);
+=end
+
+
+# SSPのゴーストキャッシュから出た場合、読み込み時コールバックエントリを呼び出す
+event.OnCacheRestore : $(
+	GetifExist kp.callback.OnLoad;
+	# フリーズしっぱなし回避タスクを起動
+	split @tasklist $(KTM.Tasklist) "|";
+	foreach @task @tasklist $(
+		if $(.match_at ${@task} "FreezeCheck/") $(
+			KTM.RunTask $(.substr ${@task} 12);
+			return;
+		);
+	);
+)
+
+# 起動後、ずっとフリーズしっぱなしになることを回避するタスク
+
+task.freezecheck.init : $(
+	if $[ $(GetInteger closemode) == 3 ] $(
+		# 栞リロード後なのが明らかなので、すぐにフリーズを解除する
+		.setstr $(KTM.Local counter) 58;
+	) else if $[ $(GetInteger closemode) == 2 ] $(
+		# インストールかネットワーク更新で再起動した
+		InheritCond;
+		.dec count.boot 1 0;
+	) else $(
+		.setstr $(KTM.Local counter) 0;
+	);
+)
+
+task.freezecheck.proc : $(
+	if $[ $(isNotFreezing) || $(KTM.GetMailNo FreezeCheck) ] $(
+		# メールボックスに通知がきたら、内容問わず「フリーズしてない」と見る
+		KTM.PostMail "SYSTEM" "M_STOP" ${KTM.tid};
+		# 再度タスクが起床するのはキャッシュから出た時と推定できる
+		# それに備え、タスク状態を初期化する
+		.setstr $(KTM.Local counter) 0;
+		while $(KTM.GetMailNo FreezeCheck) $(KTM.DeleteMail FreezeCheck);
+		return;
+	);
+	.inc $(KTM.Local counter);
+	if $[ ${$(KTM.Local counter)} == 60 ] $(
+		# 起動から60秒間フリーズしっぱなし、又はリロード後だった
+		# フリーズ解除と起動イベント相当の処理を行う
+		resetFreeze;
+		InheritCond;
+		return;
+	);
+)
+
+# タスクの起動
+System.Callback.OnLoad : $(
+	# フリーズ監視タスクを起動
+	KTM.RunTask $(
+		KTM.CreateTask
+		"FreezeCheck"
+		KTM.TRUE
+		task.freezecheck.proc
+		KTM.RANK4
+		task.freezecheck.init
+	)
+)
+
+# タイマ・カウンタ等の継承
+# InitCondより少し弱い。ネットワーク更新時の再起動用。
+=kis
+function InheritCond $(
+	KTM.PostMail "SYSTEM" "M_STOP" ${KTM.tid};
+	# 多重起動イベント処理防止用のmutexチェック
+	if $(GetString kp.bootmutex) $(return);
+	.setstr kp.bootmutex 1;
+	SecureInc count.boot;
+	# このケースになるのはリロード時と推定できるので、時間を継続処理する
+	SecureInc time.iconize $(GetInteger time.iconize.before);
+	SecureInc time.desktop $(GetInteger time.desktop.before);
+	.setstr minimizedtime 0;
+	if $(GetString parawork) $(
+		.setstr worktime $[ ( ${time.desktop} + ${time.iconize} ) / 60 ];
+		SecureDec cntwork $[ ( ${time.desktop} + ${time.iconize} ) % 60 ];
+	 ) else $(
+		.setstr worktime 0;
+	);
+	.setstr closemode 0;
+	.setstr mousecount 0;
+	.setstr res.phase 0;
+	SaveData;
+);
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : task.freezecheck.init, task.freezecheck.proc
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : BootCondSearch,InitCond,InheritCond
+
+#==============================================================================
+
+
+
+#終了系処理群******************************************************************
+
+#終了(OnClose)=================================================================
+
+event.OnClose : $(
+	SetCloseCond;
+	.setstr closemode 1;
+	CloseCondSearch;
+	TalkSafeSearch "kp.onclose";
+	)\w9\w9\-
+
+kp.onclose (
+	TalkClose.${timezone}.$(KPdate %m%d),
+	TalkClose.$(KPdate %m%d),
+	TalkClose.${kp.modifier},
+	TalkClose.${timezone},
+	TalkClose,
+	TalkGeneral,
+	!kp.onclosedefault
+)
+
+kp.onclosedefault : \1\s[10]\0\s[0]
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onclose, kp.onclosedefault
+
+#==============================================================================
+
+
+#他のゴーストへ変更、呼び出し(OnGhostChanging/OnGhostCalling)==================
+
+event.OnGhostChanging : $(
+	SetCloseCond;
+	.setstr closemode 1;
+	if $[ $(Reference 0) == ${Character0} && ( ! $(Reference 2) || $(Reference 2) == ${System.SelfName} ) ] $(
+		# 次のゴーストは自分と推測出来る
+		.setstr closemode 3;
+	);
+	CloseCondSearch;
+	GhostChangingCommon "ghostchanging";
+	.clear kp.modifier;
+)
+
+event.OnGhostCalling : $(
+	GhostChangingCommon "ghostcalling";
+	.clear kp.modifier;
+)
+
+=kis
+# OnGhostChanging/OnGhostCalling共通処理
+# 第1引数: ghostchanging/ghostcalling
+function GhostChangingCommon $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	if $[ ${System.Request.Reference1} == "automatic" ] $(
+		.setstr kp.modifier "Auto";
+	);
+	.setstr nextghost $(NormReference 0);
+	if $[ $(Reference 2) != "" ] $(
+		.setstr nextname $(NormReference 2);
+	);
+	TalkSafeSearch "kp.on"$@arg[1]$(
+		if $[ ${closemode} == 3 ]
+			"2"
+	);
+	.clear nextghost;
+	.clear nextname;
+);
+=end
+
+# ゴーストのフルネームを使った切り替え反応
+kp.onghostchanging.ghostname (
+	TalkGhostChangingEx.${nextghost}.${nextname}.$(KPdate %m%d),
+	TalkGhostChangingEx.${nextghost}.${nextname}
+)
+kp.onghostcalling.ghostname (
+	TalkGhostCallingEx.${nextghost}.${nextname}.$(KPdate %m%d),
+	TalkGhostCallingEx.${nextghost}.${nextname}
+)
+
+# 通常の切り替え反応
+kp.onghostchanging.normal (
+	TalkGhostChanging.${nextghost}.$(KPdate %m%d),
+	TalkGhostChanging.__other__.$(KPdate %m%d),
+	TalkGhostChanging.${nextghost}
+)
+kp.onghostcalling.normal (
+	TalkGhostCalling.${nextghost}.$(KPdate %m%d),
+	TalkGhostCalling.__other__.$(KPdate %m%d),
+	TalkGhostCalling.${nextghost}
+)
+
+# 汎用的な切り替え反応
+kp.onghostchanging.general (
+	TalkGhostChanging
+)
+kp.onghostcalling.general (
+	TalkGhostCalling,
+	TalkGeneralBegin
+)
+
+# 時間関係の切り替え反応
+kp.onghostchanging.timetalk (
+	TalkGhostChanging.${kp.modifier}
+)
+kp.onghostcalling.timetalk (
+	TalkGhostCalling.${kp.modifier}
+)
+
+#オプション設定に応じて、ゴースト切替時トークの優先順位を設定
+=kis
+if ${kp.config.useghostchangetimefirst} $(
+	.copy kp.onghostchanging.timetalk kp.onghostchanging;
+	.copy kp.onghostcalling.timetalk kp.onghostcalling;
+);
+if ${kp.config.useghostchangeghostname} $(
+	.copy kp.onghostchanging.ghostname kp.onghostchanging;
+	.copy kp.onghostcalling.ghostname kp.onghostcalling;
+);
+.copy kp.onghostchanging.normal kp.onghostchanging;
+.copy kp.onghostcalling.normal kp.onghostcalling;
+if $[ ! ${kp.config.useghostchangetimefirst} ] $(
+	.copy kp.onghostchanging.timetalk kp.onghostchanging;
+	.copy kp.onghostcalling.timetalk kp.onghostcalling;
+);
+# OnGhostChangingの反応がなかった場合、OnCloseの反応で代用を試みる
+# OnGhostCallingは代用しない
+.copy kp.onghostchanging.general kp.onghostchanging;
+.copy kp.onclose onghostchanging;
+.copy kp.onghostcalling.general kp.onghostcalling;
+=end
+
+# 再起動時
+# TalkRebootingが優先される以外はkp.onghostchangedと共通
+# OnGhostCalling時は発生しない
+=kis
+.setstr kp.onghostchanging2 "TalkRebooting";
+.copy kp.onghostchanging kp.onghostchanging2;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onghostchanging,	kp.onghostchanging2,kp.onghostcalling
+
+#==============================================================================
+
+
+#タグによるゴーストの終了のフック==============================================
+
+event2.OnTranslate : $(
+	.setstr @ref0 $(GetString System.Request.Reference0 0);
+	# 終了に関係するタグが無ければ帰る
+	if $[	$(.match ${@ref0} "\\![change,ghost,") < 0
+		&&	$(.match ${@ref0} "\\-") < 0
+		&&	$(.match ${@ref0} "\\![reload,shiori]") < 0
+		&&	$(.match ${@ref0} "\\![reload,ghost]") < 0
+	] $(return);
+	.setstr @ref0len $(.length ${@ref0});
+	.setstr @i 0;
+	while $[ ${@i} < ${@ref0len} ] $(
+		.setstr @c $(sslex_char_at ${@ref0} ${@i});
+		if $(.match_at ${@c} "\\![change,ghost,") $(
+			# ゴースト切り替えタグだった
+			if $[ $(.setstr @pos $(GetCloseParenthesis ${@c}) ; .entry @pos) > 0 ] $(
+				# 括弧は閉じていた(=ゴースト名が存在)
+				.setstr @ghost $(.substr ${@c} 16 $[ ${@pos} - 16 ]);
+				if $[ ${System.OwnerGhost} == ${@ghost} ] $(
+					# ゴースト切り替えによる再起動だった
+					.setstr @exit 3;
+					break;
+				) else if ${(System.InstalledGhost+kp.specialghostname)&@ghost} $(
+					# 有効なゴースト名だった
+					.setstr @exit 1;
+					break;
+				);
+			);
+		) else if $[ ${@c} == "\\-" ] $(
+			# 終了タグだった
+			.setstr @exit 1;
+			break;
+		) else if $[ ${@c} == "\\![reload,shiori]" || ${@c} == "\\![reload,ghost]" ] $(
+			#リロードタグだった
+			.setstr @exit 3;
+			break;
+		);
+		.inc @i $(.length ${@c});
+	);
+	# @exitフラグがたっていたら終了処理
+	if ${@exit} $(SetCloseCond ; .setstr closemode ${@exit});
+)
+
+# 特殊な機能を持つゴースト名一覧
+kp.specialghostname : random, sequential, lastinstalled
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.specialghostname
+
+#==============================================================================
+
+
+#終了系共通処理================================================================
+#呼び出されてから短時間での終了、または切り替え
+
+=kis
+function CloseCondSearch $(
+	.setstr kp.modifier $(ModifierSearch "kp.close.short" ${ghosttime.now});
+);
+=end
+
+=kis
+#終了時の条件(終了時間、終了日、アイコン化時間、デスクトップ時間)をセット
+function SetCloseCond $(
+	setFreeze;
+	.setstr endtime $(MinCalc);
+	.setstr endday $(DayCalc);
+	if $(.size time.iconize) $(
+		.setstr time.iconize.before $(GetInteger time.iconize);
+	);
+	if $(.size time.desktop) $(
+		.setstr time.desktop.before $(GetInteger time.desktop);
+	);
+	# 多重起動イベント処理防止用のmutex
+	.setstr kp.bootmutex 0;
+	# クラッシュフラグのクリア
+	.setstr kp.iscrashed 0;
+	# 初回起動フラグのクリア
+	.setstr kp.isfirstboot 0;
+);
+=end
+
+# 終了系共通セーブ動作(ネットワーク更新時再起動含む)
+# SSPのゴーストキャッシュに入った(OnCacheSuspend)場合も含む
+System.Callback.OnUnload , event.OnCacheSuspend : $(
+	# closemode=0: 時刻を記録していない、推定で栞リロード
+	# closemode=1: 時刻は記録済み、ネットワーク更新以外
+	# closemode=2: 時刻を記録していない、ネットワーク更新成功
+	# closemode=3: 時刻は記録済み、タグによる栞リロード時
+	# それ以外:    closemodeがNULL等、異常終了
+	.setstr @closemode $(GetInteger closemode);
+	if  $[ ${@closemode} == 0 ] $(
+		.setstr closemode 3;
+		SetCloseCond;
+		Backup;
+	) else if $[ ${@closemode} == 1 ] $(
+		SaveData;
+		ClearData;
+	) else if $[ ${@closemode} == 2 ] $(
+		SetCloseCond;
+		Backup;
+	) else if $[ ${@closemode} == 3 ] $(
+		Backup;
+	) else $(
+		SetCloseCond;
+		SaveData;
+		ClearData;
+	);
+	LogMsg (
+		$(if $[ ${System.Request.ID} =~ "Cache" ] "Suspend" else "Unload")
+		" at "$(.date %s)
+	) "closemode='"${@closemode}"'";
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : dataclearparam
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : CloseCondSearch,SetCloseCond
+
+#==============================================================================
+
+
+#他のゴーストの起動/終了*******************************************************
+
+#他のゴーストが起動(OnOtherGhostBooted)========================================
+
+event.OnOtherGhostBooted : $(
+	.setstr bootedghost $(NormReference 0);
+	if $[ $(Reference 2) != "" ] $(
+		.setstr bootedname $(NormReference 2);
+	);
+	SearchKeyword "kp.otherghostbootedwords" $(Reference 1);
+	TalkSearch "kp.onotherghostbooted";
+	.clear scriptwords;
+	.clear bootedghost;
+	.clear bootedname;
+)
+
+# ゴーストのフルネームを使った切り替え反応
+kp.onotherghostbooted.ghostname (
+	TalkOtherGhostBootedEx.${bootedghost}.${bootedname}.$(KPdate %m%d).${scriptwords},
+	TalkOtherGhostBootedEx.${bootedghost}.${bootedname}.$(KPdate %m%d),
+	TalkOtherGhostBootedEx.${bootedghost}.${bootedname}.${scriptwords},
+	TalkOtherGhostBootedEx.${bootedghost}.${bootedname}
+)
+
+# 通常の切り替え反応
+kp.onotherghostbooted.normal (
+	TalkOtherGhostBooted.${bootedghost}.$(KPdate %m%d).${scriptwords},
+	TalkOtherGhostBooted.__other__.$(KPdate %m%d).${scriptwords},
+	TalkOtherGhostBooted.${bootedghost}.$(KPdate %m%d),
+	TalkOtherGhostBooted.${bootedghost}.${scriptwords},
+	TalkOtherGhostBooted.__other__.$(KPdate %m%d),
+	TalkOtherGhostBooted.__other__.${scriptwords},
+	TalkOtherGhostBooted.${bootedghost}
+)
+
+# 汎用的な切り替え反応
+kp.onotherghostbooted.general (
+	TalkOtherGhostBooted,
+	TalkGeneral
+)
+
+# フルネームを使ったキーワードリスト
+kp.otherghostbootedwords.ghostname (
+	OtherGhostBootedWords.${bootedghost}.${bootedname}
+)
+
+# 通常のキーワードリスト
+kp.otherghostbootedwords.normal (
+	OtherGhostBootedWords.${bootedghost},
+	OtherGhostBootedWords.__other__
+)
+
+#オプション設定に応じて、ゴースト切替時トークの優先順位を設定
+=kis
+if ${kp.config.useghostchangeghostname} $(
+	.copy kp.onotherghostbooted.ghostname kp.onotherghostbooted;
+	.copy kp.otherghostbootedwords.ghostname kp.otherghostbootedwords;
+);
+.copy kp.onotherghostbooted.normal kp.onotherghostbooted;
+.copy kp.onotherghostbooted.general kp.onotherghostbooted;
+.copy kp.otherghostbootedwords.normal kp.otherghostbootedwords;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onotherghostbooted, kp.otherghostbootedwords
+
+#==============================================================================
+
+
+#他のゴーストが終了(OnOtherGhostClosed)========================================
+
+event.OnOtherGhostClosed : $(
+	.setstr closedghost $(NormReference 0);
+	if $[ $(Reference 2) != "" ] $(
+		.setstr closedname $(NormReference 2);
+	);
+	SearchKeyword "kp.otherghostclosedwords" $(Reference 1);
+	TalkSearch "kp.onotherghostclosed";
+	.clear scriptwords;
+	.clear closedghost;
+	.clear closedname;
+)
+
+# ゴーストのフルネームを使った切り替え反応
+kp.onotherghostclosed.ghostname (
+	TalkOtherGhostClosedEx.${closedghost}.${closedname}.$(KPdate %m%d).${scriptwords},
+	TalkOtherGhostClosedEx.${closedghost}.${closedname}.$(KPdate %m%d),
+	TalkOtherGhostClosedEx.${closedghost}.${closedname}.${scriptwords},
+	TalkOtherGhostClosedEx.${closedghost}.${closedname}
+)
+
+# 通常の切り替え反応
+kp.onotherghostclosed.normal (
+	TalkOtherGhostClosed.${closedghost}.$(KPdate %m%d).${scriptwords},
+	TalkOtherGhostClosed.__other__.$(KPdate %m%d).${scriptwords},
+	TalkOtherGhostClosed.${closedghost}.$(KPdate %m%d),
+	TalkOtherGhostClosed.${closedghost}.${scriptwords},
+	TalkOtherGhostClosed.__other__.$(KPdate %m%d),
+	TalkOtherGhostClosed.__other__.${scriptwords},
+	TalkOtherGhostClosed.${closedghost}
+)
+
+# 汎用的な切り替え反応
+kp.onotherghostclosed.general (
+	TalkOtherGhostClosed,
+	TalkGeneral
+)
+
+# フルネームを使ったキーワードリスト
+kp.otherghostclosedwords.ghostname (
+	OtherGhostClosedWords.${closedghost}.${closedname}
+)
+
+# 通常のキーワードリスト
+kp.otherghostclosedwords.normal (
+	OtherGhostClosedWords.${closedghost},
+	OtherGhostClosedWords.__other__
+)
+
+#オプション設定に応じて、ゴースト切替時トークの優先順位を設定
+=kis
+if ${kp.config.useghostchangeghostname} $(
+	.copy kp.onotherghostclosed.ghostname kp.onotherghostclosed;
+	.copy kp.otherghostclosedwords.ghostname kp.otherghostclosedwords;
+);
+.copy kp.onotherghostclosed.normal kp.onotherghostclosed;
+.copy kp.onotherghostclosed.general kp.onotherghostclosed;
+.copy kp.otherghostclosedwords.normal kp.otherghostclosedwords;
+=end
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onotherghostclosed, kp.otherghostclosedwords
+
+#==============================================================================
+
+
+#マウス反応系処理群************************************************************
+
+#サーフィス上でダブルクリック(OnMouseDoubleClick)==============================
+
+#サーフィス上でダブルクリックした際に実行されます
+#吹き出しメニューやつつき反応に使われます
+#同じ領域でシングルクリックとダブルクリックの共存は出来ないので注意
+#両方書いた場合シングルクリックが優先されます
+
+event.OnMouseDoubleClick : $(
+	if $(isNotFreezing) $(
+		SetMouseCond useother;
+		TalkSearch "kp.onmousedoubleclick";
+		ClearMouseCond;
+	);
+)
+
+kp.onmousedoubleclick (
+	C${characterscope}Double.${mousezone}.${surfacenum},
+	C${characterscope}Double.${mousezone},
+	C${characterscope}Doubleclick
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onmousedoubleclick
+
+#==============================================================================
+
+
+#サーフィス上でシングルクリック(OnMouseClick)==================================
+
+#領域指定（例:Bust,Face）が無い場合は無視されます
+#また、同じ領域でのダブルクリックとの共存は出来ません
+
+event.OnMouseClick : $(
+	if $(isNotFreezing) $(
+		if $[ $(Reference 4) == "" && ! $(Reference 5) ] $(return);
+		SetMouseCond;
+		TalkSearch "kp.onmousesingleclick"$(IntReference 5);
+		ClearMouseCond;
+	);
+)
+
+# 左クリック
+kp.onmousesingleclick0 ( 
+	C${characterscope}Single.${mousezone}.${surfacenum},
+	C${characterscope}Single.${mousezone},
+	C${characterscope}Singleclick
+)
+
+# 右クリック
+kp.onmousesingleclick1 ( 
+	C${characterscope}SingleRight.${mousezone}.${surfacenum},
+	C${characterscope}SingleRight.${mousezone},
+	C${characterscope}SingleclickRight
+)
+
+# 中央/ホイールクリック
+kp.onmousesingleclick2 ( 
+	C${characterscope}SingleMiddle.${mousezone}.${surfacenum},
+	C${characterscope}SingleWheel.${mousezone}.${surfacenum},
+	C${characterscope}SingleMiddle.${mousezone},
+	C${characterscope}SingleWheel.${mousezone},
+	C${characterscope}SingleclickMiddle,
+	C${characterscope}SingleclickWheel
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onmousesingleclick0,
+	kp.onmousesingleclick1,
+	kp.onmousesingleclick2
+)
+
+#==============================================================================
+
+
+#サーフィス上でのマウスカーソル移動(OnMouseMove)===============================
+
+#サーフィスの上でマウスカーソルを動かした際に実行されます
+#頭撫でや胸さわりなどに使われています
+
+event.OnMouseMove : $(
+	if $(isNotFreezing) $(
+		if ${System.Request.Reference4} $(
+			# 当り判定領域内にカーソルがある
+			SetMouseCond;
+			# beforemousestateを安全化
+			.setstr beforemousestate $(GetString beforemousestate);
+			if $[ ${characterscope}"/"${mousezone} == ${beforemousestate} ] $(
+				# カーソルは前回と同じ領域内にある
+				SecureInc mousecount;
+				# stroke.limitを安全化
+				.setstr stroke.limit $(NonNegative $(GetString stroke.limit));
+				if $[ ${stroke.limit} == ${mousecount} ] $(
+					# カウントが設定したlimitに達したのでトーク
+					TalkSearch "kp.onmousemove.stroke";
+					NextStrokeSearch;
+				);
+			) else $(
+				# カーソルは前回と違う領域にある
+				.setstr beforemousestate ${characterscope}"/"${mousezone};
+				FirstStrokeSearch;
+			);
+			ClearMouseCond;
+		) else $(
+			# 当り判定領域外
+			.setstr mousecount 0;
+		);
+	);
+)
+
+=kis
+# 次のlimitを検索・設定(NextStrokeSearch)
+# mousecountは安全化していることが前提
+function NextStrokeSearch $(
+	# オプション設定エントリ名を取得
+	.setstr @option $(EntryName $(EntrySearch "kp.onmousemove.option"));
+	# tmp.strokeとres.phaseを安全化
+	.setstr tmp.stroke $(GetString tmp.stroke);
+	.setstr res.phase $(NonNegative $(GetString res.phase));
+	# res.phaseをシフト
+	if $[ $(.find ${@option} "loopall") >= 0 ] $(
+		# phaseがループするオプションがあった
+		.setstr mousecount $[ ${mousecount} % $(NonNegative $(GetString ${tmp.stroke} "-1")) ];
+		.setstr res.phase $[ ( ${res.phase} + 1 ) % $(.size ${tmp.stroke}) ];
+	) else $(
+		# phaseは上限で飽和
+		if $[ $(.find ${@option} "looplast") >= 0 && ${res.phase} == $(.size ${tmp.stroke}) - 1 ] $(
+			# 最後のphaseでループするオプションがあった
+			.setstr mousecount 0;
+		);
+		# phaseを上限で飽和させつつ増加
+		SecureInc res.phase 1 $[ $(.size ${tmp.stroke}) - 1 ];
+	);
+	.setstr stroke.limit $(NonNegative $(GetString ${tmp.stroke} ${res.phase}));
+);
+=end
+
+=kis
+# 最初のlimitを検索・設定(FirstStrokeSearch)
+function FirstStrokeSearch $(
+	.setstr mousecount 0;
+	.setstr res.phase 0;
+	.setstr tmp.stroke $(EntryName $(EntrySearch "kp.onmousemove.limit"));
+	if $[ $(.length ${tmp.stroke}) == 0 ] $(
+		# limitは設定されていないので、デフォルト値を設定
+		.setstr tmp.stroke "kp.onmousemove.defaultlimit";
+	);
+	.setstr stroke.limit $(NonNegative $(GetString ${tmp.stroke} 0));
+);
+=end
+
+# limit設定がない場合のデフォルト
+kp.onmousemove.defaultlimit : 1
+
+# limit
+kp.onmousemove.limit (
+	C${characterscope}Stroke.limit.${mousezone}.${surfacenum},
+	C${characterscope}Stroke.limit.${mousezone}
+)
+
+# トーク
+kp.onmousemove.stroke (
+	C${characterscope}Stroke.${res.phase}.${mousezone}.${surfacenum},
+	C${characterscope}Stroke.${res.phase}.${mousezone},
+	C${characterscope}Stroke.${mousezone}.${surfacenum},
+	C${characterscope}Stroke.${mousezone}
+)
+
+# オプション設定
+kp.onmousemove.option (
+	C${characterscope}Stroke.option.${mousezone}.${surfacenum},
+	C${characterscope}Stroke.option.${mousezone},
+	C${characterscope}Stroke.option
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onmousemove.defaultlimit,
+	kp.onmousemove.limit,
+	kp.onmousemove.stroke,
+	kp.onmousemove.option
+)
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : FirstStrokeSearch, NextStrokeSearch
+
+#==============================================================================
+
+
+#サーフィス上でマウスホイール回転(OnMouseWheel)================================
+
+event.OnMouseWheel : $(
+	if $(isNotFreezing) $(
+		SetMouseCond useother;
+		TalkSearch "kp.onmousewheel";
+		ClearMouseCond;
+	);
+)
+
+kp.onmousewheel (
+	C${characterscope}Wheel.${kp.wheelvalue}.${mousezone}.${surfacenum},
+	C${characterscope}Wheel.${kp.wheelvalue}.${mousezone},
+	C${characterscope}Wheel.Both.${mousezone}.${surfacenum},
+	C${characterscope}Wheel.Both.${mousezone},
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onmousewheel
+
+#==============================================================================
+
+
+#マウス系処理共通関数==========================================================
+
+# 共通条件をエントリにセット(SetMouseCond)
+# 第1引数 : 「useother」ならReference4がNULLの時mousezoneを「__other__」にする
+#           省略可能。
+=kis
+function SetMouseCond $(
+	.setstr characterscope $(NonNegReference 3);
+	.setstr surfacenum $(GetInteger SurfaceC${characterscope});
+	.setstr mousezone $(EntNamReference 4);
+	# useotherオプションで「__other__」を付加
+	if $[ $@arg[1] == "useother" && ! ${System.Request.Reference4} ] $(
+		.setstr mousezone "__other__";
+	);
+	# Reference2が存在する場合、ホイール回転方向情報を発行
+	if ${System.Request.Reference2} $(
+		if $[ $(IntReference 2) > 0 ] $(
+			.setstr kp.wheelvalue "Plus";
+		) else $(
+			.setstr kp.wheelvalue "Minus";
+		);
+	);
+);
+=end
+
+# 共通条件をクリア(ClearMouseCond)
+=kis
+function ClearMouseCond $(
+	.clear characterscope;
+	.clear surfacenum;
+	.clear mousezone;
+	.clear kp.wheelvalue;
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SetMouseCond, ClearMouseCond
+
+#==============================================================================
+
+
+#各種状態変化系****************************************************************
+
+#最小化関連(OnWindowState...)==================================================
+#freezeによる抑制を使う（WinAMP等で反応する可能性がある為）
+
+#最小化開始(OnWindowStateMinimize)---------------------------------------------
+
+event.OnWindowStateMinimize : $(
+	setFreeze;
+	.setstr iconizing 1;
+	.setstr minimizedtime 0;
+	GetifExist kp.callback.OnWindowStateMinimize;
+	silent;
+)
+
+#最小化から復帰(OnWindowStateRestore)------------------------------------------
+
+event.OnWindowStateRestore : $(
+	resetFreeze;
+	.setstr iconizing 0;
+	GetifExist kp.callback.OnWindowStateRestore;
+	.setstr kp.modifier $(ModifierSearch "kp.minimizedtime" ${minimizedtime});
+	TalkSafeSearch "kp.onwindowstaterestore";
+	.clear kp.modifier;
+)
+
+kp.onwindowstaterestore (
+	TalkRestore.${kp.modifier},
+	TalkRestore,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onwindowstaterestore
+
+#==============================================================================
+
+
+#サーフィス情報周辺(OnSurface...)==============================================
+
+#サーフィス情報番号取得(OnSurfaceChange)---------------------------------------
+
+#サーフィスが変わった際に実行され、\0,\1それぞれのサーフィス番号が
+#SurfaceC(0/1)に格納されます。
+
+event.OnSurfaceChange : $(
+	.setstr SurfaceC0 $(IntReference 0);
+	.setstr SurfaceC1 $(IntReference 1);
+	# SSP拡張のReference2に対応
+	.clear @msg;
+	.split @msg $(Reference 2) ",";
+	if $[ $(.size @msg) > 1 ] $(
+		# 意味のあるメッセージだった
+		.setstr SurfaceC$(NonNegative $@msg[0]) $(Integer $@msg[1]);
+	);
+)
+
+#MATERIAの場合OnSurfaceChangeが発生しない為、OnTranslateで代替処理
+#Thanx to こやま☆あきら(akira-k@blue.interq.or.jp) …original code
+
+# event2.OnTranslateは、event.OnTranslateイベント処理末尾に追加される
+event2.OnTranslate : $(
+	if $[ ${System.Request.Sender} != "embryo" ] $(return);
+	SSParser ${System.Request.Reference0};
+)
+
+=kis
+# さくらスクリプトを解析し、各キャラの最後のサーフィス番号を取得する
+# 第1引数: スクリプト
+# 戻り値 : なし(SurfaceC*エントリにサーフィス番号を格納)
+function SSParser $(
+	if $[ $(.size @arg) != 2 ] $(return);
+
+	# デフォルトは\0側
+	.setstr @side 0;
+	.setstr @i 0;
+	.setstr @length $(.length $@arg[1]);
+	while $[ ${@i} < ${@length} ] $(
+		.setstr @c $(sslex_char_at $@arg[1] ${@i});
+		if $[ $(.length ${@c}) > 1 ] $(
+			# 解析対象単語を@wordに
+			.setstr @word $(substr ${@c} 1);
+			if $(.match_at ${@word} "e") $(
+				# 終了タグだったので解析打ち切り
+				break;
+			) else if $[ $(.match_at ${@word} "0") || $(.match_at ${@word} "h") ] $(
+				# さくら側だった
+				.setstr @side 0;
+			) else if $[ $(.match_at ${@word} "1") || $(.match_at ${@word} "u") ] $(
+				# うにゅう側だった
+				.setstr @side 1;
+			) else if $(.match_at ${@word} "p[") $(
+				# \p[]タグだった
+				.setstr @side $(
+					.substr ${@word}"]" 2 $[ $(GetCloseParenthesis ${@word}"]" 1) - 2 ]
+				);
+				# スコープ番号は必ず非負整数
+				.setstr @side $(NonNegative ${@side});
+			) else if $(.match_at ${@word} "s[") $(
+				# サーフィス番号取得
+				.setstr SurfaceC${@side} $(
+					.substr ${@word}"]" 2 $[ $(GetCloseParenthesis ${@word}"]" 1) - 2 ]
+				);
+				# サーフィス番号は整数の筈
+				.setstr SurfaceC${@side} $(Integer ${SurfaceC${@side}});
+			);
+		);
+		.inc @i $(.length ${@c});
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : SSParser
+
+#サーフィス復帰(OnSurfaceRestore)----------------------------------------------
+
+#サーフィスがイレギュラーな状態から（通常　\0:サーフィス0 \1:サーフィス10）
+#戻るタイミングが来たときに実行されます
+#タグ以外の文字がきた場合のみ、トークカウントをリセットします。
+
+event.OnSurfaceRestore : $(
+	.setstr kp.surfacec0 $(IntReference 0);
+	.setstr kp.surfacec1 $(IntReference 1);
+	# 以下、TalkSearchの変形
+	.setstr @talkentry $(EntrySearch "kp.onsurfacerestore");
+	if $[ $(.length ${@talkentry}) != 0 ] $(
+		.setstr @str $(EntryRefer ${@talkentry});
+		#自発トークフラグをデフォルトではクリア
+		.clear kp.internaltalkflag;
+		if $[ $(.length ${@str}) != 0 ] $(
+			# 外部SSTPトークではない、自発トークである証拠のフラグを立てる
+			.setstr kp.internaltalkflag 1;
+			# タグ以外を発話した場合のみ、トークカウントをリセット
+			if $(GetPlainText ${@str}) $(resetTalkcount);
+			.entry @str;
+		);
+	);
+	.clear kp.surfacec0;
+	.clear kp.surfacec1;
+)
+
+kp.onsurfacerestore (
+	TalkReturn.${kp.surfacec0}_${kp.surfacec1},
+	TalkReturn.${kp.surfacec1},
+	TalkReturn.${kp.surfacec0},
+	TalkReturn
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onsurfacerestore
+
+#==============================================================================
+
+
+#イベント実行系処理群**********************************************************
+
+#Vanish反応関連(OnVanish...)===================================================
+#freezeフラグ設定
+
+event.OnVanishSelecting : $(
+	setFreeze;
+	Talk "TalkVanishSelecting";
+)
+event.OnVanishSelected : $(
+	setFreeze;
+	Talk "TalkVanishSelected";
+)
+event.OnVanishCancel : $(
+	resetFreeze;
+	Talk "TalkVanishCancel";
+)
+event.OnVanishButtonHold : $(
+	resetFreeze;
+	Talk "TalkVanishButtonHold";
+)
+
+#他ゴーストがVanishされてからの交代--------------------------------------------
+
+event.OnVanished : $(
+	if $[ ! ${kp.bootmutex} ] $(
+		# SSPでは、起動中に他のゴーストが消滅してもOnVanishedが来る
+		InitCond;
+		GetifExist kp.callback.OnGhostChanged;
+	);
+	.setstr beforeghost $(StringNormalize $(VanishedGhostSearch));
+	TalkSafeSearch "kp.onghostchanged.vanish";
+	.clear beforeghost;
+)
+
+kp.onghostchanged.vanish (
+	TalkOtherGhostVanished.${beforeghost},
+	TalkOtherGhostVanished
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onghostchanged.vanish
+
+=kis
+# MATERIA583のバグで、直前にVanishしたゴースト名が通知されない問題対策
+# vanishログで消滅日時が最も新しいゴーストを探し、それを返す。
+# MATERIA以外ではOnVanished自体が来ないが、念の為Reference0を返す
+function VanishedGhostSearch $(
+	if $[ ${System.Request.Sender} != "embryo" ] $(
+		return ${System.Request.Reference0};
+	);
+
+	.setstr @time "2000/01/0100:00:00";
+	.textload @line "..\\..\\..\\..\\log\\vanish.txt";
+	foreach @i @line $(
+		.clear @j;
+		.split @j ${@i} $(.chr 1);
+		.clear @k;
+		.split @k $@j[-1] " ";
+		if $[ $(.compare $@k[0]$@k[2] ${@time}) >= 0 ] $(
+			.setstr @time $@k[0]$@k[2];
+			.setstr @ghost $@j[0];
+		);
+	);
+	return ${@ghost};
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : VanishedGhostSearch
+
+#==============================================================================
+
+
+##InputBoxによる入力（OnUserInput）============================================
+
+event.OnUserInput : $(
+	Talk $(
+		if $[ ${System.Request.Reference1} == "timeout" ]
+			"TalkInputTimeOut."
+		else
+			"TalkInput."
+	)$(EntNamReference 0);
+)
+
+#==============================================================================
+
+
+#メニュー（\q）による選択肢選択(OnChoiceSelect)================================
+#「\q」による選択肢が選択されたときに実行されます
+
+event.OnChoiceSelect : $(
+	if $(.size kp.menuformname) $(
+		# メニューフォーム
+		.setstr @menuformname $(.encode_entryname ${kp.menuformname});
+		.clear kp.menuformname;
+		.setstr kp.menuidcounter 0;
+		Talk "MenuForm."${@menuformname};
+	) else if $(.size kp.MenuGroup) $(
+		# 選択肢の文でさらに選択肢グループが設定されるかもしれないので、
+		# 代理エントリに移してから消去
+		.setstr kp.MenuGroup2 $(.encode_entryname ${kp.MenuGroup});
+		.clear kp.MenuGroup;
+		TalkSearch "kp.onchoiceselect";
+		.clear kp.MenuGroup2;
+	) else $(
+		Talk "Select."$(EntNamReference 0);
+	);
+)
+
+=kis
+# メニューグループを設定する
+# 第1引数: メニューグループ
+# 戻り値:  なし
+# 備考:    引数無しの場合、メニューグループをクリアする
+function setMenuGroup $(
+	if $[ $(.size @arg) <= 1 ] $(
+		.clear kp.MenuGroup;
+	) else $(
+		.setstr kp.MenuGroup $(.encode_entryname $@arg[1]);
+	);
+);
+=end
+
+=kis
+# メニューフォーム開始を宣言
+# 第1引数: 戻ってくるメニューフォーム名
+# 戻り値:  なし
+function MenuForm $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	.setstr kp.menuformname $@arg[1];
+	.setstr kp.menuidcounter 0;
+);
+=end
+
+=kis
+# メニューフォーム用の\qタグ簡易入力用コマンド
+# 第1引数: 選択肢の内容
+# 備考:    メニューフォームに戻ってくる時、メニューフォーム開始からn番目なら
+#          IDにn-1が帰ってくる。
+function Menu.q $(
+	if $[ $(.size @arg) != 2 ] $(return);
+	.setstr kp.menuidcounter $(GetInteger kp.menuidcounter);
+	.setstr @i ${kp.menuidcounter};
+	.inc kp.menuidcounter;
+	return "\\q["$@arg[1]","${@i}"]";
+);
+=end
+
+=kis
+# メニューフォーム用の\qタグ簡易入力用コマンド(ID付)
+# 第1引数: 選択肢の内容
+# 第2引数: 選択肢のID
+# 備考:    メニューフォームに戻ってくる時、指定したIDが来る
+function Menu.q.id $(
+	if $[ $(.size @arg) != 3 ] $(return);
+	SecureInc kp.menuidcounter;
+	return "\\q["$@arg[1]","$@arg[2]"]";
+);
+=end
+
+# メニューフォーム用のカウンタ
+kp.menuidcounter : 0
+
+kp.onchoiceselect (
+	Select.${kp.MenuGroup2}.$(EntNamReference 0),
+	Select.$(EntNamReference 0)
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onchoiceselect
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : setMenuGroup
+
+#==============================================================================
+
+
+#選択肢タイムアウト（OnChoiceTimeout）=========================================
+#「\q」による選択肢が一定時間放置されたときに実行されます
+#ヘッドラインセンサーの選択肢放置からも呼び出される為、freezeフラグを解除して
+#います
+
+event.OnChoiceTimeout : $(
+	resetFreeze;
+	if $(.size kp.menuformname) $(
+		# メニューフォーム
+		# タイムアウトの文でさらにメニューフォームが設定されるかもしれないので、
+		# 代理エントリに内容を移してから消去
+		.setstr kp.menuformname2 $(.encode_entryname ${kp.menuformname});
+		.clear kp.menuformname;
+		.setstr kp.menuidcounter 0;
+		TalkSearch "kp.onchoicetimeout";
+		.clear kp.menuformname2;
+	) else if $(.size kp.MenuGroup) $(
+		# タイムアウトの文でさらに選択肢グループが設定されるかもしれないので、
+		# 代理エントリに内容を移してから消去
+		.setstr kp.MenuGroup2 $(.encode_entryname ${kp.MenuGroup});
+		.clear kp.MenuGroup;
+		TalkSearch "kp.onchoicetimeout2";
+		.clear kp.MenuGroup2;
+	) else $(
+		Talk "TalkTimeout";
+	);
+)
+
+kp.onchoicetimeout (
+	MenuFormTimeout.${kp.menuformname2},
+	TalkTimeout,
+	TalkGeneral
+)
+
+kp.onchoicetimeout2 (
+	TalkTimeout.${kp.MenuGroup2},
+	TalkTimeout,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onchoicetimeout, kp.onchoicetimeout2
+
+#==============================================================================
+
+
+#選択肢上にマウスカーソルが乗った/外れた(OnChoiceEnter)========================
+#選択肢の上にマウスが乗った場合と外れた場合に実行されます
+#※サイレントイベントです
+
+event.OnChoiceEnter : $(
+	if $(.size System.Request.Reference0) $(
+		# 選択肢にマウスが乗った
+		.setstr @choice $(EntNamReference 1);
+	) else $(
+		# 選択肢からマウスが外れた
+		.setstr @choice "NotSelected";
+	);
+	if $(.size kp.MenuGroup) $(
+		EntryRefer Selecting.$(.encode_entryname ${kp.MenuGroup}).${@choice};
+	) else $(
+		EntryRefer Selecting.${@choice};
+	);
+)
+
+#==============================================================================
+
+
+#キャラクタ型アンカー(\_a)の選択(OnAnchorSelect)===============================
+# 「\_a」によるキャラクタ型アンカーが選択されたときに実行されます
+
+event.OnAnchorSelect : $(Talk "Anchor."$(EntNamReference 0))
+
+#==============================================================================
+
+
+#ネットワーク系処理群**********************************************************
+
+#ネットワーク更新関連(OnUpdate...)=============================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#更新開始(OnUpdateBegin)-------------------------------------------------------
+
+event.OnUpdateBegin : $(
+	setFreeze;
+	if $[ $(SReference 3) == "" || $(SReference 3) == "ghost" ] $(
+		TalkSearch "kp.onupdatebegin";
+	) else $(
+		TalkSearch "kp.onupdatebegin.system";
+	);
+)
+
+kp.onupdatebegin (
+	TalkUpdateBegin,
+	TalkGeneralBegin
+)
+
+kp.onupdatebegin.system (
+	SystemupdateBegin.$(NormReference 3),
+	SystemupdateBegin,
+	TalkGeneralBegin
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onupdatebegin, kp.onupdatebegin.system
+
+#更新準備完了(OnUpdateReady)---------------------------------------------------
+
+event.OnUpdateReady : $(
+	setFreeze;
+	.setstr UpdateFileTotal $(AdjustOrigin $(NonNegReference 0));
+	if $[ $(SReference 3) == "" || $(SReference 3) == "ghost" ] $(
+		TalkSearch "kp.onupdateready";
+	) else $(
+		TalkSearch "kp.onupdateready.system";
+	);
+)
+
+kp.onupdateready (
+	TalkUpdateReady,
+	TalkGeneral
+)
+
+kp.onupdateready.system (
+	SystemupdateReady.$(NormReference 3),
+	SystemupdateReady,
+	TalkGeneral
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onupdateready, kp.onupdateready.system
+
+#更新内容ダウンロード開始(OnUpdate.OnDownloadBegin)----------------------------
+
+event.OnUpdate.OnDownloadBegin : $(
+	.setstr closemode 2;
+	.setstr UpdateFileNo $(AdjustOrigin $(NonNegReference 1));
+	TalkSearch "kp.onupdate.ondownloadbegin";
+)
+
+kp.onupdate.ondownloadbegin (
+	TalkDownloadBegin,
+	TalkGeneralBegin
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.onupdate.ondownloadbegin
+
+#MD5照合開始/成功/失敗---------------------------------------------------------
+
+event.OnUpdate.OnMD5CompareBegin: $(TalkSearch "kp.onupdate.onmd5comparebegin")
+
+kp.onupdate.onmd5comparebegin (
+	TalkMD5Begin,
+	TalkGeneralBegin
+)
+
+event.OnUpdate.OnMD5CompareComplete : $(TalkSearch "kp.onpudate.onmd5comparecomplete")
+
+kp.onpudate.onmd5comparecomplete (
+	TalkMD5Complete,
+	TalkGeneralComplete
+)
+
+event.OnUpdate.OnMD5CompareFailure : $(TalkSearch "kp.onupdate.onmd5comparefailure")
+
+kp.onupdate.onmd5comparefailure (
+	TalkMD5Fail,
+	TalkGeneralfail
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onupdate.onmd5comparebegin,
+	kp.onpudate.onmd5comparecomplete,
+	kp.onupdate.onmd5comparefailure
+)
+
+#更新完了(OnUpdateComplete)----------------------------------------------------
+
+event.OnUpdateComplete : $(
+	resetFreeze;
+	if $[ ${System.Request.Reference0} == "none" ] $(
+		.setstr closemode 0;
+		if $[ $(SReference 3) == "" || $(SReference 3) == "ghost" ] $(
+			TalkSearch "kp.onupdatecomplete.none";
+		) else $(
+			TalkSearch "kp.onupdatecomplete1";
+		);
+	) else $(
+		# ネットワーク更新成功は、再起動と同等
+		GetifExist kp.callback.OnUpdateComplete;
+		if $[ $(SReference 3) == "" || $(SReference 3) == "ghost" ] $(
+			TalkSearch "kp.onupdatecomplete.changed";
+		) else $(
+			TalkSearch "kp.onupdatecomplete2";
+		);
+	);
+	.clear UpdateFileNo;
+	.clear UpdateFileTotal;
+)
+
+kp.onupdatecomplete.none (
+	TalkUpdatecomplete.none,
+	TalkGeneralComplete
+)
+
+kp.onupdatecomplete1 (
+	SystemupdateNoupdate.$(NormReference 3),
+	SystemupdateNoupdate,
+	TalkGeneralComplete
+)
+
+kp.onupdatecomplete.changed (
+	TalkUpdatecomplete.changed,
+	TalkGeneralComplete
+)
+
+kp.onupdatecomplete2 (
+	SystemupdateCompleted.$(NormReference 3),
+	SystemupdateCompleted,
+	TalkGeneralComplete
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect (
+	kp.onupdatecomplete.none,
+	kp.onupdatecomplete1,
+	kp.onupdatecomplete.changed,
+	kp.onupdatecomplete2
+)
+
+#更新失敗(OnUpdateFailure)-----------------------------------------------------
+
+event.OnUpdateFailure : $(
+	resetFreeze;
+	TalkSearch $(
+		if $[ $(SReference 3) == "" || $(SReference 3) == "ghost" ]
+			"kp.dataupdateerror1"
+		else
+			"kp.dateupdateerror2"
+	);
+	.clear UpdateFileNo;
+	.clear UpdateFileTotal;
+)
+
+kp.dataupdateerror1 (
+	TalkUpdatefail.$(NormReference 0),
+	TalkUpdatefail.etc,
+	TalkGeneralfail
+)
+
+kp.dataupdateerror2 (
+	SystemupdateFailed.$(NormReference 3).$(NormReference 0),
+	SystemupdateFailed.$(NormReference 3).etc,
+	SystemupdateFailed.$(NormReference 0),
+	SystemupdateFailed.etc,
+	TalkGeneralfail
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.dataupdateerror1 , kp.dataupdateerror2
+
+#==============================================================================
+
+
+#==============================================================================
+#以上GET SHIORI/3.0イベント
+#==============================================================================
+
+
+#==============================================================================
+#以下NOTIFY SHIORI/3.0
+#==============================================================================
+
+#自己ゴースト名取得(ownerghostname)============================================
+#Reference0に「自己ゴースト名」
+#ゴースト切り替えによる再起動の検出精度向上目的で取得
+notify.ownerghostname : $(
+	.setstr System.OwnerGhost $(SReference 0);
+	if $[ ${Character0} != ${System.OwnerGhost} ] $(
+		# Character0と本体通知の\0名が一致しないので、強制的に一致させる
+		LogMsg "Character0 is NOT equal to the ghost name!";
+		.setstr Character0 ${System.OwnerGhost};
+	);
+	.get "Execute.Ownerghostname";
+)
+
+#==============================================================================
+
+
+#ウィンドウハンドル通知(hwnd)==================================================
+#Reference0に「さくら側サーフィス[バイト値1]うにゅう側サーフィス」
+#Reference1に「さくら側バルーン[バイト値1]うにゅう側バルーン」
+#それぞれバイト値1で分割してSystem.Hwnd.shell、System.Hwnd.balloonに格納
+#格納後、Execute.Hwndエントリの処理を実行する
+notify.hwnd : $(
+	.clear System.Hwnd.shell;
+	.clear System.Hwnd.balloon;
+	.split System.Hwnd.shell ${System.Request.Reference0} $(.chr 1);
+	.split System.Hwnd.balloon ${System.Request.Reference1} $(.chr 1);
+	.get "Execute.Hwnd";
+)
+
+#==============================================================================
+
+#インストール済みゴースト(installedghostname)==================================
+#インストールしたゴーストの数だけReferenceに通知される。
+#MATERIAはバグでこれが動作していないため、自力で獲得している
+#インストール済みゴーストはSystem.InstalledGhostエントリに格納する
+#格納後、Execute.Installedghostnameエントリの処理を実行する
+notify.installedghostname : $(
+	.clear System.InstalledGhost;
+
+	if $[ ${System.Request.Sender} != "embryo" ] $(
+		# MATERIA以外
+		.setstr @i 0;
+		while $(.size System.Request.Reference${@i}) $(
+			.pushstr System.InstalledGhost $(SReference ${@i});
+			.inc @i;
+		);
+	) else $(
+		# MATERIA
+		GetInstalledGhost;
+	);
+	.get "Execute.Installedghostname";
+)
+
+
+# 各ゴーストのghost\master\descript.txtから、インストール済ゴースト名を取得
+=kis
+function GetInstalledGhost $(
+	.readdir @ghostdirs $(.cncpath ../../..);
+	foreach @i @ghostdirs $(
+		if $(.size @text) $(.clear @text);
+		.textload @text $(.cncpath ../../../${@i}/ghost/master/descript.txt);
+		loop $(.size @text) $(
+			.setstr @j ${-1};
+			if $(.match_at $@text[${@j}] "sakura.name,") $(
+				.pushstr System.InstalledGhost $(.substr $@text[${@j}] 12);
+				break;
+			);
+		);
+	);
+);
+=end
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetInstalledGhost
+
+#==============================================================================
+
+#起動中の他ゴースト(otherghostname)============================================
+#同時起動中のゴーストの数だけReferenceに通知される。
+#System.OtherGhostエントリにゴースト名だけ、System.OtherGhostExエントリに
+#「ゴースト名[バイト値1]さくらサーフィス番号[バイト値1]うにゅうサーフィス番号」
+#を格納する。
+#格納後、Execute.Otherghostnameエントリの処理を実行する
+notify.otherghostname : $(
+	#.clear System.OtherGhost;
+	#.clear System.OtherGhostEx;
+	.move System.OtherGhost @otherghost;
+	.move System.OtherGhostEx @otherghostex;
+
+	.setstr @i 0;
+	while $(.size System.Request.Reference${@i}) $(
+		.clear @ghost;
+		.split @ghost $(SReference ${@i}) $(.chr 1);
+		.pushstr System.OtherGhost $@ghost[0];
+		.pushstr System.OtherGhostEx $(SReference ${@i});
+		.inc @i;
+	);
+	.copy System.OtherGhost @newotherghost;
+	.copy System.OtherGhostEx @newotherghostex;
+:rem
+	if $[ ! $(GetString kp.onotherghostclosedflag) ] $(
+		#新たに起動したゴースト、終了したゴーストを検出
+		.setstr @i 0;
+		while $[ ${@i} < $(size @newotherghostex) ] $(
+			.setstr @pos $(.find @otherghostex $(.getcode @newotherghost[${@i}]));
+			if $[ ${@pos} >= 0 ] $(
+				# ずっといるゴーストはリストから外す
+				.clear @otherghost[${@pos}];
+				.clear @otherghostex[${@pos}];
+				.clear @newotherghost[${@i}];
+				.clear @newotherghostex[${@i}];
+			) else $(
+				.inc @i;
+			);
+		);
+		#今日はここまで#
+	);
+	.clear kp.onotherghostclosedflag;
+:endrem
+	.get "Execute.Otherghostname";
+)
+
+#==============================================================================
+
+#インストール済みシェル(installedshellname)====================================
+#起動中のゴーストにインストールされているシェルの数だけReferenceに通知される。
+#System.InstalledShellエントリにシェル名を格納する。
+#格納後、Execute.Installedshellnameエントリの処理を実行する
+notify.installedshellname : $(
+	.clear System.InstalledShell;
+
+	.setstr @i 0;
+	while $(.size System.Request.Reference${@i}) $(
+		.pushstr System.InstalledShell $(SReference ${@i});
+		.inc @i;
+	);
+	.get "Execute.Installedshellname";
+)
+
+#==============================================================================
+
+#インストール済みバルーン(installedballoonname)================================
+#インストールされているバルーンの数だけReferenceに通知される。
+#System.InstalledBalloonエントリにバルーン名を格納する。
+#格納後、Execute.Installedballoonnameエントリの処理を実行する
+notify.installedballoonname : $(
+	.clear System.InstalledBalloon;
+
+	.setstr @i 0;
+	while $(.size System.Request.Reference${@i}) $(
+		.pushstr System.InstalledBalloon $(SReference ${@i});
+		.inc @i;
+	);
+	.get "Execute.Installedballoonname";
+)
+
+#==============================================================================
+
+#Unique ID通知(uniqueid)=======================================================
+#ゴーストに偽造しにくいIDを与える。SSTPで特権処理する際に必要。
+#System.UniqueIdエントリに格納する。
+#格納後、Execute.Uniqueidエントリの処理を実行する
+notify.uniqueid : $(
+	.setstr System.UniqueId ${System.Request.Reference0};
+	.get "Execute.Uniqueid";
+)
+
+#==============================================================================
+
+#ゴースト情報通知(OnNotifySelfInfo)============================================
+#ゴースト自身に関する情報(\0名、\1名、シェル名等)が通知される。
+#情報格納後、Execute.SelfInfoエントリの処理を実行する
+
+notify.OnNotifySelfInfo : $(
+	if $[ ! ${System.SelfName} ] $(.setstr System.SelfName $(SReference 0));
+	if $[ ! ${Character0} ] $(.setstr Character0 $(SReference1));
+	if $[ ! ${Character1} ] $(.setstr Character1 $(SReference2));
+	.setstr System.Shell $(SReference 3);
+	.setstr System.ShellPath $(Reference 4);
+	.setstr System.Balloon $(SReference 5);
+	.setstr System.BalloonPath $(Reference 6);
+	.get "Execute.SelfInfo";
+)
+
+=kis
+# SSP以外でOnNotifySelfInfo同等情報を得るためのコマンド
+function GetDescript $(
+	.textload @fin descript.txt;
+	if $[ $(.size @fin) == 0 ] $(return);
+
+	.setstr @done 0;
+	loop $(.size @fin) $(
+		.setstr @i ${-1};
+		.setstr @str $@fin[${@i}];
+		loop $(.size kp.getdescript.tosearch) $(
+			.setstr @j ${-1};
+			.setstr @entry $kp.getdescript.tosearch[${@j}];
+			if $(.match_at ${@str} ${@entry}) $(
+				.setstr $kp.getdescript.toset[${@j}] $(.substr ${@str} $(.length ${@entry}));
+				.inc @done;
+				break;
+			);
+		);
+		if $[ ${@done} == $(.size kp.getdescript.tosearch) ] $(return);
+	);
+);
+=end
+
+kp.getdescript.tosearch (
+	"name,",
+	"sakura.name,",
+	"kero.name,"
+)
+
+kp.getdescript.toset (
+	"System.SelfName",
+	"Character0",
+	"Character1"
+)
+
+# 保護対象エントリであることを宣言
+kp.EntryToProtect : kp.getdescript.tosearch, kp.getdescript.tset
+
+# 保護対象関数であることを宣言
+kp.FunctionToProtect : GetDescript
+
+#==============================================================================
+
+#OS情報通知(OnNotifyOSInfo)====================================================
+#ゴーストが起動しているOSの情報が通知される。
+#情報格納後、Execute.OSInfoエントリの処理を実行する
+
+notify.OnNotifyOSInfo : $(
+	.split @vername $(SReference 0) ",";
+	.setstr System.OS.Name $@vername[0];
+	.setstr System.OS.Version  $@vername[1];
+	.setstr worktime.OS $[ $(IntReference 3) / 60 ];
+	.setstr cntwork.OS ${worktime.OS};
+	.get "Execute.OSInfo";
+)
+
+# システム情報の初期値
+System.OS.Name    : "UNKNOWN"
+System.OS.Version : "0.00"
+
+#==============================================================================
+
+
+#==============================================================================
+#以上NOTIFY SHIORI/3.0
+#==============================================================================

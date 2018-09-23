@@ -1,0 +1,111 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  コミュニケート辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version2.1.0      2003.01.03 12:00版
+# Version2.1.1      2003.01.26 23:00版
+# Version2.1.2      2003.03.03 23:00版
+# Version2.2        2003.04.01 00:00版
+# Version2.2.1      2003.04.14 22:00版
+# Version2.2.2      2003.05.01 18:00版
+# Version2.2.3      2003.05.18 00:00版
+# Version2.2.4      2003.06.16 23:00版
+# Version2.2.5      2003.07.31 00:00版
+# Version2.3.0 snapshot0309211444 2003.09.21 15:00版
+# Version3.0.0      2004.06.06 00:00版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 8.1.0 及び上位互換版
+#           「何か」（現「伺か」）MATERIA period 583 以上
+#           CROW、SSP、ninix、偽林檎での動作を考慮
+#==============================================================================
+
+#コミュニケート(OnCommunicate)=================================================
+# マッチ条件
+#   <FlagMode>.TalkComm.<正規化ゴースト名>.<ID>.match : キーワード群
+# 又は
+#   <FlagMode>.TalkComm.<正規化ゴースト名>.<ID>.cond : 条件(真偽を返すこと)
+#
+# トーク
+#   <FlagMode>.TalkComm.<正規化ゴースト名>.<ID> : トーク
+#
+# <ID>はエントリ名に使える文字列なら何でも良い。キーワード・トークの組を
+# 区別する為の文字列。
+#
+# ゴーストを特定しなくてもいいトークを書く場合、「__other__」というゴーストへの
+# トークとして書く。
+
+# 話し掛ける例。SendToで話し掛ける相手を設定する。
+Select.SendTo : \1\s[10]\0\s[0]ね、\w8しりとりしましょ？\w8\w8\e$(SendTo ${System.OtherGhost})
+
+# どの条件にも該当しなかった場合
+TalkComm : \1\s[10]\0\s[4]ごめん、分かんない…。\e$(StopCommunicate)
+
+# 陽子への反応
+TalkComm.陽子.おはよう.match : おはよう
+TalkComm.陽子.おはよう : \1\s[10]\0\s[5]陽子ちゃん、\w8おはよう！\e$(StopCommunicate)
+
+TalkComm.陽子.こんばんは.match : こんばんは
+TalkComm.陽子.こんばんは : \1\s[10]\0\s[5]陽子ちゃん、\w8こんばんは！\e$(StopCommunicate)
+
+# しりとりの例。descript.txtのみ書き換えてきぃを2体を立てると機能する。
+TalkComm.__other__.しりとり認可.match : しりとりしましょ？
+TalkComm.__other__.しりとり認可 : \1\s[10]\0\s[5]うん！\w8\w8じゃ、\w8最初は…\w8愛。\e
+
+TalkComm.__other__.しりとり1.match : 愛。\e
+TalkComm.__other__.しりとり1 : \1\s[10]\0\s[0]意思。\e
+
+TalkComm.__other__.しりとり2.match : 意思。\e
+TalkComm.__other__.しりとり2 : \1\s[10]\0\s[0]幸せ。\e
+
+TalkComm.__other__.しりとり3.match : 幸せ。\e
+TalkComm.__other__.しりとり3 : \1\s[10]\0\s[0]世界。\e
+
+TalkComm.__other__.しりとり4.match : 世界。\e
+TalkComm.__other__.しりとり4 : \1\s[10]\0\s[0]戒め。\e
+
+TalkComm.__other__.しりとり5.match : 戒め。\e
+TalkComm.__other__.しりとり5 : \1\s[10]\0\s[0]迷宮。\e
+
+TalkComm.__other__.しりとり6.match : 迷宮。\e
+TalkComm.__other__.しりとり6 : \1\s[10]\0\s[0]うわさ。\e
+
+TalkComm.__other__.しりとり7.match : うわさ。\e
+TalkComm.__other__.しりとり7 : \1\s[10]\0\s[0]災害。\e
+
+TalkComm.__other__.しりとり8.match : 災害。\e
+TalkComm.__other__.しりとり8 : \1\s[10]\0\s[0]怒り。\e
+
+TalkComm.__other__.しりとり9.match : 怒り。\e
+TalkComm.__other__.しりとり9 : \1\s[10]\0\s[0]理想。\e
+
+TalkComm.__other__.しりとりa.match : 理想。\e
+TalkComm.__other__.しりとりa : \1\s[10]\0\s[0]運命。\e
+
+TalkComm.__other__.しりとりb.match : 運命。\e
+TalkComm.__other__.しりとりb : \1\s[10]\0\s[0]今。\e
+
+TalkComm.__other__.しりとりc.match : 今。\e
+TalkComm.__other__.しりとりc : \1\s[10]\0\s[0]魔法。\e
+
+TalkComm.__other__.しりとりd.match : 魔法。\e
+TalkComm.__other__.しりとりd : \1\s[10]\0\s[0]海。\e
+
+TalkComm.__other__.しりとりe.match : 海。\e
+TalkComm.__other__.しりとりe : \1\s[10]\0\s[0]未来。\e
+
+TalkComm.__other__.しりとりf.match : 未来。\e
+TalkComm.__other__.しりとりf : \1\s[10]\0\s[0]今…あ。\w8\w8\n負けた～。\w8\w8\e
+
+TalkComm.__other__.しりとりend.match : 負けた～
+TalkComm.__other__.しりとりend : \1\s[10]\0\s[5]やった～！\e$(StopCommunicate)
+
+# 別人格のコミュニケート記述の例
+Another.TalkComm.テスト.しりとり.match : しりとりしましょ？
+Another.TalkComm.テスト.しりとり : \1\s[10]\0\s[5]やだ。\1やだってお前…\e$(StopCommunicate)
+
+#==============================================================================
