@@ -1,0 +1,138 @@
+#########################################################################
+# Ｇｈｏｓｔ「．さくら」
+# Ｌｉｎｋ関係
+#
+#########################################################################
+
+
+#==============================================================================
+#リソース：「お勧め」サイトリストボタン名======================================
+
+#エントリ名 : Sakura.URLCaption : \0側のお勧め
+#　　　　　   Kero.URLCaption   : \1側のお勧め
+#　　　　　   Portal.URLCaption : 本体のポータル
+#書式 ： "右クリックメニューに表示されるサイトリスト名"
+#複数指定可能
+
+Sakura.URLCaption : "さくらのお勧め(&R)"
+Kero.URLCaption   : "うにゅうのお勧め(&R)"
+Portal.URLCaption : "ポータルサイト(&P)"
+
+
+#==============================================================================
+#「お勧め」サイトリスト書式説明================================================
+
+#エントリ名
+# URL.sakura : 本体側のおすすめサイト
+# URL.kero   : kero側のおすすめサイト
+# URL.portal : 本体側のポータルサイト
+
+##式
+# "(サイト名)(ＵＲＬ)(バナーＵＲＬ)"
+#　又は、
+# "(サイト名)"$(chr 1)"(ＵＲＬ)"$(chr 1)"(バナーＵＲＬ)"$(chr 2)
+#
+#区切り線は、
+# "-" 又は、"-"$(chr 2)
+#
+#バナーとして表示できるのはJPG・PNG形式のみでGIF形式は表示できないので注意。
+#予め「banner」フォルダにあるものを表示するには、
+#バナーＵＲＬを「(識別子)」、bannerフォルダ内のファイル名を
+#「(識別子).(拡張子)」とする。
+#バナーを表示させたくない時はスペース等を最低１文字入れておく。
+#例
+#URL.sakura : "example"$(chr 1)"http://www.nanntoka.net/"$(chr 1)"nanntoka_banner"$(chr 2)
+#bannerフォルダ内のバナー画像 nanntoka_banner.png
+
+#バナーを表示させたくないとき
+#URL.sakura : "example"$(chr 1)"http://www.nanntoka.net/"$(chr 1)" "$(chr 2)
+
+
+#==============================================================================
+#さくら：お勧めリスト：SHIORI/2.2 対応アプリケーション=========================
+URL.sakura : "初心者のための Bottle！"$(chr 1)"http://www.globetown.net/~8390bottle/"$(chr 1)"http://ekicyou.github.com/old/dot-sakura/images/hajiboto.jpg"$(chr 2)
+URL.sakura : "瓶典 -ボトルの辞典-"$(chr 1)"http://bottler.s22.xrea.com/"$(chr 1)""$(chr 2)
+URL.sakura : "NO MORE YASAGURE!!"$(chr 1)"http://seriko.nanika.jp/"$(chr 1)""$(chr 2)
+URL.sakura : "怪しげな小瓶。"$(chr 1)"http://k-a2shi.hp.infoseek.co.jp/bottle/"$(chr 1)""$(chr 2)
+URL.sakura : "-"$(chr 2)
+
+URL.sakura : "SSTP Viewer's Street"$(chr 1)"http://seriko.nanika.jp/sstpviewer/"$(chr 1)"http://seriko.nanika.jp/sstpviewer/sv.png"$(chr 2)
+URL.sakura : "Yasagure Software"$(chr 1)"http://63factory.jp/klat/bottle/"$(chr 1)"http://63factory.jp/klat/bottle/banner07.gif"$(chr 2)
+URL.sakura : "それはそれ。(SSSB)"$(chr 1)"http://blue.ribbon.to/~sssb/"$(chr 1)"http://seriko.nanika.jp/sstpviewer/sv.png"$(chr 2)
+URL.sakura : "ぼとるいぬごや"$(chr 1)"http://bottle-inugoya.hp.infoseek.co.jp/"$(chr 1)""$(chr 2)
+
+
+
+#==============================================================================
+#うにゅう：お勧めリスト：アンテナ、情報========================================
+
+URL.kero : "さくらナビ.com"$(chr 1)"http://www.remus.dti.ne.jp/~j-o/skin/skin.htm"$(chr 1)"http://www.remus.dti.ne.jp/~j-o/skin/banner00.png"$(chr 2)
+URL.kero : "MOON PHASE"$(chr 1)"http://cyan.maid.to/"$(chr 1)"http://cyan.maid.to/commonCG/moonbnr_2.jpg"$(chr 2)
+URL.kero : "Public Service Announcement"$(chr 1)"http://psa.ange.ac/"$(chr 1)" "$(chr 2)
+URL.kero : "何かアンテナ"$(chr 1)"http://sakura.nekome.net/antenna/"$(chr 1)" "$(chr 2)
+URL.kero : "やさぐれアンテナ"$(chr 1)"http://antenna.yasagure.net/"$(chr 1)"http://antenna.yasagure.net/ysgr_antenna.png"$(chr 2)
+URL.kero : "何か。の略歴"$(chr 1)"http://a1.st/nob/sakura/"$(chr 1)"http://a1.st/nob/sakura/r_banner.png"$(chr 2)
+URL.kero : "SSTP Bottle"$(chr 1)"http://bottle.mikage.to/"$(chr 1)"http://bottle.mikage.to/banner.gif"$(chr 2)
+URL.kero : "-"$(chr 2)
+URL.kero : "えちょの残骸"$(chr 1)"http://ekicyou.github.io/about.html"$(chr 1)"http://ekicyou.github.io/img/ruins.jpg"$(chr 2)
+
+
+
+#==============================================================================
+#さくら：ポータルサイト：本体・情報サイト・「華和梨」関係======================
+
+URL.portal : "伺か"$(chr 1)"http://usada.sakura.vg/"$(chr 1)"http://sakura.mikage.to/banner.png"$(chr 2)
+
+URL.portal : "-"$(chr 2)
+URL.portal : "SSP BUGTRAQ"$(chr 1)"http://ssp.shillest.net/"$(chr 1)"http://ssp.shillest.net/images/banner.png"$(chr 2)
+URL.portal : "ＣＲＯＷ"$(chr 1)"http://crow.aqrs.jp/"$(chr 1)"http://homepage2.nifty.com/aqrs/crow/crow_bnr1.png"$(chr 2)
+URL.portal : "ninix-aya"$(chr 1)"http://ninix-aya.sourceforge.jp/"$(chr 1)""$(chr 2)
+URL.portal : "偽林檎"$(chr 1)"http://www3.to/ccm"$(chr 1)" "$(chr 2)
+
+URL.portal : "-"$(chr 2)
+URL.portal : "OpenKEEPS"$(chr 1)"http://keeps.sourceforge.jp"$(chr 1)"http://keeps.sourceforge.jp/banner.png"$(chr 2)
+URL.portal : "華和梨公式配布ページ"$(chr 1)"http://kawari.sourceforge.net/"$(chr 1)"http://kawari.sourceforge.net/images/banner.png"$(chr 2)
+
+URL.portal : "-"$(chr 2)
+URL.portal : "「あれ以外の何か以外の何か」"$(chr 1)"http://meister-d-i.hoops.ne.jp/"$(chr 1)"http://meister-d-i.hoops.ne.jp/banner.png"$(chr 2)
+URL.portal : "「あれ以外の何か以外の何か」掲示板"$(chr 1)"http://hpcgi1.nifty.com/creative-s/meister/wforum.cgi"$(chr 1)"http://homepage1.nifty.com/creative-s/meister/bbsbanner.png"
+URL.portal : "華和梨を使い倒す？"$(chr 1)"http://www27.tok2.com/home/kawarisp/"$(chr 1)"http://www27.tok2.com/home/kawarisp/banner/kawariplus.png"$(chr 2)
+URL.portal : "私設「華和梨」応援団"$(chr 1)"http://users.hoops.ne.jp/shobu/"$(chr 1)"http://users.hoops.ne.jp/shobu/images/kpcg_banner.png"$(chr 2)
+URL.portal : "偽かわりんくす"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?FakeKawaLinks"$(chr 1)"http://wiki.counterghost.net/pukiwiki.php?plugin=attach&openfile=fake-kawalinks.png&refer=FakeKawaLinks"$(chr 2)
+
+URL.portal : "-"$(chr 2)
+URL.portal : "もどき板"$(chr 1)"http://nh.pv.to/"$(chr 1)"http://nh.mikage.to/banner0.png"$(chr 2)
+
+#==============================================================================
+
+#TalkURL.さくらナビcom            : ${h0}「何か」の情報、\w6まずはここから。\e
+#TalkURL.何かアンテナ             : ${h5}ここを覗いて更新情報をチェキ！\e
+#TalkURL.MOONPHASE                : ${h5}ニュースと「何か」を同時にチェキ！\e
+#TalkURL.SSTPBottle               : ${h7}ネタ師、\w6集まれっ！${u0}ここから新しいさくらが生まれるわけやな。\e
+#TalkURL.お絵かき板With何か       : ${h5}レベルが高いよ！${u0}見て楽しむか、\w6書いて楽しむかや。\e
+#TalkURL.もどき板                 : ${h7}「何か」を語ろう！${u0}アンマリ熱くなるなよ。\e
+#TalkURL.SPEAKEASY                : ${h0}かわりのかわり。${u0}それじゃ判らんぞ。\e
+#TalkURL.何かの略歴               : ${h0}「何か」関連モジュールの履歴だって。${u0}むう。\e
+#TalkURL.何かゴーストマネージャ   : ${h0}ゴーストをとっかえひっかえしたい方に。\e
+#TalkURL.何かゴーストマネージャ   : ${h1}あんまり、浮気しないでね‥‥\e
+#TalkURL.あれ以外の何か以外の何か : ${h0}SHIORIモジュール・「華和梨」の総本山っ！${u0}似ＡＩでお世話になっとるな。\e
+#TalkURL.ＫＥＥＰＳ               : ${h0}SHIORIモジュール・「華和梨」\nのスクリプトセットだよ。${u0}似ＡＩでお世話になっとるな。\e
+#TalkURL.華和梨を使い倒す         : ${h0}SHIORIモジュール・「華和梨」\nの使い方をここで学ぼう。${u0}似ＡＩでお世話になっとるな。\e
+#TalkURL.華和梨さんの虫パレード   : ${u0}虫やっ、\w8虫やっ、\w8あっ\w4ぶらっ\w4むし♪${h4}やめて‥‥\e
+#TalkURL.ゆうかもなか             : ${h0}プロジェクト楠見製菓だよ。${u0}ゆうかもなか、おいしそうやな。${h}そだねっ。\e
+#TalkURL.花ちゃん助さん           : ${u1}きつね萌えっ！${h4}うにゅう‥‥\e
+#TalkURL.毒子ほねゅう薬子         : ${h7}でんじゃらす！${u1}じーざす！\e
+#TalkURL.まゆら黒うにゅう         : ${h3}まゆらの屋敷だ‥‥${u0}やばいぞ、迷ったら二度と出られんぞ。\e
+#TalkURL.なるゆうか               : ${なるの挨拶に切れる}
+#TalkURL.安子さんギコ             : ${h5}硬派だねっ。${u0}あれで結構ウブなとこあるからな‥‥\e
+#TalkURL.せりこまるちぃ           : ${h3}放置プレイ？${u0}お前もなー。\e
+#TalkURL.せりこまるちぃ           : ${h6}そしてせりこはヤグサレ箱に帰りましたとさ。${u0}めでたくなし、\w8めでたくなし。\e
+#TalkURL.さくらうにゅう           : ${h0}一応、私の本拠地。${u0}たいした事してへんやん。${h4}‥‥\e
+#TalkURL.さくらうにゅう           : ${h0}一応、私の本拠地。${u0}有言無実行。${h4}‥‥\e
+#TalkURL.さくらうにゅう           : ${h0}一応、私の本拠地。${u0}‥‥ぱくり。${h4}‥‥\e
+#TalkURL.さくらうにゅう           : ${h0}一応、私の本拠地。${u0}リバースエンジニアリング。${h4}‥‥\e
+#TalkURL.ふたばみかげ             : ${h6}ある世界に、一人の少女がいました。\w8${h0}その少女は病弱で両親は彼女に彼女にそっくりなロボットを与えました。${h5}そのロボットは彼女の代わりに遊び、\w8学び、\w8その記憶を少女と共有しました。\w8${h0}‥‥\w8\w8ある日少女は健康を取り戻し、\w8そのロボットと別れを告げました。\w8しかしロボットは「少女の自我」を持ち生き続けます。${h3}そのロボットは自らが偽りの存在であることに気付いていません‥‥\w8${u0}なんや、\w8それ。\w8${h0}ん、\w8昔考えた物語。\w8${h6}ふと思い出してね。\w8${u}‥‥\e
+#TalkURL.ふたばみかげ             : ${h5}お父さんだー。${u0}お前復活してるで。${h6}私の魅力には勝てないんだよ。${u}お前な‥‥\e
+#TalkURL.ふたばみかげ             : ${h5}お父さんだー。${u0}「ゲームやアニメに影響されて」と発言するクソ馬鹿野郎を横に並べて左端から順番に首をもぎ取るサイトやね。${h4}ながっ！\e
+#TalkURL.ふたばみかげ             : ${h3}お父さん‥‥${u0}娘が家飛び出して不良少女やっとるで。${h4}あうっ。\e
+#TalkURL.ふたばみかげ             : ${h3}お父さん‥‥${u0}娘が家財持ち出してネットに流し取るで。${h2}やばっ。\e

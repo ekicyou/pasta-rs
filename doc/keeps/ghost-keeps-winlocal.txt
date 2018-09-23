@@ -1,0 +1,276 @@
+#########################################################################
+# Ｇｈｏｓｔ「．さくら」
+# 華和梨イベント辞書
+#########################################################################
+
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   Windowsローカルアプリケーションイベント スクリプト辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 7.3.1 及び上位互換版を使用。
+#           「何か」（現「伺か」）MATERIA period 480 及び上位互換ソフトを使用。
+#==============================================================================
+
+
+#ＳＳＰスケジューラー==========================================================
+
+#TalkSchedule5Min.ToGo : スケジュールの時間の５分前
+# IconType : イベントのタイプ
+# system.Reference1 : イベントの内容(caption)
+# system.Reference2 : 追加データ(subtitle)
+# system.Reference3 : スクリプト(script)
+
+#TalkScheduleRead : カレンダーアイコンの上にマウスをしばらく置いた時
+# IconType : イベントのタイプ
+# system.Reference1 : イベントの内容(caption)
+# system.Reference2 : 追加データ(subtitle)
+# system.Reference3 : スクリプト(script)
+
+#TalkScheduleSenseBegin : スケジュールセンサが接続開始する時
+# system.Reference0 : スケジュールセンサの名前
+
+#TalkScheduleSenseComplete : スケジュールセンサの処理が完了した時
+# system.Reference0 : スケジュールセンサの名前
+# system.Reference1 : スケジュールセンサの返したスケジュールデータの数
+
+#TalkScheduleSense{Word1} : スケジュール取得結果(情報が取得されない場合)
+# Word1 : Noupdate / Failed / Miss / Error
+# スケジュールセンス失敗理由 (更新なし / 受信失敗 / 解析失敗 / その他)
+
+#TalkSchedulePostBegin : スケジュールセンサが投稿モードで接続開始する時
+# system.Reference0 : スケジュールセンサの名前
+
+#TalkSchedulePostComplete : スケジュールセンサが投稿処理を完了した時
+# system.Reference0 : スケジュールセンサの名前
+
+
+TalkSchedule5Min.ToGo : ${h0}"（"${IconType}"）"\n${system.Reference1}\n\n予定時刻、５分前です。$(if $(expr ${system.Reference2} | ${system.Reference3}) \n－－－－－－－－－－\n${system.Reference2}\n${system.Reference3})\e
+
+TalkScheduleRead : ${h0}"（"${IconType}"）"\n${system.Reference1}$(if $(expr ${system.Reference2} | ${system.Reference3}) \n－－－－－－－－－－\n${system.Reference2}\n${system.Reference3})\e
+
+TalkScheduleSenseBegin : ${h0}${system.Reference0} スケジュールを取得します。\e
+
+TalkScheduleSenseComplete : ${h0}${system.Reference0} スケジュールを取得しました。\n\nスケジュールデータは、${system.Reference1}ありました。\e
+
+TalkScheduleSenseNoupdate : ${h4}スケジュールは更新されていませんでした。\e
+
+TalkScheduleSenseFailed : ${h4}スケジュール情報が取得できませんでした。\e
+
+TalkSchedualSenceMiss : ${h4}スケジュール情報の解析に失敗しました。\e
+
+TalkSchedualSenceError : ${h2}「${system.Reference0}」エラーが発生しました。\e
+
+TalkSchedulePostBegin : ${h0}${system.Reference0} スケジュールへ投稿します。\e
+
+TalkSchedulePostComplete : ${h5}${system.Reference0} スケジュールへの投稿処理が完了しました。\e
+
+#==============================================================================
+
+
+#UD Sensor データ更新イベント==================================================
+
+# TalkUDSensor : 「UD Agent」及び「UD Sensor」使用時、データが更新された時
+
+# system.Reference0 : 現在の解析度 (単位：％)
+# system.Reference1 : １％の解析にかかった時間の「時間」部分
+# system.Reference2 : １％の解析にかかった時間の「分」部分
+# system.Reference3 : 前回の通知からの経過時間の「時間」部分
+# system.Reference4 : 前回の通知からの経過時間の「分」部分
+# system.Reference5 : タスク全体の経過時間の「時間」部分
+# system.Reference6 : タスク全体の経過時間の「分」部分
+# system.Reference7 : 書式化された文字列
+# UDSTime1Per       : １％の解析にかかった時間 (単位：分)
+# UDSTimePast       : 前回の通知からの経過時間 (単位：分)
+# UDSTimeTotal      : タスク全体の経過時間 (単位：分)
+
+TalkUDSensorA : ${h5}「UD Agent」、データ更新っ！${u0}終了するんなら今がチャンスやね。${h6}解析率は、${system.Reference0}％だね。${TalkUDSensor0}\e
+
+TalkUDSensorB : ${h5}「UD Agent」、次のデータ取りに行くよ～。${u0}ネットに繋ぐで～。${h6}${TalkUDSensor0}\e
+
+
+TalkUDSensor : \t$(if $([ ${system.Reference0} -eq 0 ]) ${TalkUDSensorB}  ${TalkUDSensorA})
+
+TalkUDSensor0 : 今の解析データはこうなってるよ。${h}${TalkUDSensor1}\n${TalkUDSensor2}\n${TalkUDSensor3}$(if ${system.Reference7} "\n----------\n"${system.Reference7})"\e"
+
+TalkUDSensor1 : １％の解析時間：${UDSTime1Per}"分（"$(if ${system.Reference1} ${system.Reference1}"時間")$(if ${system.Reference2} ${system.Reference2}"分")"）"
+
+TalkUDSensor2 : 前回の通知から：${UDSTimePast}"分（"$(if ${system.Reference3} ${system.Reference3}"時間")$(if ${system.Reference4} ${system.Reference4}"分")"）"
+
+TalkUDSensor3 : トータル時間　：${UDSTimeTotal}"分（"$(if ${system.Reference5} ${system.Reference5}"時間" ; if ${system.Reference6} ${system.Reference6}"分")"）"
+
+#==============================================================================
+
+
+#SHIORI/2.2 Notify対応アプリ汎用イベント=======================================
+
+#・共通の変数
+# AppliName      : 稼動中のアプリケーション名
+# AppliMaker     : 稼動中のアプリケーションの製造元
+# AppliVersion   : 稼動中のアプリケーションのバージョン
+# AppliCopyright : 稼動中のアプリケーションの著作権
+# AppliURL       : 稼動中のアプリケーションに関するＵＲＬ
+# Word1          : アプリケーション名(全・半角スペース、半角記号は削除、
+#                  全・半角アルファベットは全て半角小文字に変換）
+#ただし「AppliName」以外は情報が送られない(「NoData」)場合もある。
+
+#TalkAppliBoot(.{Word1}) : アプリケーションが起動した。
+#TalkAppliClose(.{Word1}) : アプリケーションが終了した。
+#  system.Reference0 : アプリケーション名
+#  system.Reference1 : アプリケーションの情報(内容はアプリケーションによる)
+
+#TalkAppliExist(.{Word1}) : 起動しているアプリケーションからの汎用通知
+#  system.Reference0 : アプリケーション名
+#  system.Reference1 : アプリケーションの情報(内容はアプリケーションによる)
+
+#TalkAppliFinish(.{Word1}) : アプリケーションで、特定の処理が終了した時
+#  system.Reference0 : アプリケーション名
+#  system.Reference1 : 処理の内容(内容はアプリケーションによる)
+#  system.Reference2 : 処理の対象(内容はアプリケーションによる)
+
+#TalkAppliOpen(.{Word1}) : アプリケーションが、ファイルを開いた時
+#  system.Reference0 : アプリケーション名
+#  system.Reference1 : 開いたファイル名(フルパス)
+#  AppliFile : 開いたファイル名(ファイル名のみ)
+#  AppliType : 開いたファイル名(拡張子のみ)
+
+#TalkWebsite : ウェブサイトからの情報を受信。
+#  system.Reference0 : ウェブサイト名
+#  system.Reference1 : 最終更新日時
+#  system.Reference2 : サイトからのデータ
+#  WebNews : さくらスクリプトに変換した、サイトからのデータ
+
+TalkAppliBoot : ${h0}「${AppliName}」が起動したよ。\e
+
+TalkAppliBoot.udsensor : ${h5}「UDSensor」が起動したよ。\n\n「UNITED DEVICES」の解析状況を報告。\e
+
+TalkAppliClose : ${h0}「${AppliName}」が終了したよ。\e
+
+TalkAppliClose.udsensor : ${h3}「UDSensor」が終了したよ。\e
+
+TalkAppliExist : ${h0}「${system.Reference0}」からの情報。\n\n－－－－－－－－－－\n\n${system.Reference1}\e
+
+TalkAppliFinish : ${h5}「${system.Reference0}」の、${system.Reference1}が${system.Reference2}したよ。\e
+#＝
+TalkAppliOpen : $(if $(expr find ".bmp.jpg.png.gif" ${AppliType}) ${TalkAppliOpen1}  ${TalkAppliOpen2})
+
+TalkAppliOpen1 : ${h0}画像ファイル「${AppliFile}」を「${system.Reference0}」で開けてるね。\e
+
+TalkAppliOpen2 : ${h0}「${AppliFile}」を「${system.Reference0}」で開けてるね。\e
+
+TalkWebsite : ${h0}「${system.Reference0}」からの更新情報。\n\n最終更新日：${system.Reference1}\n－－－－－－－－－－\n${WebNews}\e
+
+#==============================================================================
+
+
+#「きのこ」反応================================================================
+
+#TalkKinoko{Word1}{Word2}.{Word3} :「きのこ」が起動している時
+# {Word1} : Create / Destroy / Installed
+# それぞれ、生えた / 消えた / 自動インストールされた
+# {Word2} : Name / Type
+# 「Name」は名前、「Type」はカテゴリ
+# (名前→カテゴリで優先されます。複数カテゴリは最初の記述のみ有効)
+# (全角・半角スペース、及び半角記号は削除された名前になります)
+# {Word3} : 名前・カテゴリ名
+
+# kinokoname : きのこの名前
+# kinokotype : きのこのカテゴリ
+# 名前・カテゴリに該当がない場合「Type.Etc」となります。必ず記述してください。
+
+#TalkKinokoBatteryLow : バッテリー残量が４０％を切った時
+#TalkKinokoBatteryCritical : バッテリー残量が２０％を切った時
+# system.Reference0 : 現在のバッテリー残量 (単位：％)
+
+#TalkKinokoSystemLow : システムリソースが５０％を切った時
+#TalkKinokoSystemCritical : システムリソースが３０％を切った時
+# system.Reference0 : 現在のシステムリソース残量 (単位：％)
+
+
+#TalkKinokoCreateName.1UPきのこ60 : ${h4}小さい１ＵＰきのこが生えました。
+#TalkKinokoCreateName.クスミタケ : ${h4}クスミタケが生えました。
+
+#TalkKinokoCreateType.きのこ : ${h4}「${kinokoname}」というきのこが生えました。
+#TalkKinokoCreateType.アンテナ : ${h4}「${kinokoname}」というアンテナが生えました。
+#TalkKinokoCreateType.植物 : ${h4}「${kinokoname}」という植物が生えました。
+#TalkKinokoCreateType.建造物 : ${h4}「${kinokoname}」という建造物が建ちました。
+#TalkKinokoCreateType.ヘッドマーク : ${h4}「${kinokoname}」というヘッドマークがつきました。
+#TalkKinokoCreateType.Etc : ${h4}「${kinokoname}」という「${kinokotype}」が生えました。
+
+#TalkKinokoDestroyName.どりふで潰れるきのこ : ${h5}つぶれるきのこが狩られました。\e
+
+#TalkKinokoDestroyType.きのこ : ${h5}「${kinokoname}」というきのこが狩られました。\e
+#TalkKinokoDestroyType.Etc : ${h5}「${kinokoname}」という「${kinokotype}」が狩られました。\e
+
+#TalkKinokoInstalledType.Etc : ${h0}「${kinokoname}」という「${kinokotype}」がインストールされました。\e
+
+#TalkKinokoBatteryLow : ${h3}バッテリー残量が${system.Reference0}%に低下しています。\e
+#TalkKinokoBatteryCritical : ${h2}バッテリー残量が${system.Reference0}%に低下しました。\e
+
+#TalkKinokoSystemLow : ${h3}システムリソースの残りが${system.Reference0}%しかありません。\e
+#TalkKinokoSystemCritical : ${h4}システムリソースが${system.Reference0}%しか残っていません。\e
+
+#==============================================================================
+
+
+#「猫どりふ」反応(SHIORI2.2モード)=============================================
+
+#TalkNekodrif{Word1}{Word2}{Word3}.{Word4} :「猫どりふ」より物を落下された時。
+# {Word1} : Emerge / Hit / Defend / Drop / Vanish / Dodge
+# それぞれ、落下開始/当たった/「きのこ」に当たった/落下中/画面外/避けた
+# {Word2} : Sakura / Kero
+# 「Sakura」はメインゴースト、「Kero」はサブゴーストがターゲット
+# {Word3} : Name / Type
+# 「Name」は名前、「Type」はカテゴリ
+# (名前→カテゴリで優先されます。複数カテゴリは最初の記述のみ有効)
+# (スペースや記号は、全角･半角問わず省かれます)
+# {Word4} : 名前・カテゴリ名
+
+#・使用できる変数
+# drifname : 落下物の名前
+# driftype : 落下物のカテゴリ
+
+# 名前・カテゴリに該当がない場合、「Type.Etc」となります。
+# 該当する動作が無い場合、「Type.Etc」も記述する必要はありません。
+
+# 落下物がきのこに当たった場合、その後の「Vanish」は無効となります。
+
+#猫どりふ落下対象判定用サブゴースト名
+Keroname : うにゅう
+
+#TalkNekodrifEmergeSakuraType.Etc : \_q${h2}私が狙われています。\e
+#TalkNekodrifEmergeKeroType.Etc : \_q${u1}私が狙われています。\e
+
+#TalkNekodrifHitSakuraName.かえる : ${h0}‥‥${h2}きぃやぁあぁぁああぁぁぁっ！\e
+#TalkNekodrifHitSakuraName.loveletter : ${h2}‥\w4‥\w4手紙？\e
+
+#TalkNekodrifHitSakuraType.surprise : ${h0}‥‥${h2}きぃやぁあぁぁああぁぁぁっ！\e
+#TalkNekodrifHitSakuraType.hate : ${h0}‥‥${h2}きぃやぁあぁぁああぁぁぁっ！\e
+#TalkNekodrifHitSakuraType.pretty : ${h1}あ‥\w4‥\w4‥。\e
+#TalkNekodrifHitSakuraType.love : ${h1}あ‥\w4‥\w4‥。\e
+#TalkNekodrifHitSakuraType.elegant : ${h1}あ‥\w4‥\w4‥。\e
+#TalkNekodrifHitSakuraType.Etc : ${h4}\_qいたっ！\_q\e
+
+#TalkNekodrifHitKeroType.stub : ${u1}\_qびっ！\_q\e
+#TalkNekodrifHitKeroType.Etc : ${u1}\_qぴっ！\_q\e
+
+#TalkNekodrifDefendSakuraType.Etc : ${h5}きのこに当たりました。\e
+#TalkNekodrifDefendKeroType.Etc : ${u0}きのこに当たりました。\e
+
+#TalkNekodrifDropSakuraType.Etc : ${h4}‥‥。\e
+
+#TalkNekodrifVanishSakuraName.かえる : ${h4}かえるぴょこぴょこみぴょこぴょこ。\e
+#TalkNekodrifVanishSakuraName.loveletter : ${h5}手紙を受け取りました。\e
+
+#TalkNekodrifVanishSakuraType.Etc : \0「${drifname}」という「${driftype}」でした。\e
+#TalkNekodrifVanishKeroType.Etc : \1「${drifname}」という「${driftype}」でした。\e
+
+#TalkNekodrifDodgeSakuraType.Etc : ${h5}${drifname}を避けました。\e
+#TalkNekodrifDodgeKeroType.Etc : ${u0}${drifname}を避けました。\e
+
+#==============================================================================

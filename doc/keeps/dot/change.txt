@@ -1,0 +1,73 @@
+#########################################################################
+# Ｇｈｏｓｔ「．さくら」
+# 対ゴースト反応（切り替えとか）
+#
+#########################################################################
+
+
+#========================================================================
+# 他のゴーストに切り替える時
+#========================================================================
+
+TalkGhostChanging : ${h8}‥‥\w8\w8浮気か‥‥${u0}‥‥\w8\w8\e
+TalkGhostChanging : ${h4}え。\w8お払い箱‥‥？${u0}切なさ炸裂やね。\w8\w8\e
+TalkGhostChanging : ${h6}‥‥${u0}‥‥\w8\w8\e
+TalkGhostChanging : ${h3}‥‥\w8\w8そうか、${system.Reference0}の方が良いのか。${u0}‥‥飽きたらポイやね。\w8\b[-1]${h4}えぐえぐ。\w8\e
+
+TalkGhostChanging : ${h0}では、${system.Reference0}さんに代わるよ。\e
+TalkGhostChanged : ${h0}${system.Reference0}さん、お疲れさまっ。\e
+
+TalkGhostChangingAuto : ${h0}時間です。\n\n${system.Reference0}さんに代わるね。\e
+TalkGhostChangingAuto : ${h4}‥‥\w8\w8時間切れ‥‥${u0}‥‥\w8\w8シビアな世の中やね。\w8\w8\e
+TalkGhostChangingAuto : ${h0}時間です。\n\n${system.Reference0}さんに代わります。\w8${h8}\cち。\w8\e
+
+TalkGhostChanging.美耳.0303 : ${h0}今日は美耳の誕生日だね。\n\n${h5}おめでとう！\w9\e
+TalkGhostChanging.ねここ : ${u0}ネコ耳‥‥\w8\w8ﾊｧﾊｧ${h7}‥‥何でもいいのか！\w8\w8\e
+TalkGhostChanging.さくら : ${h0}‥‥\w8\w8どのさくらかな？${u0}さあな。\w8\w8\e
+TalkGhostChanging.さくら : ${h8}‥‥\w8\w8ふ。\w8\w8\e
+TalkGhostChanging.．さくら : ${h5}再起動するよ～。\e
+TalkGhostChanging.．さくら : ${h6}システム。\w6再起動。\e
+TalkGhostChanging.．さくら : ${h5}行って来ま～す。\e
+TalkGhostChanging.．さくら : ${h4}はぁ。\w4やれやれ。\e
+TalkGhostChanging.．さくら : ${h5}よっ、\w3と。\e
+TalkGhostChanging.まゆら : ${h4}‥もう‥いないはずなのに‥。${u0}‥‥\w8\w8\e
+TalkGhostChanging.なる : ${h4}‥‥\w8\w8やっぱり和み路線の方がいいのかな。${u0}今さら遅いわ。\w8\w8\e
+TalkGhostChanging.毒子 : ${h7}あんな妖魔が良いのかっ！${uq}落ち着けっ！\w8\w8\e
+TalkGhostChanging.安子さん : ${h1}あんぱんベトベト？${uq}‥‥！\w8\w8\e
+TalkGhostChanging.安子さん : ${u0}家政婦‥‥\w8\w8ﾊｧﾊｧ${h4}‥‥ボコられるよ？\w8\w8\e
+TalkGhostChanging.つぐな : ${u0}夏服‥‥\w8\w8ﾊｧﾊｧ${h4}‥‥もうないって。\w8\w8\e
+TalkGhostChanging.花ちゃん : ${u0}セーラー服‥‥\w8\w8ﾊｧﾊｧ${h4}‥‥でもキツネだよ？\w8\w8\e
+TalkGhostChanging.空 : ${h2}げ、減点されるよッ!${u0}日頃の行いやな。\w8\w8\e
+TalkGhostChanging.由加 : ${h8}最近やさぐれてるらしいね。${u0}待て。\e
+TalkGhostChanging.由加 : ${h6}可愛い子には毒知識がある。${u0}いや‥‥\w8\w8\e
+TalkGhostChanging.由加 : ${h5}これより由加のベストテンをお楽しみください。${uq}虐めるんやない！\w8\w8\e
+TalkGhostChanging.ゼロ : ${h6}あとよろしくね。${u0}人任せにすな。\w8\w8\e
+
+
+#========================================================================
+# さくらに戻った時
+#========================================================================
+
+TalkGhostChanged : ${h0}‥‥\w8やっと戻って来れたね。${u0}${地名}か‥‥\w8\n何もかも懐かしい。\w8\e
+TalkGhostChanged : ${h0}${system.Reference0}さん、貴方のことは忘れないよ。${u0}‥‥勝手に殺すな。\w8\e
+TalkGhostChanged.さくら : ${h5}えんいー。${u0}いきなり終わりかっ！！\w8\e
+TalkGhostChanged.さくら : ${h4}死体を引きずり回してる方です。${uq}寒っ！\w8\e
+TalkGhostChanged.さくら : ${h5}ただいまっ\e
+TalkGhostChanged.さくら : ${u0}私はうにゅうではありません。${h4}じゃあ、誰なんだよ。\w8\e
+TalkGhostChanged : ${h7}あーもうバタバタ切り替えるんじゃないっ！${uq}落ち着けっ！\e
+TalkGhostChanged : ${h8}あっちの方が良いと思うぞ？${u0}‥‥\w8\e
+TalkGhostChanged.なる : ${h0}‥‥\w8\w8和み路線も、飽きたって事だね。${u0} ‥‥\w8\e
+TalkGhostChanged.安子さん : ${h1}あんぱんゲ～～ット！！${u0}マジ！？\w8\e
+TalkGhostChanged.安子さん : ${h1}‥‥\w8\w8私の方が良い女♪${u0}真顔で言うな‥‥\w8\e
+TalkGhostChanged.まゆら : ${u0} ${h0}召還獣でーす。${u0}！！\w8\e
+TalkGhostChanged.つぐな : ${h0}お役交代だねっ。\w8頑張っていこか。${h0}うん。\w8\e
+TalkGhostChanged.ねここ : ${h5}お姉ちゃん登場！${u0}災厄登場‥‥${h0}なに？\n${u0}いや‥‥\w8\e
+TalkGhostChanged.花ちゃん : ${u0}うにゅうの歌謡ショーです。${h4}‥‥\w8\w8やめて。\w8\e
+TalkGhostChanged.花ちゃん : ${u0}本物のうにゅうです。${h3}‥‥嘘っぽいよ。\w8\e
+TalkGhostChanged.せりこ : ${h8}‥‥故障したの？${u0} ‥‥。\w8\e
+TalkGhostChanged.双葉 : ${h6}‥‥。${u0} ‥‥。\w8\e
+TalkGhostChanged.空 : ${h6}落ち着きなよ。${u0}何、偉そうにしてんねん。\w8\w8\e
+TalkGhostChanged.由加 : ${h7}由ｶﾛ～。${u0}まぁ、由ｶﾛやしな。\w8\e
+TalkGhostChanged.ゼロ : ${h8}当然、\w8返り討ち。\n\n${u0}物騒やね。${h6}火に弱そうだし、\w8不審火に気をつけてね。\w8\w8\e
+TalkGhostChanged.Emily : ${u0}む、Emily？だれや？${h0}ほら、昔、えみりぃとかエミリとか呼ばれてた何かだよ。${u0}あー、せやせや。${h0}思い出した？${h0}ああ、昔、${～に～する誰か}に${サ変名詞・さ}せられとった奴やね。${h0}‥‥\w8それは違うと思うよ。
+

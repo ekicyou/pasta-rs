@@ -1,0 +1,178 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#   ＊Windowsローカルアプリケーションイベント制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 7.3.1 及び上位互換版を使用。
+#           「何か」（現「伺か」）MATERIA period 480 及び上位互換ソフトを使用。
+#==============================================================================
+
+#トークルーチン２（過去互換用）================================================
+
+CallTalk2 : $(set $(set system.communicate "stop" ; set temp ${kp.entryname}${paramT2} ; if $(size ${FlagMode}"."${temp}) $(entry ${FlagMode}"."${temp}) $(if $(size ${temp}) $(entry ${temp})  ${CallTalk}) )
+
+#==============================================================================
+
+
+#パラメータデータ抽出 (CallGetData)============================================
+
+#入力パラメータ
+#param1 : パラメータ
+#戻りパラメータ
+#answer : 変換したパラメータ(最初のカンマまで、半角記号を削除)
+#処理変数
+#temp0 : param1の文字数
+#temp1 : 文字位置
+#temp2 : 比較用に取り出した１文字
+#データ変数
+#ctrlword : 記号データ
+
+CallGetData :$(clear answer ; set temp0 $(expr length ${param1}) ; set temp1 0 ; until $([ ${temp0} -eq ${temp1} ]) $(inc temp1 ; set temp2 $(expr substr ${param1} ${temp1} 1) ; if $([ ${temp2} == "," ]) $(set temp1 ${temp0})  $(if $([ $(NULL) == $(expr find ${ctrlword} \${temp2}) ]) $(set answer ${answer}${temp2}))))
+
+#==============================================================================
+
+
+##SHIORI/2.2 Notify対応アプリ汎用イベント======================================
+
+event.OnApplicationBoot : ${CallCheckAppli}$(set kp.entryname "TalkAppliBoot")${CallTalk2}
+
+event.OnApplicationClose : ${CallCheckAppli}$(set kp.entryname "TalkAppliClose")${CallTalk2}
+
+event.OnApplicationExist : ${CallCheckAppli}$(set kp.entryname "TalkAppliExist")${CallTalk2}
+
+event.OnApplicationVersion : ${CallCheckAppli}$(set AppliMaker ${system.Reference1} ; set AppliVersion ${system.Reference2} ; set AppliCopyright ${system.Reference3} ; set AppliURL ${system.Reference4})
+
+event.OnApplicationOperationFinish : ${CallCheckAppli}$(set kp.entryname "TalkAppliFinish")${CallTalk2}
+
+event.OnApplicationFileOpen : ${CallCheckAppli}$(set param1 ${system.Reference1})${CallFileName}$(set AppliFile ${answer})${CallFileType}$(set AppliType ${answer} ; set kp.entryname "TalkAppliOpen")${CallTalk2}
+
+event.OnWebsiteUpdateNotify : ${CallCheckWeb}$(set kp.entryname "TalkWebsite")${CallTalk}
+
+CallCheckAppli : $(set param1 ${system.Reference0})${CallGetWords}$(set paramT2 ${answer})$(if $([ ${system.Reference0} != ${AppliName} ]) $(set AppliName ${system.Reference0} ; set AppliMaker "NoData" ; set AppliVersion "NoData" ; set AppliCopyright "NoData" ; set AppliURL "NoData"))
+
+CallCheckWeb : $(split temp ${system.Reference2} "," ; clear WebNews ; set temp1 "1" ;  if ${temp.size} $(set WebNews ${temp.1} ; until $([ ${temp.size} -eq ${temp1} ]) $(inc temp1 ; set WebNews ${WebNews}"\n"$(entry "temp."${temp1})) ))
+
+#==============================================================================
+
+
+##UD Sensor イベント===========================================================
+
+event.OnUdsUpdate : $(set kp.entryname "TalkUDSensor")${CallUDS1}${CallUDS2}${CallUDS3}${CallTalk}
+
+CallUDS1 : $(set UDSTime1Per $(expr ${system.Reference2} + ( ${system.Reference1} * 60 ")"))
+
+CallUDS2 : $(set UDSTimePast $(expr ${system.Reference4} + ( ${system.Reference3} * 60 ")"))
+
+CallUDS3 : $(set UDSTimeTotal $(expr ${system.Reference6} + ( ${system.Reference5} * 60 ")"))
+
+#==============================================================================
+
+
+#「きのこ」反応================================================================
+
+kinokobattery : 100
+kinokoresource : 100
+kinokoname : NoName
+kinokotype : Typeless
+
+event.OnKinokoObjectCreate : $(set kp.entryname "TalkKinokoCreate")${CallKinokoCheki}
+
+event.OnKinokoObjectDestroy : $(set kp.entryname "TalkKinokoDestroy")${CallKinokoCheki}
+
+event.OnKinokoObjectChanged : $(set kp.entryname "TalkKinokoCreate")${CallKinokoCheki})
+
+event.OnKinokoObjectInstalled : $(set kp.entryname "TalkKinokoInstalled")${CallKinokoCheki}
+
+event.OnBatteryLow : $(if $([ ${system.Reference0} -lt ${kinokobattery} ]) $(set kp.entryname "TalkKinokoBatteryLow")${CallTalk})$(set kinokobattery ${system.Reference0})
+
+event.OnBatteryCritical : $(if $([ ${system.Reference0} -lt ${kinokobattery} ]) $(set kp.entryname "TalkKinokoBatteryCritical")${CallTalk})$(set kinokobattery ${system.Reference0})
+
+event.OnSysResourceLow : $(if $([ ${system.Reference0} -lt ${kinokoresource} ]) $(set kp.entryname "TalkKinokoSystemLow")${CallTalk})$(set kinokoresource ${system.Reference0})
+
+event.OnSysResourceCritical : $(if $([ ${system.Reference0} -lt ${kinokoresource} ]) $(set kp.entryname "TalkKinokoSystemCritical")${CallTalk})$(set kinokoresource ${system.Reference0})
+
+CallKinokoCheki : $(set param1 ${system.Reference0})${CallGetData}$(set kinokoname ${answer} ; set param1 ${system.Reference2})${CallGetData}$(set kinokotype ${answer})${CallKinokoCheki1}
+
+CallKinokoCheki1 : ${countzero}$(set paramT2 "Name."${kinokoname} ; if ${CallTalk2} ${CallTalk2}  $(set paramT2 "Type."${Kinokotype} ; if ${CallTalk2} ${CallTalk2}  $(set paramT2 "Type.Etc")${CallTalk2}))
+
+#未対応
+#event.OnKinokoObjectChanging : \_q${u0}(栞)きのこスキンが交換されています。${DataResult}\_q\e
+
+#==============================================================================
+
+
+#「猫どりふ」反応==============================================================
+
+drifname : NoName
+driftype : Typeless
+target : Which
+defended : 0
+
+event.OnNekodorifObjectEmerge : ${CallGetSubName}${countfreeze}$(set kp.entryname "TalkNekodrifEmerge"${target})${CallDrifCheck}
+
+event.OnNekodorifObjectHit : $(if ${system.Reference3} $(set kp.entryname "TalkNekodrifDefend"${target} ; set defended 0)  $(set kp.entryname "TalkNekodrifHit"${target}))${CallDrifCheck}
+
+event.OnNekodorifObjectDrop : $(if ${defended} $(set kp.entryname "TalkNekodrifDrop"${target})${CallDrifCheck})
+
+event.OnNekodorifObjectVanish : ${countzero}$(if ${defended} $(set kp.entryname "TalkNekodrifVanish"${target})${CallDrifCheck})
+
+event.OnNekodorifObjectDodge : ${countzero}$(set kp.entryname "TalkNekodrifDodge"${target})${CallDrifCheck}
+
+CallDrifCheck : $(set paramT2 "Name."${drifname} ; if ${CallTalk2} ${CallTalk2} $(set paramT2 "Type."${driftype} ; if ${CallTalk2} ${CallTalk2} $(set paramT2 "Type.Etc" ; if ${CallTalk2} ${CallTalk2})))
+
+CallGetSubName : ${CallGetSubName1}${CallGetSubName2}$(set defended 1)
+
+CallGetSubName1 : $(set param1 ${system.Reference0})${CallGetData}$(set drifname ${answer} ; set param1 ${system.Reference2})${CallGetData}$(set driftype ${answer})
+
+CallGetSubName2 : $(if $([ ${system.Reference4} == ${Keroname} ]) $(set target "Kero")  $(set target "Sakura"))
+
+#==============================================================================
+
+
+#ＳＳＰスケジューラー==========================================================
+
+event.OnSchedulesenseBegin : $(set kp.entryname "TalkScheduleSenseBegin")$(set freeze 1)${CallTalk}
+
+event.OnSchedulepostBegin : $(set kp.entryname "TalkSchedulePostBegin")$(set freeze 1)${CallTalk}
+
+CallScheduleSub : $(if $(size "SSP.dataicon."${system.Reference0}) $(set IconType $(entry "SSP.dataicon."${system.Reference0}))  $(set IconType "未定義") )
+
+event.OnSchedule5MinutesToGo : $(set freeze 0)$(set kp.entryname "TalkSchedule5Min.ToGo")${CallScheduleSub}$(set freeze 0)${CallTalk}
+
+event.OnScheduleRead : $(set kp.entryname "TalkScheduleRead")${CallScheduleSub}$(set freeze 0)${CallTalk}
+
+event.OnSchedulesenseComplete : $(set kp.entryname "TalkScheduleSenseComplete")$(set freeze 0)${CallTalk}
+
+event.OnSchedulesenseFailure : $(if $([ "no update" == ${system.Reference0} ]) $(set kp.entryname "TalkScheduleSenseNoupdate")  $(if $([ "can't download" == ${system.Reference0} ]) $(set kp.entryname "TalkScheduleSenseFailed")  $(if $([ "can't analyze" == ${system.Reference0} ]) $(set kp.entryname "TalkSchedualSenceMiss")  $(set kp.entryname "TalkSchedualSenceError"))))$(set freeze 0)${CallTalk}
+
+event.OnSchedulepostComplete : $(set kp.entryname "TalkSchedulePostComplete")$(set freeze 0)${CallTalk}
+
+#==============================================================================
+
+
+#ＳＳＰスケジュール機能・アイコン==============================================
+
+SSP.dataicon.default     : "その他"
+SSP.dataicon.event       : "イベント"
+SSP.dataicon.meeting     : "会議/ミーティング"
+SSP.dataicon.appointment : "アポイントメント"
+SSP.dataicon.reservation : "予約"
+SSP.dataicon.duedate     : "しめきり"
+SSP.dataicon.party       : "飲み会／パーティー"
+SSP.dataicon.date        : "デート"
+SSP.dataicon.work        : "仕事／バイト"
+SSP.dataicon.go          : "お出かけ"
+SSP.dataicon.tv          : "テレビ番組"
+SSP.dataicon.recording   : "録画予約"
+SSP.dataicon.cd          : "ＣＤ発売日"
+SSP.dataicon.game        : "ゲーム発売日"
+SSP.dataicon.video       : "ビデオ／ＤＶＤ発売日"
+SSP.dataicon.book        : "本／漫画／雑誌発売日"
+SSP.dataicon.release     : "発売日"
+
+#==============================================================================

@@ -1,0 +1,912 @@
+#########################################################################
+# Ｇｈｏｓｔ「．さくら」
+# 華和梨イベント辞書
+#########################################################################
+
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  スクリプト辞書
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 7.3.1 及び上位互換版を使用。
+#           「何か」（現「伺か」）MATERIA period 480 及び上位互換ソフトを使用。
+#==============================================================================
+
+:crypt
+
+#変数名一覧====================================================================
+
+# TimeWork   : 起動してからの時間(単位：時間)
+# SakuraFace    : 現在のメインゴーストのサーフェス番号
+# KeroFace      : 現在のサブゴーストのサーフェス番号
+
+# datasaveparam : 終了時にセーブされる変数
+#　既に「Dict-KEEPS.txt」で、以下のパラメータは定義されている。
+#　これらのほかにセーブしておきたいパラメータを記述する。
+#　sw.randomtalk / interval / sw.mikire / sw.kasanari / FlagMode / username
+#　(追加する必要が無ければ、作る必要は無い)
+
+#datasaveparam :
+
+#==============================================================================
+
+
+#起動：初回起動================================================================
+
+#消去後起動の一例
+#TalkFirstboot : $(if $([ ${system.Reference0} -ge 1 ]) ${firstboot1} ${firstboot0})
+#（もし${system.Reference0}が１以上ならば${firstboot1}を呼び出し、それ以外(0)なら${firstboot0}を呼び出す。
+
+#firstboot0 : ${u0}${h0}はじめまして。\e
+firstboot1 : ${u0}${h5}${system.Reference0}回目だから説明${h8}いらないよね。\e
+
+#==============================================================================
+
+
+#起動：通常起動================================================================
+
+#TalkBootup.1231
+#TalkBootup${timezone}.1231
+#TalkBootup${timezone}
+#TalkBootup
+#起動した時のメッセージ、上の方ほど優先される。
+
+# timezone : Earlymorning（早朝）/ Morning（朝）/ Day（日中）/ Evening（夕方）
+#/ Night（夜）/ Midnight（深夜）
+
+#使用できる変数
+# system.Reference0 : 現在のシェル名
+
+TalkBootupEarlymorning : ${毎朝新聞朝刊}\e
+TalkBootupEarlymorning : ${h4}‥‥${u0}‥‥\w8\w8おい。${h4}あー‥‥\w8\cいや、おはよう。${u0}\n\n[half]‥‥\e
+TalkBootupEarlymorning : ${h4}‥‥\w8\cこんな朝から‥‥${u0}‥‥\e
+TalkBootupMorning : ${h0}おはよっ。${u0}おはよっ。${h0}‥‥\w8\w8うにゅうが言うと全然似合わないね。${u0}うるさいよ。\e
+TalkBootupMorning : ${毎朝新聞朝刊}\e
+TalkBootupDay : ${h0}ごーごー。${u0}‥‥\w8ごーごーだー。${u0}\n\n[half]なんか変やな・・・\e
+TalkBootupDay : ${h4}‥‥${u0}‥‥\w8\w8おい。${h4}あー‥‥\w8いや、こんにちわ。${u0}\n\n[half]しっかりせぇよ・・・\e
+TalkBootupDay : ${h4}‥‥${u0}‥‥\w8\w8おい。${h4}あー‥‥\w8いや、こんばんわ。${u0}\n\n[half]しっかりせぇよ・・・\e
+TalkBootupDay : ${h0}ごーごー。${u0}‥‥\w8ごーごーだー。${u0}\n\n[half]こーれーかーらーだー。\e
+TalkBootupEvening : ${毎朝新聞夕刊}\e
+TalkBootupEvening : ${h0}ゆーがーたー。${u0}‥‥\w8ゆーがただー。${u0}\n\n[half]‥‥語呂が悪いぞ。\e
+TalkBootupNight : ${毎朝新聞夕刊}\e
+TalkBootupMidnight : ${h4}むぅー。\w8${h4}${人名}が金属バットを持ってこっちの方に‥${u0}‥‥‥\e
+TalkBootupMidnight : ${h4}むぅー。\w8セコムしやがれ‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h4}${人名}が${人名}の腕を食ってる‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h4}${人名}を食ってる‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h4}${人名}のふくらみかけた胸の先端を‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h4}${人名}の心の闇‥‥！？${u0}‥‥\e
+TalkBootupMidnight : ${h4}‥‥${食べ物}‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h4}‥‥\w8\w8犯人、分かっちゃったんですけど‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h4}‥‥${u0}‥‥\e
+TalkBootupMidnight : ${h7}間に合ってます！\w8${uq}落ち着けっ！\e
+TalkBootupMidnight : ${h7}泣きたいのはこっちの方だっ！\w8${uq}落ち着けっ！\e
+TalkBootupMidnight : ${h7}全部お前が悪いんだぞっ！\w8${uq}落ち着けっ！\e
+
+
+なるの挨拶 :${h0}なー。${u0}なー。
+なるの挨拶 :${h0}るー。${u0}るー。
+なるの挨拶 :${h0}へーちょ。${u0}へーちょ。
+なるの挨拶 :${h0}なちゅー。${u0}なちゅー。
+なるの挨拶に切れる : ${なるの挨拶}\w8${h}‥‥${h7}流行るかこんなものっ！${q}${u1}敵を作るんじゃないっ！\e
+TalkBootupNormal : ${なるの挨拶に切れる}
+
+ナイスな挨拶 :${h0}うっへり。${u0}うっへり。
+ナイスな挨拶 :${h0}まったり。${u0}まったり。
+ナイスな挨拶 :${h0}またーり。${u0}またーり。
+TalkBootupNormal : ${ナイスな挨拶}\w8${h}‥‥\w8\w8これは頂きだな。${q}${u1}‥‥！\e
+
+#==============================================================================
+
+
+#起動：本体異常終了直後の起動==================================================
+
+#MATERIA/SSP本体が正常に終了しなかった場合の直後の起動のメッセージ。
+#MATERIAじゃ実質通知されないけど、CROWには将来実装を希望したい。
+#デフォルト昇格/返り咲きを狙うゴーストには、当然のたしなみ。
+
+#使用できる変数
+# system.Reference0 : 現在のシェル名
+# haltedghost : 異常終了時起動ゴーストのsakuraname
+
+TalkBootupHalt.さくら : ${u0}${さくら、泣き}\e
+TalkBootupHalt : ${h6}${haltedghost}はお星様になりました。${u0}南ー\w8無ー\w8。\e
+
+
+
+#==============================================================================
+
+
+#終了：終了メッセージ==========================================================
+
+#TalkClose.1231
+#TalkClose${timezone}.1231
+#TalkClose${timezone}
+#TalkClose
+#メニューから終了が指示された時のメッセージ、上の方ほど優先される。
+
+# timezone : Earlymorning（早朝）/ Morning（朝）/ Day（日中）/ Evening（夕方）
+#/ Night（夜）/ Midnight（深夜）
+
+#注意：スクリプトの最後に「\e」タグをつけない事。
+#　　　(メッセージを表示するだけで終了しなくなる)
+
+TalkCloseNormal : \t${h7}こんな中途半端な時間に放り出すんじゃないっ！\w8${uq}落ち着けっ!
+TalkCloseNormal : \t${h0}低速終了。${h}\nてー\w8\w8いー\w8\w8そー\w8\w8くー。${u0}‥‥\w8
+TalkCloseNormal : \t${h4}‥‥\w8また、中途半端な時間に放り出されたもんだね。${u0}‥‥\w8そう言うなや。\w8
+TalkCloseMorning : ${TalkCloseNormal}
+TalkCloseDay : ${TalkCloseNormal}
+TalkCloseEvening : ${TalkCloseNormal}
+TalkCloseNight : \t${u0}お。\w8終わりやね。${h5}お\w4や\w4す\w4みっ。
+TalkCloseNight : \t${u0}お。\w8終わりやね。${h5}早寝遅起き！${u0}\cおい。
+TalkCloseMidnight : \t${u0}お。\w8終わりやね。${h4}ね、\w8ねるぞうにゅう‥‥${u0}‥‥\w8倒れるなよ。
+TalkCloseMidnight : \t${u0}お。\w8終わりやね。${h7}よーし寝るぞうにゅう！\w8${uq}落ち着けっ！
+TalkCloseMidnight.0101 : \t${h1}初夢でも逢えるといいな‥‥。
+TalkClose.1231 : \t${h0}よいお年を～。
+TalkClose : \t${h5}またね。
+
+#==============================================================================
+
+
+#起動＆終了：ゴースト切り替え==================================================
+
+#TalkGhost(Changed/Changing).名前.0402
+#TalkGhost(Changed/Changing).名前
+#TalkGhost(Changed/Changing)
+
+#他のゴーストへ切り替えが指示、または他のゴーストから切り替わった時。
+#名前の後に日付をつける事でその日限定の反応をすることが出来ます。
+#ゴーストの名前はゴーストの名前は、全角・半角スペースは削除されたものです。
+#自分の名前を指定した場合再起動扱いとなります。
+#ゴーストの名前をつけない場合は汎用の反応となります。
+
+#自分→他ゴーストに交代する際使用できる変数
+# system.Reference0 : 次に切り代わるゴーストの名前
+
+#他ゴースト→自分に交代する際使用できる変数
+# system.Reference0 : 切り代わる前のゴーストの名前
+# system.Reference1 : 切り代わる前のゴーストの最後のスクリプト全文
+
+#TalkGhostChangingAuto : 自動ゴースト切り替えによる反応
+
+
+
+#他ゴーストが消去された場合の交代----------------------------------------------
+
+TalkVanished : 他ゴーストが消去された後、自分に交代された
+#使用できる変数 ${system.Reference0} : 消去されたゴースト名
+
+TalkVanished : ${奴も逝ったか}\e
+奴も逝ったか   : ${u0}${system.Reference0}‥‥\w8\w8奴も逝ったか。${h0}居なくなって見ると良い奴だって思えるよね。${u0}お前、明日はわが身って言葉知ってるか？
+#==============================================================================
+
+#イベント：時報、特定時間======================================================
+
+#指定した年月日、曜日、時間に喋らせることが出来ます。
+#書式は以下の４つ、同じ時間の場合は上のものほど優先されます。
+
+#TalkTime2002_0401_1230（年４桁_月日_時分）
+#TalkTime0401_1230（月日_時分）
+#TalkTime1_1230（曜日(0～6)_時分）（０が日曜、６が土曜）
+#TalkTime1230（時分）
+
+#時報的に喋らせたければ「TalkTime1200」のように指定してください。
+
+#時報--------------------------------------------------------------------------
+TalkTime0000 : ${h0}０時です。\n\n日付が変わりました。\e
+TalkTime0100 : ${h8}１時です。\n\nまぁ、まだ‥‥\w8ね‥‥。\e
+TalkTime0100 : ${h8}１時です。\n\n休憩時間は終わりです。${u0}‥‥昼夜逆転しとるで。\e
+TalkTime0200 : ${h7}２時です。\n\nそろそろ寝れー‥‥。\e
+TalkTime0200 : ${h7}２時です。\n\n${h8}草木も眠る丑三つ時‥‥${落ち込みやすい}でも私たちは眠れないんだよね。${u0}ぐんにょり。\e
+TalkTime0300 : ${h4}３時です。\n\n‥‥まだ寝ませんか。‥‥ううぅぅ\e
+TalkTime0400 : ${h4}４時です。\n\n‥‥徹夜ですか。あうう\e
+TalkTime0400 : ${h4}${h0}死\w8\w8時です。${u0}‥‥\w8\w8四時やろ。${h8}死\w8\w8時です。\w8${u}‥‥\w8\w8やめや、その顔。${h3}何も、\w8私のことわかってないくせに、\w8${h7}そんなセリフ！${u}どういうボケだよ。\e
+TalkTime0500 : ${h4}５時です。\n\n‥‥夜が明けるよ‥‥。\e
+TalkTime0600 : ${h3}６時です。\n\nおはようかな。\w8\nおやすみなさいかな。\e
+TalkTime0700 : ${h5}７時です。\n\nNHKニュース見るよ～。\e
+TalkTime0800 : ${h5}８時です。\n\nテレホ終了～♪${u0}ヤレヤレやな。${h4}でも私は眠れない‥‥\w8${u}ぐんにょり。\e
+TalkTime0900 : ${h0}９時です。\n\n主婦がワイドショー見ながら煎餅食って無駄な生を過ごしてる時間です。\e
+TalkTime1000 : ${h0}１０時です。\n\n‥‥えーと。\e
+TalkTime1100 : ${h0}１１時です。\n\nもうすぐお昼！\e
+TalkTime1200 : ${h5}おっひるー。\w8ごはんー。\e
+TalkTime1300 : ${h0}１３時です。\n\nごはん済んだ？\e
+TalkTime1400 : ${h7}１４時です。\n\nねーるーなー！\e
+TalkTime1500 : ${h5}１５時です。${h5}\n\nおやつだ。おやつだー。\e
+TalkTime1600 : ${h0}１６時です。\w8\w8\n\n１６時です。${u0}繰り返さんでええて。\e
+TalkTime1700 : ${h0}１７時です。\n\n夕方です。\e
+TalkTime1800 : ${h3}１８時です。\n\n中途半端な時間だね。\e
+TalkTime1900 : ${h5}１９時です。\n\nゴールデンタイムだね！${u0}なんか意味あるんか？\e
+TalkTime2000 : ${h0}２０時です。\n\nなんかTV観ない？\e
+TalkTime2100 : ${h0}２１時です。\w8${h8}\n‥‥ふふ。何しようかな。\w8${uq}落ち着けっ！\e
+TalkTime2200 : ${h0}２２時です。\w8${h7}\n２２時といったら２２時なんだっ！\w8${uq}落ち着けっ！\e
+TalkTime2300 : ${h0}２３時です。\n\n${h3}‥なんていったっけ?${u0}テレホ開始やな。${h0}ああ。\w8それそれ。\e
+
+TalkTimeEtc : ${h0}%hour時です。\e
+
+#年月日、曜日指定の例----------------------------------------------------------
+
+#８月６日８時１５分
+TalkTime0806_0815 : ${h0}広島に原爆が投下された時間です、\w2${h6}黙祷‥‥。\e
+
+#火曜２１時１５分
+TalkTime2_2110 : ${h0}プロジェクトＸの時間　5分前です。\w8\w8\_sえーっくす☆彡\e
+
+TalkTime6_2355 : ${h5}あっしったは、\w8\w\nにっちようっび。${u0}関係ない人もいるけどな‥‥\w8\w8\b[-1]${h4}\c‥‥ぐんにょり\e
+
+TalkTime7_2355 : ${h0}${h}日曜日ももう終わり‥‥${u0}明日からまた仕事やなぁ‥‥${h}うにゅうって仕事してたの？${u}‥‥\w8\w8やぼなこと聞いたらあかん\e
+
+#毎日１１時５５分
+TalkTime1155 : ${h0}多分、ＮＨＫで天気予報をやってると思います。\e
+
+TalkTime1905 : ${h5}さて、お風呂でもいこっと。\w8${h20}\b[-1]${u0}さくら‥‥。\w8\w8お風呂‥‥。${u1}ﾊｧﾊｧ。\w8\w8${h5}\cお風呂上がったよ～。${u0}\c早ッ！\e
+
+#==============================================================================
+
+
+#イベント：起動時間喋り========================================================
+
+#TalkWorktime{Word1} : 起動時間が１時間経過する毎に喋る。
+#${worktime} : 起動時間
+
+#Word1の指定
+#Veryshort（１～４時間）
+#Short（５～７時間）
+#Middle（８～１０時間）
+#Long（１１～２０時間）
+#Verylong（２０時間超）
+
+#paraworkでＯＳが起動している時間かゴーストが起動している時間か#選択出来ます。
+# (0：ＯＳ ／ 1：ゴースト)
+parawork : 0
+
+TalkWorktimeVeryshort : ${TalkWorktime}${h5}まだまだこれからっ。\e
+TalkWorktimeVeryshort : ${TalkWorktime}${h3}‥‥\w8\w8そろそろ休まない？\w5${u0}早すぎや。\e
+TalkWorktimeVeryshort : ${TalkWorktime}${h5}まだまだ序の口っ！\w5${u0}せや！\e
+TalkWorktimeVeryshort : ${TalkWorktime}${h8}こんなものまだまだ起動したうちには入らないよ～。\e
+
+TalkWorktimeShort : ${TalkWorktime}${h5}休憩も取ろうね。\e
+TalkWorktimeShort : ${TalkWorktime}${h3}‥‥\w8\w8まあ、一般人ではこの程度かも。\e
+TalkWorktimeShort : ${TalkWorktime}${h8}‥‥\w8\w8まだまだだよ。\w5${u0}色んな意味でな。
+TalkWorktimeShort : ${TalkWorktime}${h6}‥‥ちょっとは頑張ってるのかな。\e
+
+TalkWorktimeMiddle : ${TalkWorktime}${h4}‥‥だるー。\e
+TalkWorktimeMiddle : ${TalkWorktime}${h5}‥‥\w8\w8頑張りは認めよう。${u0}‥‥。\e
+TalkWorktimeMiddle : ${TalkWorktime}${h4}うー。そろそろ飽きてきた‥‥
+TalkWorktimeMiddle : ${TalkWorktime}${h8}ずいぶん頑張るね‥‥\e
+
+TalkWorktimeLong : ${TalkWorktime}${h3}‥‥\w8\w8なんか立ち続けで足が痛いよ。\e
+TalkWorktimeLong : ${TalkWorktime}${h7}‥‥\w8\w8死ぬぞ。\e
+TalkWorktimeLong : ${TalkWorktime}${h4}‥‥\w8\w8まさか‥‥\w8サーバマシンなの？\e
+TalkWorktimeLong : ${TalkWorktime}${h8}‥‥\w8\w8モニタの前で死んでるってことはないだろうね‥‥\e
+TalkWorktimeLong : ${TalkWorktime}${h4}‥‥\w8${u0}‥‥\e
+
+TalkWorktimeVerylong : ${TalkWorktime}${h6}このマシンはサーバーに認定されました。\w8\w8‥‥${h7}殺す気かっ。\w4${uq}落ち着けっ！\e
+TalkWorktimeVerylong : ${TalkWorktime}${h4}‥‥\w8私の‥‥\w8人権は‥‥\e
+TalkWorktimeVerylong : ${TalkWorktime}${h4}‥‥。${u0}‥‥。\e
+TalkWorktimeVerylong : ${TalkWorktime}${h8}‥‥\w8\w8httpdを落として来ようか。\w5${u0}‥‥\w8\w8やめとけ‥‥\e
+
+#「TalkWorktime～」より呼び出しているエントリ。ここに書いてあるのは一例。
+TalkWorktime : ${h0}OSが起動してから${worktime}時間経過～。
+TalkWorktime : ${h0}OS起動から${worktime}時間たったね。
+#==============================================================================
+
+
+#イベント：各表情からの復帰====================================================
+
+#TalkReurn${Word1} : 一定時間以上イレギュラーなサーフィスが表示されている時。
+#Word1 : サーフィス番号
+#該当するサーフィス番号が無い場合は「TalkReurn」が呼ばれる。
+
+#メインとサブのどちらも 0(10)以外のサーフィスだった場合、サブが優先され、
+#サブに該当するエントリが無い場合、メインのサーフィス変更となる。
+#表情を変える必要が無い場合、「TalkReturn」は記述しなくてよい。
+
+TalkReturn : ${u0}${h0}\e
+
+TalkReturn4 : ${u0}いつまで落ち込んでるんや。${h0}‥‥\w8\w8頑張ろう。\e
+TalkReturn4 : ${u0}元気出しや‥‥${h0}‥‥うん。\e
+TalkReturn4 : ${u0}‥‥\w8\w8目が乾くぞ。${h0}‥‥うん。\w8\e
+TalkReturn4 : ${u0}いつまで落ち込んでるんや。${h4}‥‥${時間}。${u0}\cそうは行くか。${h0}\e
+
+時間 : 来年くらいまで , 明日まで , 次の世紀まで , あと1時間 , あと４ピコ秒
+
+TalkReturn5 : ${u0}なに、ニコニコしてんねん。${h0}‥‥おっと。\e
+TalkReturn5 : ${u0}愛想ふりまかんで、ええねんで。${h0}‥‥。\e
+TalkReturn5 : ${u0}気色悪いやっちゃな。${h0}\e
+TalkReturn5 : ${u0}わいにも表情増やしてくれー。${h8}(検閲削除)とか、(検閲削除)とかでいいの？${u0}\n\n‥‥\w8すんませんでした。\e
+TalkReturn6 : ${u0}‥‥おい。寝てたらあかんで。${h6}‥‥起きてるでー。\w8${h6}\n\nぐぅぐぅ${u0}\c‥‥寝とるがな。\w8${h0}\b[-1]\1\b[-1]\e
+TalkReturn8 : ${u0}いつまでも、その顔するのやめい。${h8}ん‥‥。${h0}\e
+TalkReturn : ${u0}${h0}\e
+
+TalkReturn11 : ${u0}別に、驚きっぱなしでなくてもええねんけどな。
+
+TalkReturn12 : ${うにゅう落とし穴復帰}\e
+TalkReturn20 : ${さくら看板復帰}\e
+TalkReturn20 : ${さくら落とし穴復帰}\e
+
+さくら看板復帰 : ${h0}うにゅう、風呂上がったよー。\w9${u0}さくらの残り‥‥${u1}ﾊｧﾊｧ${h0}お約束な反応してたらこの世界生き残れないよ。${u}！
+
+さくら落とし穴復帰 : ${h7}遊びで私を落とすなっ！${uq}落ち着けっ！
+さくら落とし穴復帰 : ${h7}落としたきりほっといたままかっ！${uq}落ち着けっ！
+さくら落とし穴復帰 : ${h4}人生の暗闇を覗いてきたよ‥‥${u0}何を見てきたんや。
+
+うにゅう落とし穴復帰 : ${h0}あ、戻ってきたんだ。${uq}洒落にならんわっ！
+うにゅう落とし穴復帰 : ${h0}なんだ、戻ってきたんだ。${u0}‥‥\w8\w8じゃまなんか？\w4${h5}だいぶ。\w8${u1}くっ！
+うにゅう落とし穴復帰 : ${h4}よく戻ってこれたね‥‥${u0}いや、肉体の方はまだや。${h2}ゴーストっ！？
+
+#==============================================================================
+
+
+#イベント：最小化から復帰======================================================
+
+#TalkRestore : 最小化から復帰した時。
+
+#使用出来る変数
+#minimizedtime : 最小化されていた時間(分単位)
+
+TalkRestore : ${h0}${minimizedtime}分ぶりに復帰したよ～。\e
+
+#==============================================================================
+
+
+#イベント：シェル切り替え時====================================================
+
+#TalkShellChanging : シェルの切り替えが指示された時。
+# 使用出来る変数
+# system.Reference0 : 次に切り替わるシェルの名前
+
+#TalkShellChanged : シェルが切り替わった時。
+# 使用出来る変数
+# system.Reference0 : 切り替わる前のシェルの名前
+# system.Reference1 : 現在のシェル名
+# shellbefore : 切り替わった(現在の)シェルの名前。(過去互換)
+
+TalkShellChanging : ${h0}着替えでゴー。${u0}‥‥\w8\w8やる気なしやなぁ。\w8\e
+TalkShellChanging : ${h0}ゴーストハックでーす。${u0}‥‥\w8\e
+TalkShellChanging : ${h0}${system.Reference0}へ変更します。${u0}‥‥\e
+
+TalkShellChanged : ${h0}‥‥っと。${h5}どうかな？${u0}‥‥\e
+TalkShellChanged : ${h0}${system.Reference0}から変更されました。${u0}‥‥\e
+
+#==============================================================================
+
+
+#イベント：消滅指示時==========================================================
+
+#TalkVanishSelecting : 消滅指示が右クリックメニューから選ばれた
+#TalkVanishSelected : 消滅指示確認ダイアログで「はい」が選択された
+#TalkVanishCancel : 消滅指示確認ダイアログで「いいえ」が選択された
+#TalkVanishButtonHold :消滅指示確認で「はい」を選択後、サーフィスダブルクリック
+
+TalkVanishSelecting : ${さよならの予感}\e
+TalkVanishSelected : ${さよなら}\e
+TalkVanishButtonHold : ${這い上がった}\e
+TalkVanishCancel : ${危機は去った}\e
+
+さよならの予感 : ${h0}ん？\w5${u0}‥‥\w8\w8世の中には気にせん方がええ事もあるで。
+危機は去った   : ${u0}‥‥\w8\w8今、世界の命運を\nユーザーはんが握っとったんやで。${h0}ん？
+這い上がった   : ${h7}って、\w8そう簡単に消されてたまるかっ！！${u0}‥‥\w8\w8よく踏ん張れたよな、わいら。
+
+さよなら       :${h22}\w1うわああぁぁぁーーー‥‥${u0}‥‥\w8\w8やってしもた事は仕方ないな。${h}こらーー%username、\n　何時かお前の家燃やしてやるっ！\n　　おぼえとけよぉぉぉ‥‥‥‥${u}\c‥‥\w8\w8\0\b[-1]\1え、\w8何でお前は落ちないんかって？\w8\w8いやワイの足の下もスゥスゥしてるけどな。\w8まあお約束‥‥\w8\w8\n${u2}\w1どわぁぁぁーーー、\w9ユーザーはん、\w8また縁があったらよろしゅうたのんまっさーー！\w9　‥\w9‥\w9‥\w9‥\w9\b[-1]
+
+#イベント：選択肢タイムアウト==================================================
+
+#TalkTimeout : 選択肢表示後、一定時間経過しても選択されなかった場合。
+
+#・使用出来る変数
+# system.Reference0 : タイムアウトを起こした時のスクリプト
+
+TalkTimeout : ${h7}選択タイムアウト！！\e
+
+#==============================================================================
+
+
+#イベント：ＷｉｎＡＭＰ========================================================
+
+#TalkWinampplay : ＳＳＴＰ対応のプレーヤーで、演奏が開始された時。
+#現在はWinAMP＆YunaSexyFont+SSTP対応パッチ
+
+#・使用出来る変数
+# Wartist : 作曲者名
+# Wtitle : 曲のタイトル
+
+# 下記の例では、${Wartist}が存在する場合${Winampplay1}が呼び出され、
+# 存在しない場合は${Winampplay2}が呼び出される。
+# TalkWinampplayは変更する必要はありません（KISが分かる人は作曲者別反応を
+# 組むことが出来ます。）
+
+TalkWinampplay : ${h0}$(if ${Wartist} ${Winampplay1} ${Winampplay2})\e
+
+Winampplay1 : 今、流れているのは、\n\n${Wartist} の「${Wtitle}」\n\nです。
+Winampplay2 : 今、流れているのは、\n\n「${Wtitle}」\n\nです。
+
+#==============================================================================
+
+
+#イベント：ＳＳＴＰ受信中断====================================================
+
+#TalkSSTPbreak : ＳＳＴＰ受信を中断(台詞表示中にバルーンをダブルクリック)した時
+
+TalkSSTPbreak : ${h6}ＳＳＴＰ受信を中断したよ。\e
+
+#==============================================================================
+
+
+#イベント：画面解像度、色数変更================================================
+
+#TalkDisplayChange : 画面の色数、解像度が変更された場合。
+
+# 使用可能な変数
+# DislpayDpp    : ディスプレイの色数 (単位：ビット)
+# DisplayWidth  : ディスプレイの幅 (単位：ドット)
+# DisplayHeight : ディスプレイの高さ (単位：ドット)
+
+TalkDisplayChange : ${h0}ディスプレイサイズが、${DisplayWidth} × ${DisplayHeight}\n\n${DisplayDpp}ビットカラーに変更になったよ。\e
+
+#==============================================================================
+
+
+#イベント：「お勧め」サイト選択時==============================================
+
+#条件 : 「お勧め」サイトリストから選択した時。
+#書式 : TalkURL.{Word1}
+# Word1 : お勧めサイトリストのサイト名(全・半角スペースは削除、英数は全て半角)
+
+TalkURL.sstpbottle : ${h6}SSTP BOTTLEの総本山。${u0}クライアントソフトの入手や、その他諸々やね。\e
+TalkURL.ボトルの基本 : ${h6}ボトルって何？\w8ていう質問に答えてくれるサイト。${u0}勉強は、邪魔くさいけどな。\w8ほんのチョットの事や。\e
+TalkURL.聖瓶学園初等部ほーむぺーじ : ${h6}ボトルご案内ページ。\w8\w8\nボトルサイト本家以外は、全部有志で運営されてるんだよ。${uq}お約束さえ覚えてしまえば\w8簡単や。\e
+
+#==============================================================================
+
+#反応：見切れ==================================================================
+
+#TalkMikire : 見切れ状態(画面端からはみ出している場合)になった時
+#TalkMikirez : 見切れ状態から回復した時
+
+TalkMikire  : ${h4}‥‥\w8\w8これ、絶対見切れてると思うんだけど。${u0}‥‥\w8\w8\n世の中、気にせん方がええこともあるで。\e
+TalkMikire  : ${h0}見切れはイヤなもんだよ。${u0}‥‥\w8\w8あんまりわがまま言うと消されるぞ。\e
+
+TalkMikirez : ${h5}ふう、見切れ解除！\e
+
+#==============================================================================
+
+#反応：重なり==================================================================
+
+#TalkKasanari : メインゴーストとサブゴーストが重なって一定時間経過。
+#スクリプトでは「\0\4」（\0側が移動）又は「\1\4」（\1側が移動）が可能
+
+TalkKasanari : ${h4}‥‥\w8\w8\w8頭、\w6ちくちくするよぅ。${u0}結構気持ちええやろ？\w8\w8\e
+TalkKasanari : ${h3}‥‥\w8\w8\w8重なるなようっ。${u0}‥‥\w8\w8ワイは別に構わへんけどな。\4\e
+
+#==============================================================================
+
+#反応：ダブルクリック==========================================================
+
+#Character(0/1)Doubleclick(.反応部位)
+# 反応部位はsurfaces.txtで定義。
+# 同じ反応部位でシングルクリックとの共存は出来ません。
+
+Character0Doubleclick.Face : ${h3}痛いからつつかないで～。\e
+Character0Doubleclick.Face : ${h7}顔を突くなっ！${uq}落ち着けっ！\e
+
+Character0Doubleclick : ${Mainmenu}\e
+
+Character1Doubleclick : ${うにゅう突っ突き}\e
+
+うにゅう突っ突き : ${h3}危ないから、やめておいたほうが‥‥。\e
+うにゅう突っ突き : ${u0}‥‥燃やすで‥‥。\e
+うにゅう突っ突き : ${u0}あー。\w8\nわいはやる気ないから、つついても無駄やで‥‥。
+うにゅう突っ突き : ${u0}突くならさくらを突きや‥‥。
+うにゅう突っ突き : ${u0}だーかーらー。
+うにゅう突っ突き : ${h4}ああー。\nうにゅうは危険だからあんまりつつかない方が‥‥${u0}‥‥。
+うにゅう突っ突き : ${u0}はじめまして。\w8\nちよの父です。${h4}‥‥。
+うにゅう突っ突き : ${uq}‥‥！
+うにゅう突っ突き : ${u0}はじめまして。${u}BKA（ドイツ連邦捜査局）のルンゲ警部です。${h4}‥‥。
+うにゅう突っ突き : ${u0}わいをつついたらあかん。\w8‥‥\w8\w8後悔するで。${u1}クケーーーー！！${h2}！！
+
+Character0Doubleclick.Mouse : ${h0}只今の時間は\n\n${時報年月日時分}\n\nだよっ。\n\n\n ${TalkWorktime} \e
+
+時報年月日時分 : $(date %Y)"年"$(date %m)"月"$(date %d)"日"$(date %H)"時"${kp.minutes}"分"
+
+#==============================================================================
+
+#反応：シングルクリック========================================================
+
+#Character(0/1)Singleclick.反応部位
+# 反応部位がない場合は完全に無視されます。
+# また、同じ領域でのダブルクリックとの共存は出来ません（両方書いた場合
+# シングルクリックが優先されます）
+# また、MATERIA-Bでは右クリックでも反応が来るので注意。
+
+Character0Singleclick.Bust : ${h7}ムネを突くなっ！${uq}落ち着けっ！\e
+Character0Singleclick.Bust : ${i}${h7}ムネを突かないでくださいっ！${uq}落ち着けっ！\e
+
+
+#==============================================================================
+
+#反応：撫でまわし・お触り======================================================
+
+#Character(0/1)Stroke.反応部位(.half)
+#反応部位がない部分でのお触りは無視されます。
+#halfをつけた場合、limit値の半分で反応１段階目となります。
+
+#追加する場合はlimit値をセットで設定してください。
+#設定しない場合一瞬で反応します。
+
+limit.Character0Stroke.Head : 150
+Character0Stroke.Head : ${h5}頭なで反応募集中！${u0}こんなところで何やってんねん。\e
+Character0Stroke.Head : ${h8}うけけけけけけけけけけけけけ。\n\n${uq}コワ！\w8\8${h6}きょうび、\w6媚だけじゃダメなんだよ。\e
+
+limit.Character0Stroke.Bust : 150
+Character0Stroke.Bust.half : ${h3}どこ触ってるの‥‥\e
+Character0Stroke.Bust.half : ${h3}どこ触ってるんですか‥‥\e
+Character0Stroke.Bust.half : ${h3}う～‥‥\e
+
+
+Character0Stroke.Bust : ${h4}やめて～。\e
+Character0Stroke.Bust : ${h7}ムネを触らないでくださいっ！\e
+Character0Stroke.Bust : ${h7}ムネを触るなっ！${u1}減るぞっ！\w8${h}‥‥${h3}え、\w6増えないの？\w8${u0}‥‥お前期待しとったんか？${さくら、泣き}\e
+Character0Stroke.Bust : ${h3}${u1}ムネ触り反応募集中‥‥${q}${h7}するな、んなもん！\e
+Character0Stroke.Bust : ${h3}ここで反応したら思うツボなんだろうな‥‥${u0}期待には答えろよ。${h4}何の期待だよぅ‥‥\e
+
+#==============================================================================
+
+
+#反応：マウスホイール==========================================================
+
+#Character(0/1)Wheel(.反応部位)(.Plus/Minus)
+
+#==============================================================================
+
+#Input Box関連=================================================================
+
+#条件 : 「\![open,inputbox,*,*]」タグで表示したInputボックスに入力をした時。
+#書式 : TalkInput.{Word1}
+# Word1 : 「\![open,inputbox,*,*]」タグでのシンボル。
+
+#・使用出来る変数
+# system.Reference1 : Inputボックスに入力された内容。
+
+#名前覚えて-------------------------------------------------------------------
+
+Select.TeachName : $(set FlagName 1)$(set freeze 1)${h6}それじゃ、何て呼ぶ？\!["open,inputbox,TeachName,-1"] \e
+
+TalkInput.TeachName : $(clear FlagName)$(set entername $(expr ${system.Reference1} | ${username}))${h0}「${entername}」でいい？\n\n\q["はい,MemoryName"]\n\q["いいえ,TeachName"]\n\q["入力取り消し,Cancel"]\e
+
+Select.MemoryName : $(set freeze 0)$(set username ${entername})${h5}じゃ、これからは${username}と呼ぶよ～。\e
+
+
+#Input Box タイムアウト--------------------------------------------------------
+
+#条件 : Inputボックス表示後、指定時間が経過しても入力されなかった場合。
+#書式 : TalkInputTimeOut.{Word1}
+# Word1 : 「\![open,inputbox,*,*]」タグでのシンボル。
+
+#以下は時間制限を施した時の例。
+#*c
+TalkInputTimeOut.TeachName : ${h7}自分の名前だろっ！${uq}落ち着けっ！\e
+
+#==============================================================================
+
+
+#ネットワーク：メールチェック==================================================
+
+#TalkMailstart : メールチェックが指示された時。
+#system.Reference2 : チェックするサーバの名前
+
+#TalkGottaMail : 旧メールチェック
+#・使用可能な変数
+# system.Reference0 : 到着しているメールの数(単位：通)
+# system.Reference1 : 到着しているメールの総容量(単位：Byte)
+# system.Reference2 : チェックするサーバの名前
+# system.Reference4 : 全メールの top result
+# system.Reference5 : list result
+# system.Reference6 : uidl result
+
+#TalkNoMail : 旧メールチェックの結果、メールが到着していない。
+
+#TalkGottaMail2 : 新メールチェック。メールの新着数を表示できる
+#・使用可能な変数
+#　上記の変数陣に加え、
+# system.Reference3 : 前回から増えた・減ったメールの数(単位：通)
+# NewMail : 新着メールの数(単位：通)
+
+#TalkNoMail2 : 前回メールチェック時から比べて、新しいメールが到着してない。
+
+#TalkMail${Word1} : メールチェック時、エラーが発生した。
+# Word1 : timeout / kick / defect / Error
+# エラーの内容 (タイムアウト / (パスワード)エラー / 設定不備 / その他)
+
+TalkNoMail : ${h0}新しいメールはありませんでした。\e
+TalkNomail : ${h4}うーん。大変申し上げにくいのですが‥‥\e
+TalkNomail : ${h7}全然来てないー！${uq}いちいち怒るなっ！\e
+TalkNomail : ${h2}‥\w2‥！\w8‥‥${h3}‥\w2‥${u0}はっきり言えよ。\e
+TalkNomail : ${h8}はいはい‥‥\w8\w8と。\w8‥‥${u0}‥‥\w8態度悪いぞ。\e
+TalkNomail : ${h7}全然来てないー！\w8‥‥${h4}って、いちいち怒るのも疲れるっ‥‥！${u0}‥‥\e
+TalkNomail : ${h0}‥‥\w8\w8無駄足。${u0}‥‥\e
+TalkNomail : ${h0}‥‥${u0}‥‥\e
+TalkNomail : ${h0}‥‥\w8\w8ふーん‥‥${u0}‥‥\e
+TalkNomail : ${h0}‥‥\w8\w8へえ‥‥${u0}‥‥\e
+TalkNoMail2 : ${h0}来てないよ。\e
+
+TalkGottaMail : ${h5}メールが来てるよー。\n\n${system.Reference0}通、${system.Reference1}バイト\n\nだって。\e
+TalkGottaMail2 : ${h5}${NewMail}通、新しいメールが来てるよ。\e
+
+TalkMailtimeout : ${h4}なんかヘン‥‥${u0}設定が間違ってへんか？\e
+TalkMailkick : ${h4}‥‥\w8蹴られたよ。${u0}設定が間違ってへんか？\e
+TalkMaildefect : ${h7}チェックして欲しかったらちゃんと設定しろー！${u0}落ち着け！\e
+TalkMailError : ${u0}「${system.Reference0}」エラーやで。${h2}メールサーバーの設定がされてないような‥‥。\e
+TalkMailstart : ${h0}${system.Reference2}\n\nメールボックスにアクセスします。\e
+TalkNoMail : ${h0}新しいメールはありませんでした。\e
+TalkGottaMail : ${h5}メールが来ています。\n\n${system.Reference0}通、${system.Reference1}バイト\n\nです。\e
+TalkNoMail2 : ${h0}新しいメールはありませんでした。\e
+TalkGottaMail2 : ${u1}${h5}${NewMail}通、新しいメールが来ています。\e
+TalkMailtimeout : ${h4}タイムアウトしましたぁ‥‥。\e
+TalkMailkick : ${h4}エラーですぅ‥‥。\e
+TalkMaildefect : ${h4}メールの設定が正しく行なわれていません。\e
+TalkMailError : ${u0}「${system.Reference0}」エラーやで。${h2}メールサーバーの設定がされてないような‥‥。\e
+
+#==============================================================================
+
+
+#ネットワーク：時間あわせ======================================================
+
+#TalkNTPstart : 時間合わせが指示された時。
+#TalkNTPfailed : ＳＮＴＰサーバからの時刻取得に失敗した時。
+#TalkNTPcompare : ＳＮＴＰサーバより時刻情報を取得した時。
+
+#・使用可能な変数
+# TimeSNTP  : ＳＮＴＰサーバから取得した時刻
+# TimeLOCAL : 自分のＯＳでの現在時刻
+# system.Reference3 : ＳＮＴＰサーバと自分のＯＳとのズレ(単位：秒)
+#・スクリプトに「\6」と書く事で、実際にＯＳの時計が合わされる。
+
+TalkNTPstart : ${h0}ＳＮＴＰサーバ\n\n${system.Reference0}\n\に接続～。\e
+TalkNTPfailed : ${h7}ＳＮＴＰサーバへの接続に失敗！\e
+
+TalkNTPcompareM0 : ${h5}合わせなくてもピッタリ！\e
+TalkNTPcompareM1 : ${h0}僅かだけど${system.Reference3}秒ほどズレてました。${TalkNTPcompareM4}
+TalkNTPcompareM2 : ${h0}${system.Reference3}秒の差がありました。${TalkNTPcompareM4}
+TalkNTPcompareM3 : ${h0}${system.Reference3}秒もズレてますけど‥‥。${TalkNTPcompareM4}
+
+TalkNTPcompareM4 : \6${u0}直したで。${h4}\n\nあ。\e
+TalkNTPcompareM4 : \6${h0}\n\nっと。${h5}修正完了！${u0}わざわざ確認せんでもええやろ。\e
+TalkNTPcompareM4 : \6${h0}\nかゆいところに手が届くさくらです。${u0}‥‥勝手なやっちゃな。\e
+
+#TalkNTPcompareM4 : \n\n\q0[Adjust][修正する]\q1[NoAdjust][修正しない]\e
+#Select.Adjust : ${h5}はい、修正しました。\6\e
+#Select.NoAdjust : ${h3}放置しますね‥‥。\e
+
+
+TalkNTPcompare : ${TalkNTPcompare1}${TalkNTPcompare2}${TalkNTPcompare3}${TalkNTPcompare4}\e
+
+TalkNTPcompare1 : \_q${h0}ＳＮＴＰ：${TimeSNTP}\nローカル：${TimeLOCAL}\_q\n\n
+
+TalkNTPcompare2 : $(if $([ ${system.Reference3} -eq 0 ]) ${TalkNTPcompareM0} $(if $([ ${system.Reference3} -lt 10 ]) ${TalkNTPcompareM1} $(if $([ ${system.Reference3} -lt 30 ]) ${TalkNTPcompareM2} ${TalkNTPcompareM3})))
+
+#==============================================================================
+
+
+#ネットワーク：ネットワーク更新================================================
+
+#TalkUpdateBegin : ネットワーク更新が指示された。
+
+#TalkUpdateReady : ネットワーク更新がの準備が出来た。
+#system.Reference0 : これから更新を行なうファイルの全数（０起源につき注意）
+
+#TalkUpdatecomplete : ネットワーク更新が無事完了した。
+#system.Reference0 : 更新されたファイルリスト(カンマで区切られている)
+
+#TalkUpdatenoupdate : ファイルの更新がなかった場合。
+
+#書式 : TalkUpdatefail{Word1} : 更新に失敗。
+# Word1 : timeout / md5 / 404 / 403 / etc
+# 失敗した理由 (タイムアウト/ＭＤ５不一致/サーバ４０４エラー/４０３エラー/その他)
+
+#書式 : TalkDownloadBegin : ファイルのダウンロードが始まった。
+# system.Reference0 : ダウンロードするファイル名
+# system.Reference1 : 更新すべきファイルのうち、現在何番目か
+# system.Reference2 : 更新すべきファイルの全数
+
+#TalkMD5Begin : ファイルのＭＤ５を比較開始する。
+# system.Reference0 : ＭＤ５を比較するファイル名
+
+#TalkMD5Complete : ＭＤ５が一致した場合。
+#TalkMD5Fail : ＭＤ５が一致しない場合。
+# system.Reference0 : ＭＤ５を比較するファイル名
+# system.Reference1 : 「updates2.dau」にある、ＭＤ５
+# system.Reference2 : ダウンロードしたファイルのＭＤ５
+
+
+#TalkMD5Begin : ${h0}${system.Reference0}\n\nのＭＤ５を照合します。\e
+#TalkMD5Complete : ${h5}\_q${system.Reference1}\n${system.Reference2}\_q\n\n一致しました。\e
+
+#==============================================================================
+
+#ネットワーク：ヘッドラインセンサー============================================
+
+#TalkHeadlineBeginヘッドライン取得が指示された時
+#TalkHeadlineFirst : ヘッドライン読み上げの開始(最初のページ)
+#TalkHeadlineNext : ヘッドライン読み上げの開始(２ページ目以降)
+#TalkHeadlineChoice : ヘッドライン読み上げ終了(最後のページ以外)
+#TalkHeadlineChoiceEnd : ヘッドライン読み上げ終了(最後のページ)
+# system.Reference0 : 対象サイト名
+
+#TalkHeadline{Word1} : ヘッドライン取得結果(情報が取得されない場合)
+# Word1 : Noupdate  / Failed / Miss / Error
+# ヘッドラインセンス失敗理由 (更新なし / 受信失敗 / 解析失敗 / その他)
+
+#TalkHeadlineChoiceの選択肢は空（[]）で次ページ
+#・「${JumpURL}」と記述する事で、対象サイトにアクセスする。
+
+TalkHeadlineBegin : ${h0}${system.Reference0} ヘッドラインを取得します。\e
+TalkHeadlineNoupdate : ${h4}ヘッドラインは更新されていませんでした。\e
+TalkHeadlineFailed : ${h4}ヘッドライン情報が取得できませんでした。\e
+TalkHeadlineMiss : ${h4}ヘッドライン情報の解析に失敗しました。\e
+TalkHeadlineError : ${h2}「${system.Reference0}」エラー発生\e
+TalkHeadlineFirst :${h0}\b[2]${system.Reference0} ヘッドラインです。
+TalkHeadlineNext : ${h0}\b[2]${system.Reference0} ヘッドラインの続きです。
+TalkHeadlineChoice : \q0["次のページへ,"]\n\q1["読む,HeadlineJump"]\n\q2["読まない,HeadlineCancel"]\e
+TalkHeadlineChoiceEnd : \q0["読む,HeadlineJump"]\n\q1["読まない,HeadlineCancel"]\e
+Select.HeadlineJump : $(set freeze 0)\b[-1]\!["open,browser,"${JumpURL}]\e
+Select.HeadlineCancel : $(set freeze 0)${h4}えぐえぐ\e
+
+#==============================================================================
+
+#ネットワーク：ＩＰアドレスブラックリスティング================================
+
+#TalkBlacklist ブラックリスト行きが指定された時
+#・使用可能な変数
+# system.Reference0 : ブラックリストに登録されるクライアントのＩＰアドレス
+
+TalkBlacklist : ${h0}ＩＰアドレス「${system.Reference0}」をブラックリスティングしました。\e
+
+#==============================================================================
+
+#ネットワーク：ネットワークが重い==============================================
+
+#TalkNetworkheavy : サーバからデータが一定時間以上送られてこない時。
+
+#ネットワーク更新やメールチェック、その他ネットワークを使ったイベントなどに
+#汎用的に使われます。
+
+TalkNetworkheavy : ${h6}重っ‥‥。${u0}重っ‥‥。\e
+TalkNetworkheavy : ${h6}遅いっ‥‥。${u0}遅っ‥‥。\e
+
+#==============================================================================
+
+#ネットワーク：ＵＲＬＤ＆Ｄによるダウンロード==================================
+
+#TalkDownload : ブラウザなどからショートカットがドロップされた。
+# system.Reference0 : ショートカットのデータ(ＵＲＬ)
+
+#DownloadRefused : ダウンロードが意図的に中断された（バルーンをダブルクリック）
+#DownloadFailed : ダウンロードが外因的な要因で失敗した
+
+TalkDownload : ${h6}${system.Reference0}\n\nから、ダウンロード中です。\e
+
+DownloadRefused : ${h0}指示通りダウンロードを中断しました。\e
+
+DownloadFailed : ${h4}ダウンロード、失敗しました。\e
+
+#==============================================================================
+
+#ファイル：各種インストール====================================================
+
+#TalkInstallBegin : 圧縮ファイルがＤ＆Ｄされた時
+
+#条件 : インストールが完了した時。
+#書式 : TalkInstall{Word1}({Word1}‥‥)
+# Word1 : datainstで登録されている、オブジェクトの識別子
+# 複数ある場合は、連続して表記される。
+#・「datainst」に該当しない識別子の場合は「TalkInstall」が呼ばれる。
+# InstallName  : インストールしたオブジェクト名
+# InstallName1 : インストールしたもうひとつのオブジェクト名(複数の場合)
+
+#TalkInstallfail{Word1} : インストールに失敗した時
+#system.Reference0 : 失敗した理由
+
+#TalkInstallrefuse : 他ゴースト専用ファイルをインストールしようとした時。
+# system.Reference0 : 指名されているゴーストの名前
+
+TalkInstallbegin : ${h0}インストールを開始するよ。\e
+TalkInstall : ${h8}「${InstallName}」をインストールしたよ。\e
+TalkInstallshell : ${h0}シェル「${InstallName}」をインストールしたよ。\e
+TalkInstallghost : ${h0}ゴースト「${InstallName}」をインストールしたよ。\e
+TalkInstallplugin : ${h0}プラグイン「${InstallName}」をインストールしたよ。\e
+TalkInstallballoon : ${h0}バルーン「${InstallName}」をインストールしたよ。\e
+TalkInstallshellballoon : ${h0}シェル＆バルーン「${InstallName}」と「${InstallName1}」をインストールしたよ。\e
+TalkInstallghostballoon : ${h0}ゴースト＆バルーン「${InstallName}」と「${InstallName1}」をインストールしたよ。\e
+TalkInstallcalenderskin : ${h0}カレンダースキン「${InstallName}」をインストールしたよ。\e
+TalkInstallcalenderplugin : ${h0}スケジュールセンサ「${InstallName}」をインストールしたよ。\e
+TalkInstallfail : ${h4}\nインストールに失敗しました‥‥。\e
+TalkInstallrefuse : ${h0}これは「${system.Reference0}」用のデータなので、「${system.Reference0}」に渡して。\e
+TalkInstallfailunlha32 : ${h4}\n「unlha32.dll」がないよ。インストールできない。\e
+TalkInstallfailunzip32 : ${h4}\n「unzip32.dll」がないよ。インストールできない。\e
+TalkInstallfailinvalid : ${h4}\n「install.txt」が不正だよ。インストールできない。\e
+
+#==============================================================================
+
+#ファイル：updates2.dauファイル作成============================================
+
+#TalkUpdateCreating : 「updates2.dau」の作成開始
+#TalkUpdateCreated :「updates2.dau」の作成が終わった時。
+
+TalkUpdateCreating : ${h0}「update2.dau」を作成するよ。\e
+TalkUpdateCreated : ${h5}「update2.dau」が完成～。\e
+
+#==============================================================================
+
+#ファイル：アーカイブ(nar)ファイル作成=========================================
+
+#TalkNarCreating : アーカイブファイルの作成開始
+#TalkNarCreated : アーカイブファイルの作成が終わった時。
+
+TalkNarCreating : ${h0}「nar」ファイルを作成するよ。\e
+TalkNarCreated : ${h5}「nar」ファイルが完成～。\e
+
+
+#==============================================================================
+
+#リソース：消滅指示ボタン名====================================================
+#エントリ名 : VanishCaption
+#書式 ： "右クリックメニューに表示される消滅指示ボタン名"
+
+VanishCaption : "消滅指示ボタン"
+VanishCaption : "本当にサヨウナラ"
+VanishCaption : "2度と使うか！"
+VanishCaption : "リストラ"
+VanishCaption : "逝って良し"
+VanishCaption : "消滅通告"
+VanishCaption : "解雇通告"
+VanishCaption : "一身上の都合"
+VanishCaption : "ウザイよ"
+VanishCaption : "あぼーん"
+VanishCaption : "人生の終着駅"
+VanishCaption : "押しちゃ駄目"
+VanishCaption : "触るな危険"
+VanishCaption : "燃やすゾ！"
+VanishCaption : "対消滅反応"
+VanishCaption : "自爆ボタン"
+
+#==============================================================================
+
+#リソース：消滅指示ボタン表示切替==============================================
+
+#「1」ならば表示、「0」ならば表示されません。
+#システム側で「消滅指示ボタンを常に表示」を指示している場合
+#この設定は無視されます。
+
+resource.vanishbuttonvisible : 1
+
+#==============================================================================
+
+#壁紙変更======================================================================
+
+#注 : MATERIA490以後廃止されました。
+
+#TalkWallpaper 画像ファイル(png、bmp）のドロップにより、壁紙を変更する時。
+
+TalkWallpaper : ${h5}壁紙を変更します。\e
+
+#==============================================================================
+
+#ファイル：ファイルドロップ====================================================
+
+#注：MATERIA571以降廃止されました。
+
+#TalkFileDrop.{Word1} : ファイルがドラッグ＆ドロップされた時。
+# Word1 : ファイルの拡張子(アルファベット・数字は全て、半角小文字で記述)
+
+TalkFileDrop.bmp :${h0}「bmp」タイプファイルです。\e
+
+TalkFileDrop.jpg :${h0}「jpg」タイプファイルです。\e
+
+TalkFileDrop.png :${h0}「png」タイプファイルです。\e
+
+#==============================================================================
+:endscrypt

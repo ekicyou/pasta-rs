@@ -1,0 +1,60 @@
+#########################################################################
+# Ｇｈｏｓｔ「．さくら」
+# 変更分イベント
+#
+#　・つまり、変更した分はこっちに持ってこないとワカラナイので(^^;
+#
+#########################################################################
+
+#メニュー周り==================================================================
+
+#条件 : 「\q?」タグで表示された選択肢を選択した時。
+#書式 : Select.{Word1}
+# Word1 : 「\q?」タグで定義された、選択肢が持つ識別子。
+
+Mainmenu : \b[1]${Mainmenu1}\n\n　\q["偽ＡＩトーク,Manzai"]　　　　　　　\q["お喋り頻度,Timing"]\n　\q[見切れ反応を$(if ${sw.mikire} "ＯＮ" "ＯＦＦ")に","Mikire]　　　　\q[重なり反応を$(if ${sw.kasanari} "ＯＮ" "ＯＦＦ")に","Kasanari]\n　\q["COMMUNICATEボックス,Talk"]　　　 \q["ユーザー名変更,TeachName"]\n　\q["ボトル名作劇場,Theater"]\n　\q["他のゴーストに話しかける,Comm"]\n\n\n　\q["キャンセル,Cancel"]　　　\q["えんい～,end"]\e
+
+#\n\q["別人格へ切り替え,Change"]\e
+
+Mainmenu1 : ${h0}メニュー開くよー。
+Mainmenu1 : ${h0}ほい、メニューっす。
+Mainmenu1 : ${h0}ん、どうする？
+Mainmenu1 : ${h0}ん？なに‥‥？
+Mainmenu1 : ${h0}んー？
+Mainmenu1 : ${h6}ん？
+Mainmenu1 : ${h1}ご主人様、お呼びですか？
+Mainmenu1 : ${h6}ご利用には１インシデント必要です。
+
+
+Select.Manzai : $(set kp.entryname "ネタ種別")${CallTalk}
+Select.Timing : ${h0}喋り頻度。\n\n\q["マシンガントーク,Timing1"]\n\q["わいわい,Timing3"]\n\q["うっへり,Timing5"]\n\q["まったり,Timing7"]\n\q["ひっそり,Timing9"]\n\n　\q["閉じる,Cancel"]\e
+Select.Timing1 : $(set interval   8 ; set sw.randomtalk 0)${h8}‥‥\w8テスト用だけど、ほんとにいいの？${u0}赤い彗星もまっさおやね。\e
+Select.Timing3 : $(set interval  28 ; set sw.randomtalk 0)${h5}わいわいいくぞ！${u0}・・・ネタ大丈夫か？\e
+Select.Timing5 : $(set interval  56 ; set sw.randomtalk 0)${h0}うっへり。${u0}うっへり。\e
+Select.Timing7 : $(set interval  84 ; set sw.randomtalk 0)${h0}まったり。${u0}まったり。\e
+Select.Timing9 : $(set interval 999 ; set sw.randomtalk 1)${h4}‥‥\w8喋らせてくれないなら、いっそ殺して‥‥\w8${u0}そう言うなよ。\e
+Select.Timing9 : $(set interval 999 ; set sw.randomtalk 1)${h7}‥‥\w8欲しがりません！勝つまでは！\w8\0\b[-1]${u0}‥‥‥‥。\e
+
+Select.Mikire : ${h0}$(if ${sw.mikire} $(set sw.mikire 0)"見切れ反応を有効にするよー。"  $(set sw.mikire 1)"見切れ反応を無効にしたよ。")\e
+Select.Kasanari : ${h0}$(if ${sw.kasanari} $(set sw.kasanari 0)"重なり反応を有効にするよー。"  $(set sw.kasanari 1)"重なり反応を無効にしたよ。")\e
+
+Select.Cancel : $(set freeze 0)\b0${さくら、泣き}\e
+Select.Cancel : $(set freeze 0)\b0${さくら、泣き}\e
+Select.Cancel : $(set freeze 0)\b0${h0}‥‥\w8ちっ。\e
+Select.Cancel : $(set freeze 0)\b0${さくら、泣き}${u0}‥‥\w8\w8落ち込みやすいよな、お前。\e
+
+Select.Talk : ${countzero}${h0}ほい。${h6}なに？\!["open,communicatebox"]\e
+
+Select.Change : $(set FlagMode "Another")\c‥‥‥。\e
+
+Select.Theater : \t${h5}ボトル名作げきじょーー！${u0}　どんどん、ぱふぱふ！\w9\w9${名作劇場}
+
+Select.end : ${h5}じゃ！\w8${CallSave}\-
+Select.end : ${h5}ほんでわ！\w8${CallSave}\-
+Select.end : ${h5}有無を言わさず終了！\w8${CallSave}\-
+Select.end : ${h4}あー。\w8　終わったー。${u1}${username}も、おつかれや～。\w8${CallSave}\-
+Select.end : ${h5}\_sえんい～\w8${CallSave}\-
+Select.end : ${h7}高速終了っ！！\w8${CallSave}\-
+
+==============================================================================
+

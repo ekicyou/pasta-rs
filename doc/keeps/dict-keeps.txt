@@ -1,0 +1,875 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  イベント制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ  : http://keeps.sourceforge.jp
+# Version1.0.3 2002.5.10 11:35版
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 7.3.1 及び上位互換版を使用。
+#           「何か」（現「伺か」）MATERIA period 480 及び上位互換ソフトを使用。
+#==============================================================================
+
+#レイヤー名＆バージョン表記====================================================
+Layer.Name : OpenKEEPS
+Layer.Version : 1.0.3
+#==============================================================================
+
+
+#==============================================================================
+#共通（汎用）サブルーチン群
+#==============================================================================
+
+#カウンタ関係変数表示(デバッグ用・COMMUNCATE使用)==============================
+
+#コミュニケートボックスに「para」「appri」と入力することで、
+#フラッグの状態やSHIORI2.2対応のアプリケーションの情報を知ることが出来ます
+
+[ "para" ] : \_q\0フリーズ：${freeze}：${sw.randomtalk}\nトーク：${cnttalk}／${interval}\n見切れ：${sw.mikire}：${cntmikire}／60：${flagmikire}\n重なり：${sw.kasanari}：${cntkasanari}／60\e
+
+[ "appli" ] : \_q\0稼動中のアプリケーション\n名前：${AppliName}\n製造元：${AppliMaker}\nバージョン：${AppliVersion}\n著作権：${AppliCopyright}\n関連ＵＲＬ：${AppliURL}\e
+
+#==============================================================================
+
+
+#西暦1年1月1日から現在までのまでの経過分数 (CallMinCalc)=======================
+
+#ゴーストが存在している間の時間計測に使われます。
+#起動直後、アイコン化開始、アイコン化解除などで汎用的に使われます
+
+CallMinCalc : $(expr $(expr ${CallDayCalc} * 1440) + $(expr $(date %k) * 60) + $(date %N))
+
+CallDayCalc : $(expr $(expr $(date %y) * 365) + $(expr $(date %y) / 4)  - $(expr $(date %y) / 100) + $(expr $(date %y) / 400) + $(date %J))
+
+#==============================================================================
+
+
+##時間帯判定 (HourZone)========================================================
+
+#${HourZone}を呼び出すと${timezone}に時間帯によって次の文字列が格納されます
+
+#５時～６時　　　EarlyMorning
+#７時～１０時　　　Morning
+#１１時～１３時　Day
+#１４時～１８時　Evening
+#１９時～２２時　Night
+#２３時～４時　　Midnight
+
+HourZone : $(set temp $(date %k))$(set timezone $(if $([ ${temp} -lt 5 ]) "Midnight" $(if $([ ${temp} -lt 7 ]) "Earlymorning" $(if $([ ${temp} -lt 11 ]) "Morning" $(if $([ ${temp} -lt 16 ]) "Day" $(if $([ ${temp} -lt 19 ]) "Evening" $(if $([ ${temp} -lt 23 ]) "Night" "Midnight")))))))
+
+#==============================================================================
+
+
+#セーブルーチン(CallSave,CallSave2)============================================
+
+#セーブ１(CallSave)-----------------------------------------------------------
+#終了時にセーブされる変数です
+#datasaveparamに項目を追加することが出来ます
+
+datasaveparam : sw.randomtalk , interval , sw.mikire , sw.kasanari , FlagMode , username
+
+CallSave : $(eval "$(save dict-keeps-savedata.txt "$(foreach temp datasaveparam ${temp}" " ) ")" )
+
+#セーブ２(CallSave2)------------------------------------------------------------
+#ネットワーク更新時の一時セーブされる変数です
+#databackupparamに項目を追加することが出来ます
+
+databackupparam : sw.randomtalk , interval , sw.mikire , sw.kasanari , FlagMode , username , worktime , DislpayDpp , DisplayWidth , DisplayHeight , AppliName , AppliMaker , AppliVersion , AppliCopyright , AppliURL , AppliFile
+
+CallSave2 : $(eval "$(save dict-keeps-savedata.txt "$(foreach temp databackupparam ${temp}" " ) ")" )
+
+#==============================================================================
+
+
+##記号除去ルーチン(CallGetWords)===============================================
+#
+#このルーチンは、エントリ等に使えない文字を除去します（ＫＩＳで特別な文字として
+#使われているものがある為に誤動作の原因となる）
+
+#除去される文字
+#全角スペース、半角スペース、
+#全て半角の「\"!#$%&'()*+,-./:;<=>?@[]^_`{|}~｡｢｣､」
+
+#置換される文字
+#全角英字大小＆半角大文字⇒半角小文字
+#全角数字＆ローマ数字　　⇒半角数字
+#一部特殊文字（単位）　　⇒それ相当の半角小文字
+
+#元のKEEPSでは全角記号も削除されるようになっていますが、必然性が感じられない為
+#削除しました
+
+#入力パラメータ
+# param1 : パラメータ
+#戻りパラメータ
+# answer : 変換したパラメータ
+#処理変数
+# temp1 : 文字位置
+# temp2 : 比較用に取り出した１文字
+#データ変数
+#記号データ
+ctrlword : "\ \\\"\!\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~\｡\｢\｣\､\　"
+
+CallGetWords :$(clear answer ; set temp1 0 ; loop $(expr length ${param1}) $(inc temp1 ; set temp2 $(expr substr ${param1} ${temp1} 1) ; if $([ $(NULL) == $(expr find ${ctrlword} \${temp2}) ]) $(if $(size "ConvTable."${temp2}) $(set answer ${answer}$(entry "ConvTable."${temp2})) $(set answer ${answer}${temp2}))))
+
+#==============================================================================
+
+
+#イベントによるトーク発動ルーチン==============================================
+
+#SHIORI2.2によるイベントのトークを発動する要のルーチンです
+#また、kp.entrynameの前にFlagMode（人格モード）が挟まれる事により、
+#人格別の反応を返すことが出来ます。
+
+#入力パラメータ
+# FlagMode : トークモード
+# kp.entryname : トークエントリ
+
+CallTalk : ${i2}$(set system.communicate "stop")$(set cnttalk 0)$(if $(size ${FlagMode}"."${kp.entryname}) $(entry ${FlagMode}"."${kp.entryname}) $(entry ${kp.entryname}))
+
+#==============================================================================
+
+
+#トークエントリ有無チェック====================================================
+
+#トーク発動を呼び出す判断に使われます
+#呼び出すトークエントリが存在すれば発話ルーチン（上を参考にしてください）を
+#呼び出す仕組みになっています
+#例 $(if ${CallEntryCheck} ${calltalk})
+
+#入力パラメータ
+# FlagMode : トークモード
+# kp.entryname : トークエントリ
+
+#戻り結果
+# 該当エントリ(キャラクターモード含む)がないと0、あれば0以外の数値
+
+CallEntryCheck : $(expr $(size ${FlagMode}"."${kp.entryname}) | $(size ${kp.entryname}))
+
+#==============================================================================
+
+
+#起動時(辞書データ読込後)処理(華和梨内部)======================================
+
+system.OnLoad : ${CallSetTime}$(foreach param1 databackupparam ${CallReset})$(if $([ ${interval} -lt 1 ]) $(set interval 57))$(if $([ ${username} == $(NULL) ]) $(set username "ユーザーさん"))
+
+CallReset : $(clear temp1 ; foreach temp ${param1} $(set temp1 $(expr ${temp} | ${temp1})) ; set ${param1} ${temp1})
+
+CallSetTime : $(if ${parawork} $(set cntwork ${CallMinCalc}) $(clear cntwork))
+
+#==============================================================================
+
+#==============================================================================
+#以上汎用ルーチン
+#==============================================================================
+
+
+
+
+#==============================================================================
+#以下SHIORI2.2イベント
+#==============================================================================
+
+#分単位処理(OnMinuteChange)====================================================
+
+#分が変わったときに（つまり１分ごと）に実行されます。
+#時報(CallOclock)と経過時間(CallWorkTime)の判断に使われています
+
+event.OnMinuteChange : $(if $([ ${freeze} -eq 0 ]) ${CallTimeTalk}${CallWorktime})
+
+#時限イベントトーク(CallTimeTalk)----------------------------------------------
+
+CallTimeTalk : $(set kp.minutes $(date %M))$(set kp.entryname "TalkTime"${年月日時分} ; if ${CallEntryCheck} ${CallTalk})$(set kp.entryname "TalkTime"${月日時分} ; if ${CallEntryCheck} ${CallTalk})$(set kp.entryname "TalkTime"${曜時分} ; if ${CallEntryCheck} ${CallTalk})$(set kp.entryname "TalkTime"${時分} ; if ${CallEntryCheck} ${CallTalk})
+
+年月日時分 : $(date %Y)"_"$(date %m%d)"_"$(date %H)${kp.minutes}
+月日時分 : $(date %m%d)"_"$(date %H)${kp.minutes}
+曜時分 : $(date %w)"_"$(date %H)${kp.minutes}
+時分 : $(date %H)${kp.minutes}
+
+#時限イベントトーク存在チェック(CallTimeTalkCheck)-----------------------------
+#1.0.3で追加
+#時限イベントトークがランダムトークと被ってしまって発話しない問題を解決する為の
+#ルーチン。時限イベントトーク２０秒前に呼び出され、もしそのトークが存在すれば
+#トーク間隔カウンタをゼロリセットする。
+
+CallTimeTalkCheck : $(set kp.minutes $(expr $(date %N) + 1))$(if $([ $(expr ${kp.minutes} - 10) -le 0 ]) $(set kp.minutes "0"${kp.minutes}))$(if $([ ${kp.minutes} -eq 60 ]) $(set kp.minutes "00"))${CallTimeTalk.entrycheck}
+
+CallTimeTalk.entrycheck : $(set kp.entryname "TalkTime"${年月日時分} ; if ${CallEntryCheck} $(set cnttalk 0))$(set kp.entryname "TalkTime"${月日時分} ; if ${CallEntryCheck} $(set cnttalk 0))$(set kp.entryname "TalkTime"${曜時分} ; if ${CallEntryCheck} $(set cnttalk 0))$(set kp.entryname "TalkTime"${時分} ; if ${CallEntryCheck} $(set cnttalk 0))
+
+
+#経過時間(CallWorkTime)--------------------------------------------------------
+CallWorktime : $(if ${parawork} ${CallWorktimeB} ${CallWorktimeA})
+
+CallWorktimeA : $(if $([ $(expr ${system.Reference0} - ${worktime}) -eq 1 ]) $(set worktime ${system.Reference0})${CallWorktimeX} $(set worktime ${system.Reference0}))
+
+CallWorktimeB : $(if $([ 60 -le $(expr ${CallMinCalc} - ${cntwork}) ]) $(set temp $(expr ( ${CallMinCalc} - ${cntwork} ")" / 60) ; inc cntwork $(expr ${temp} * 60) ; inc worktime ${temp})${CallWorktimeX})
+
+CallWorktimeX : $(if $([ 20 -le ${worktime} ]) $(set kp.entryname "TalkWorktimeVerylong")  $(if $([ 11 -le ${worktime} ]) $(set kp.entryname "TalkWorktimeLong") $(if $([ 8 -le ${worktime} ]) $(set kp.entryname "TalkWorktimeMiddle") $(if $([ 5 -le ${worktime} ]) $(set kp.entryname "TalkWorktimeShort")  $(set kp.entryname "TalkWorktimeVeryshort")))))${CallTalk}
+
+#==============================================================================
+
+
+#秒単位処理(OnSecondChange)====================================================
+
+#秒が変わるごと（つまり１秒ごと）に実行されます
+
+#重なり(CallKasanari)、見切れ(CallMikire)
+#自発トーク(Calltalk)の処理に使われています
+
+event.OnSecondChange : $(if $([ ${freeze} -eq 0 ]) $(if $([ $(date %r) -eq 40 ]) ${CallTimeTalkCheck} ${CallKasanari}${CallMikire}${CallTalkEvent}))
+
+#自発トーク(CallTalkEvent)-----------------------------------------------------
+
+CallTalkEvent : $(if $([ ${sw.randomtalk} -eq 0 ]) $(inc cnttalk 1)$(if $([ ${interval} -lt ${cnttalk} ]) $(set kp.entryname "sentence")${CallTalk}))
+
+
+#見切れ(CallMikire)------------------------------------------------------------
+CallMikire : $(if $([ ${sw.mikire} -eq 0 ]) $(if ${system.Reference1} ${CallMikire1} ${CallMikire2}))
+
+CallMikire1 :$(inc cntmikire ; if $([ 60 -lt ${cntmikire} ]) $(set flagmikire 1)$(set cntmikire 0 ; set kp.entryname "TalkMikire")${CallTalk})
+
+CallMikire2 : $(set cntmikire 55 ; if ${flagmikire} $(set flagmikire 0 ; set kp.entryname "TalkMikirez")${CallTalk})
+
+
+#重なり(CallKasanari)----------------------------------------------------------
+CallKasanari : $(if $([ ${sw.kasanari} -eq 0 ]) $(if ${system.Reference2} ${CallKasanari1} $(set cntkasanari 52)))
+
+CallKasanari1 : $(inc cntkasanari 1 ; if $([ 60 -lt ${cntkasanari} ]) $(set cntkasanari 0 ; set kp.entryname "TalkKasanari")${CallTalk})
+
+#==============================================================================
+
+
+#サーフィス上でのマウスカーソル移動(OnMouseMove)===============================
+
+#サーフィスの上でマウスカーソルを動かした際に実行されます
+#頭撫でや胸さわりなどに使われています
+
+event.OnMouseMove : $(if $([ ${freeze} -eq 0 ]) $(if ${system.Reference4} ${CallStroke} $(set "cnt."${kp.stroke1} 0)))
+
+CallStroke : $(set kp.stroke1 "Character"${system.Reference3}"Stroke."${system.Reference4})$(if $(size ${FlagMode}"."${kp.stroke1}) $(set ${FlagMode}"."${kp.stroke1}))$(if $(size ${kp.stroke1}".half") $(set "limithalf."${kp.stroke1} $(expr $(entry "limit."${kp.stroke1}) / 2))  $(set "limithalf."${kp.stroke1} 0))${CallStroke2}
+
+CallStroke2 : $(if $([ ${kp.stroke1} == ${kp.stroke2} ]) $(inc "cnt."${kp.stroke1} 1))$(set kp.stroke2 ${kp.stroke1})${CallStroke3}${CallStroke4}
+
+CallStroke3 : $(if $([ $(entry "cnt."${kp.stroke1}) -eq $(entry "limithalf."${kp.stroke1}) ]) $(set kp.entryname ${kp.stroke1}".half")${CallTalk})
+
+CallStroke4 : $(if $([ $(entry "cnt."${kp.stroke1}) -eq $(entry "limit."${kp.stroke1}) ]) $(set "cnt."${kp.stroke1} 0)$(set kp.entryname ${kp.stroke1})${CallTalk})
+
+#==============================================================================
+
+
+#サーフィス上でダブルクリック(OnMouseDoubleClick)==============================
+
+#サーフィス上でダブルクリックした際に実行されます
+#吹き出しメニューやつつき反応に使われます
+#同じ領域でシングルクリックとダブルクリックの共存は出来ないので注意
+#両方書いた場合シングルクリックが優先されます
+
+event.OnMouseDoubleClick : $(if $([ ${freeze} -eq 0 ]) ${CallDoubleClick})
+
+CallDoubleClick : $(set kp.entryname "Character"${system.Reference3}"Doubleclick")${CallDoubleClick1}
+CallDoubleClick1 : $(if ${system.Reference4} $(set kp.entryname ${kp.entryname}"."${system.Reference4}))${CallDoubleClick2}
+CallDoubleClick2 : $(if ${CallEntryCheck} ${CallTalk} $(set kp.entryname "Character"${system.Reference3}"Doubleclick")${CallTalk})
+
+#==============================================================================
+
+
+#サーフィス上でシングルクリック(OnMouseClick)==================================
+
+#領域指定（例:Bust,Face）が無い場合は無視されます
+#また、同じ領域でのダブルクリックとの共存は出来ません
+
+event.OnMouseClick : $(if $([ ${freeze} -eq 0 ]) $(if ${system.Reference4} ${CallSingleClick}))
+
+CallSingleClick : $(set kp.entryname "Character"${system.Reference3}"Singleclick."${system.Reference4})${CallTalk}
+
+#==============================================================================
+
+
+#サーフィス上でマウスホイール回転(OnMouseWheel)================================
+
+event.OnMouseWheel : $(if $([ ${freeze} -eq 0 ]) ${CallWheelRotate1})
+
+CallWheelRotate1 : $(set kp.entryname "Character"${system.Reference3}"Wheel")$(if $([ ${system.Reference2} -gt 0 ]) $(set wheel "Plus") $(set wheel "Minus"))$(if ${system.Reference4} $(set kp.entryname ${kp.entryname}"."${system.Reference4}))${CallWheelRotate2}
+
+CallWheelRotate2 : $(if ${CallEntryCheck} ${CallTalk})$(set kp.entryname ${kp.entryname}"."${wheel})${CallTalk}
+
+#==============================================================================
+
+
+#メニュー（\q）による選択肢選択(OnChoiceSelect)================================
+
+#「\q」による選択肢が選択されたときに実行されます
+
+event.OnChoiceSelect : $(set kp.entryname "Select."${system.Reference0})${CallTalk}
+
+#==============================================================================
+
+
+#選択肢タイムアウト（OnChoiceTimeout）=========================================
+
+#「\q」による選択肢が一定時間放置されたときに実行されます
+#ヘッドラインセンサーの選択肢放置からも呼び出される為、freezeを０に戻しています
+
+event.OnChoiceTimeout : $(set freeze 0)$(set kp.entryname "TalkTimeout")${CallTalk}
+
+#==============================================================================
+
+
+#サーフィス情報周辺(OnSurface...)==============================================
+
+#サーフィス情報番号取得(OnSurfaceChange)---------------------------------------
+
+#サーフィスが変わった際に実行され、\0,\1それぞれのサーフィス番号が
+#SakuraFace,KeroFaceに格納されます。
+#この番号が、OnSurfaceRestoreでどのサーフィスから復帰するかの目印になります
+
+event.OnSurfaceChange : $(set SakuraFace ${system.Reference0} ; set KeroFace ${system.Reference1})
+
+
+#サーフィス復帰(OnSurfaceRestore)----------------------------------------------
+
+#サーフィスがイレギュラーな状態から（通常　\0:サーフィス0 \1:サーフィス10）
+#戻るタイミングが来たときに実行されます
+
+event.OnSurfaceRestore : $(if $([ ${system.Reference1} -ne 10 ]) $(set kp.entryname "TalkReturn"${system.Reference1}) $(set kp.entryname "TalkReturn"${system.Reference0}))$(if ${CallEntryCheck} ${CallSurfaceRestore} $(set kp.entryname "TalkReturn")${CallSurfaceRestore})
+
+CallSurfaceRestore : ${i2}$(set system.communicate "stop")$(if $(size ${FlagMode}"."${kp.entryname}) $(entry ${FlagMode}"."${kp.entryname}) $(entry ${kp.entryname}))
+
+#==============================================================================
+
+
+#メールチェック関連(OnBiff...)=================================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#注
+#OnBIFFBeginは右クリックメニューの存在チェックにも使われています。
+#ref0にtestが入ってきた場合はそれですので、freezeフラグの場所に注意
+
+event.OnBIFFBegin : $(if $([ ${system.Reference0} == "test" ]) "Mail.OK" $(set freeze 1)$(set kp.entryname "TalkMailstart")${CallTalk})
+
+event.OnBIFFComplete : $(set freeze 0)$(if $(expr ${system.Reference0} * ${system.Reference1}) $(set kp.entryname "TalkGottaMail")  $(set kp.entryname "TalkNoMail"))${CallTalk}
+
+event.OnBIFF2Complete : $(set freeze 0)$(if $(expr ( ${system.Reference0} * ${system.Reference1} ")" * ${system.Reference3} ) $(if $([ ${system.Reference3} -lt 0 ]) $(set NewMail ${system.Reference0}) $(set NewMail ${system.Reference3}) ; set kp.entryname "TalkGottaMail2")  $(set kp.entryname "TalkNoMail2"))${CallTalk}
+
+event.OnBIFFFailure : $(set freeze 0)$(set kp.entryname "TalkMailError"${system.Reference0})$(if ${CallEntryCheck} $(NULL) $(set kp.entryname "TalkMailError"))${CallTalk}
+
+#==============================================================================
+
+
+#ヘッドラインセンサー関連(OnHeadlinesense...)==================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#注
+#OnHeadlinesenseBeginは右クリックメニューの存在チェックにも使われています。
+#ref0にtestが入ってきた場合はそれですので、freezeフラグの場所に注意
+
+event.OnHeadlinesenseBegin : $(if $([ ${system.Reference0} == "test" ]) "HeadLine.OK" $(set freeze 1)$(set JumpURL ${system.Reference1} ; set kp.entryname "TalkHeadlineBegin")${CallTalk})
+
+event.OnHeadlinesense.OnFind : $(set JumpURL ${system.Reference1})\t${CallHeadlineRead1}\n\n${system.Reference3}\n${CallHeadlineRead2}
+
+CallHeadlineRead1 : $(if $(expr find ${system.Reference2} "First") $(set kp.entryname "TalkHeadlineFirst")  $(set kp.entryname "TalkHeadlineNext"))${CallTalk}
+
+CallHeadlineRead2 : $(if $(expr find ${system.Reference2} "Last") $(set kp.entryname "TalkHeadlineChoiceEnd")  $(set kp.entryname "TalkHeadlineChoice"))${CallTalk}
+
+event.OnHeadlinesenseComplete : ${CallHeadlineFail}
+event.OnHeadlinesenseFailure : ${CallHeadlineFail}
+
+CallHeadlineFail : $(set freeze 0)$(if $([ ${system.Reference0} == "no update" ]) $(set kp.entryname "TalkHeadlineNoupdate") $(if $([ ${system.Reference0} == "can't download" ]) $(set kp.entryname "TalkHeadlineFailed") $(if $([ ${system.Reference0} == "can't analyze" ]) $(set kp.entryname "TalkHeadlineMiss") $(set kp.entryname "TalkHeadlineError"))))${CallTalk}
+
+#==============================================================================
+
+
+#時計あわせ関連(OnSNTP...)=====================================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+#注
+#OnSNTPBeginは右クリックメニューの存在チェックにも使われています。
+#ref0にtestが入ってきた場合はそれですので、freezeフラグの場所に注意
+
+#時計あわせ開始(OnSNTPBegin)---------------------------------------------------
+event.OnSNTPBegin : $(if $([ ${system.Reference0} == "test" ]) "SNTP.OK" $(set freeze 1)$(set kp.entryname "TalkNTPstart")${CallTalk})
+
+#SNTPサーバに接続失敗(OnSNTPFailure)-------------------------------------------
+event.OnSNTPFailure : $(set freeze 0)$(set kp.entryname "TalkNTPfailed")${CallTalk}
+
+
+#SNTPサーバに接続成功後の時間比較(event.OnSNTPCompare)-------------------------
+event.OnSNTPCompare : ${CallSntpCompare1}${CallSntpCompare2}${CallSntpCompare3}
+
+TimeDisplay : $(split temp ${param1} "," ; set ${param0} ${temp.1}"年"${temp.2}"月"${temp.3}"日 "${temp.4}"時"${temp.5}"分"${temp.6}"秒")
+
+CallSntpCompare1 : $(set param0 "TimeSNTP" ; set param1 ${system.Reference1})${TimeDisplay}
+
+CallSntpCompare2 : $(set param0 "TimeLOCAL" ; set param1 ${system.Reference2})${TimeDisplay}
+
+CallSntpCompare3 : $(set freeze 0)$(set kp.entryname "TalkNTPcompare")${CallTalk}
+
+#==============================================================================
+
+
+
+#ネットワーク更新関連(OnUpdate...)=============================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+event.OnUpdateBegin : $(set freeze 1)${CallSave2}$(set kp.entryname "TalkUpdateBegin")${CallTalk}
+event.OnUpdateReady : $(set freeze 1)$(set kp.entryname "TalkUpdateReady")${CallTalk}
+
+event.OnUpdate.OnDownloadBegin : $(set kp.entryname "TalkDownloadBegin")${CallTalk}
+event.OnUpdate.OnMD5CompareBegin : $(set kp.entryname "TalkMD5Begin")${CallTalk}
+event.OnUpdate.OnMD5CompareComplete : $(set kp.entryname "TalkMD5Complete")${CallTalk}
+event.OnUpdate.OnMD5CompareFailure  : $(set kp.entryname "TalkMD5Fail")${CallTalk}
+
+event.OnUpdateComplete : $(set freeze 0)$(if $([ ${system.Reference0} == "none" ]) $(set kp.entryname "TalkUpdatenoupdate") $(set kp.entryname "TalkUpdatecomplete"))${CallTalk}
+
+event.OnUpdateFailure : $(set freeze 0)$(set kp.entryname "TalkUpdatefailetc" ; foreach temp dataupdateerror $(if $(expr find ${system.Reference0} ${temp}) $(set kp.entryname "TalkUpdatefail"${temp})))${CallTalk}
+
+#ネットワーク更新エラー用（予期されるエラーのコード）
+#event.OnUpdateFailureの${system.Reference0}にはエラーコードが直接入るため
+#ここに無いエラーならTalkUpdatefailetcが呼び出される
+dataupdateerror : timeout , md5 , 404 , 403
+
+#==============================================================================
+
+
+#ＵＲＬＤ＆Ｄによるダウンロード(OnURLDrop...)==================================
+#ここではシステムによる他イベント抑制が入る為freezeは使いません
+#（下手をするとfreezeフラグが立ちっぱなしになる可能性がある）
+
+event.OnURLDropping : $(set kp.entryname "TalkDownload")${CallTalk}
+
+#ダウンロード失敗(OnDropFailure)-----------------------------------------------
+
+#Reference0　ダウンロード中断したファイルのローカル上での絶対パス
+#Reference1　失敗の理由
+#　timeout 　　タイムアウト
+#　artificial　ユーザが意図的に中断
+
+event.OnURLDropFailure : $(if $([ {system.Reference1} == "artifical" ]) $(set kp.entryname "DownloadRefused") $(set kp.entryname "DownloadFailed"))${CallTalk}
+
+#==============================================================================
+
+
+#ネットワークが重い(OnNetworkHeavy)============================================
+
+#時計あわせ、ネットワーク更新、ヘッドラインセンサー、メールチェック時、
+#ＵＲＬＤ＆Ｄによるダウンロード時、
+#なかなか繋がらなかったり、トラフィックが込み合っている場合に実行されます。
+
+event.OnNetworkHeavy : $(set kp.entryname "TalkNetworkheavy")${CallTalk}
+
+#==============================================================================
+
+
+#ＳＳＴＰ受信中断(OnSSTPBreak)=================================================
+
+event.OnSSTPBreak : $(set kp.entryname "TalkSSTPbreak")${CallTalk}
+
+#==============================================================================
+
+
+#SSTP発信元IPをブラックリストに入れた(OnSSTPBlacklisting)======================
+
+event.OnSSTPBlacklisting : $(set kp.entryname "TalkBlacklist")\t${CallTalk}
+
+#==============================================================================
+
+
+#初回起動(OnFirstBoot)=========================================================
+
+#初回起動、及び削除されて再度インストールされた際に実行されます。
+#Reference0に削除回数が入るため、もし削除されてからのセリフを入れたい方は
+#留意してください
+#ここでは\t抑制を使います
+
+event.OnFirstBoot : \t$(set freeze 0)$(set kp.entryname "TalkFirstboot")${CallTalk}
+
+#==============================================================================
+
+
+#通常起動(Onboot)==============================================================
+
+event.OnBoot : \t$(set freeze 0)${HourZone}${CallOnBoot}
+
+CallOnBoot : $(if $([ ${system.Reference6} == "halt" ]) ${CallOnBootHalt1} ${CallOnBoot1} )
+
+CallOnBoot1 : $(set kp.entryname "TalkBootup."$(date %m%d) ; if ${CallEntryCheck} ${CallTalk} ${CallOnBoot2})
+CallOnBoot2 : $(set kp.entryname "TalkBootup"${timezone}"."$(date %m%d) ; if ${CallEntryCheck} ${CallTalk} ${CallOnBoot3})
+CallOnBoot3 : $(set kp.entryname "TalkBootup"${timezone} ; if ${CallEntryCheck} ${CallTalk} ${CallOnBoot4})
+CallOnBoot4 : $(set kp.entryname "TalkBootup")${CallTalk}
+
+CallOnBootHalt1 : $(set param1 ${system.Reference7})${CallGetWords}$(set haltedghost ${answer})$(set kp.entryname "TalkBootupHalt."${haltedghost} ; if ${CallEntryCheck} ${CallTalk} ${CallOnBootHalt2})
+CallOnBootHalt2 : $(set kp.entryname "TalkBootupHalt" ; if ${CallEntryCheck} ${CallTalk} ${CallOnBoot1})
+
+#==============================================================================
+
+
+#終了(OnClose)=================================================================
+
+event.OnClose : \t$(set freeze 1)${CallSave}${HourZone}${CallClose1}
+
+CallClose1 : $(set kp.entryname "TalkClose."$(date %m%d) ; if ${CallEntryCheck} ${CallTalk}\w9\w9\- ${CallClose2})
+CallClose2 : $(set kp.entryname "TalkClose"${timezone}"."$(date %m%d) ; if ${CallEntryCheck} ${CallTalk}\w9\w9\- ${CallClose3})
+CallClose3 : $(set kp.entryname "TalkClose"${timezone} ; if ${CallEntryCheck} ${CallTalk}\w9\w9\- ${CallClose4})
+CallClose4 : $(set kp.entryname "TalkClose")${CallTalk}\w9\w9\-
+
+#==============================================================================
+
+
+#最小化関連(OnWindowState...)==================================================
+#freezeによる抑制を使う（WinAMP等で反応する可能性がある為）
+
+#最小化開始(OnWindowStateMinimize)---------------------------------------------
+event.OnWindowStateMinimize : $(set freeze 1)$(set minimumbegin ${CallMinCalc})${CallSave}
+
+#最小化から復帰(OnWindowStateRestore)------------------------------------------
+
+event.OnWindowStateRestore : \t$(set freeze 0)$(set minimizedtime $(expr ${CallMinCalc} - ${minimumbegin}))$(set kp.entryname "TalkRestore")${CallTalk}
+
+#==============================================================================
+
+
+#他のゴーストへ変更(OnGhostChanging)==========================================
+
+event.OnGhostChanging : $(set freeze 1)${CallSave}$(set param1 ${system.Reference0})${CallGetWords}${CallGhostChanging1}
+
+CallGhostChanging1 : $(if $([ ${system.Reference1} == "automatic" ]) $(set kp.entryname ${kp.entryname}"Auto")${CallTalk} ${CallGhostChanging2})
+CallGhostChanging2 : $(set kp.entryname "TalkGhostChanging."${answer}"."$(date %m%d) ; if ${CallEntryCheck} ${CallTalk} ${CallGhostChanging3})
+CallGhostChanging3 : $(set kp.entryname "TalkGhostChanging."${answer} ; if ${CallEntryCheck} ${CallTalk} ${CallGhostChanging4})
+CallGhostChanging4 : $(set kp.entryname "TalkGhostChanging")${CallTalk}
+
+#==============================================================================
+
+
+#他のゴーストからの変更(OnGhostChanged)========================================
+
+event.OnGhostChanged : $(set freeze 0)$(set param1 ${system.Reference0})${CallGetWords}${CallGhostChanged1}
+
+CallGhostChanged1 : $(set kp.entryname "TalkGhostChanged."${answer}"."$(date %m%d) ; if ${CallEntryCheck} ${CallTalk} ${CallGhostChanged2})
+CallGhostChanged2 : $(set kp.entryname "TalkGhostChanged."${answer} ; if ${CallEntryCheck} ${CallTalk} ${CallGhostChanged3})
+CallGhostChanged3 : $(set kp.entryname "TalkGhostChanged")${CallTalk}
+
+#==============================================================================
+
+
+#Vanish反応関連(OnVanish...)===================================================
+#freezeフラグ設定
+
+event.OnVanishSelecting : $(set freeze 1)$(set kp.entryname "TalkVanishSelecting")${CallTalk}
+event.OnVanishSelected : $(set freeze 1)$(set kp.entryname "TalkVanishSelected")${CallTalk}
+
+event.OnVanishCancel : $(set freeze 0)$(set kp.entryname "TalkVanishCancel")${CallTalk}
+event.OnVanishButtonHold : $(set freeze 0)$(set kp.entryname "TalkVanishButtonHold")${CallTalk}
+
+#他ゴーストがVanishされてからの交代--------------------------------------------
+event.OnVanished : $(set kp.entryname "TalkOtherGhostVanished")${CallTalk}
+
+#==============================================================================
+
+
+#シェルセット切り替え関連(OnShellChange...)====================================
+
+#シェルセット切り替え前(OnShellChanging)---------------------------------------
+event.OnShellChanging : $(set freeze 1)$(set shellbefore ${system.Reference0} ; set kp.entryname "TalkShellChanging")${CallTalk}
+
+#シェルセット切り替え後(OnShellChanged)----------------------------------------
+event.OnShellChanged : $(set freeze 0)$(set kp.entryname "TalkShellChanged")${CallTalk}
+
+#==============================================================================
+
+
+#各種インストール関連(OnInstall...)============================================
+#イベント開始時にfreezeフラグ(1)を立てて、完了時に0に戻してください
+
+event.OnInstallBegin : $(set freeze 1)$(set kp.entryname "TalkInstallBegin")${CallTalk}
+
+event.OnInstallComplete : $(set freeze 0)${CallInstallComplete1}${CallInstallComplete2}
+
+event.OnInstallFailure : $(set freeze 0)$(set kp.entryname "TalkInstallfail")$(foreach temp datainsterror $(if $(expr find ${system.Reference0} ${temp}) $(set kp.entryname ${kp.entryname}${temp})))$(if $([ ! ${CallEntryCheck} ]) $(set kp.entryname "TalkInstallfail"))${CallTalk}
+
+event.OnInstallRefuse : $(set freeze 0)$(set kp.entryname "TalkInstallrefuse")${CallTalk}
+
+#インストールされたオブジェクトの判別ルーチン----------------------------------
+
+CallInstallComplete1 : $(set InstallName ${system.Reference1} ; if ${system.Reference2} $(set InstallName1 ${system.Reference2} ; set temp1 "balloon")  $(clear InstallName1 ; clear temp1))
+
+CallInstallComplete2 : $(set kp.entryname "TalkInstall" ; foreach temp datainst $(if $(expr find ${system.Reference0} ${temp}) $(set kp.entryname ${kp.entryname}${temp})) ; set kp.entryname ${kp.entryname}${temp1} ; if ${CallEntryCheck} ${CallTalk} $(set kp.entryname "TalkInstall")${CallTalk})
+
+##インストールされたオブジェクトを識別する識別子(識別子の登録順に注意)
+datainst : calender , skin , shell , ghost , plugin , balloon
+##インストールエラー用データ
+datainsterror : unlha32 , unzip32 , invalid
+
+#==============================================================================
+
+
+#サーフィス上にファイルをＤ＆Ｄ(OnFileDropping)================================
+
+#サーフィス上にファイルがドロップされた際に実行されます
+#Ghost-KEEPS.txt側に「TalkFileDrop.拡張子」の形で反応を追加できます
+
+#また、ドラッグされたファイルは次の規則で変換されます
+#全角英字大小＆半角大文字⇒半角小文字
+#全角数字＆ローマ数字　　⇒半角数字
+#一部特殊文字（単位）　　⇒それ相当の半角小文字
+
+event.OnFileDropping : $(set param1 ${system.Reference0})${CallFileType}$(if ${answer} $(set kp.entryname "TalkFileDrop."${answer})${CallTalk})
+
+CallFileType : $(clear answer ; set temp1 $(expr length ${param1}) ; while ${temp1} $(set temp2 $(expr substr ${param1} ${temp1} 1) ; dec temp1 ; if $([ ${temp2} == "." ]) $(set temp1 0)  $(if ${temp2} $(if $(entry "ConvTable."${temp2}) $(set answer $(entry "ConvTable."${temp2})${answer})  $(set answer ${temp2}${answer}))  $(set temp1 0 ; clear answer) )))
+
+
+#==============================================================================
+
+
+#壁紙を変更した(OnWallpaperChange)=============================================
+
+#サーフィス上にドロップされたファイルが画像ファイルだった場合実行されます。
+#注：MATERIA490より廃止されました
+
+event.OnWallpaperChange : $(set kp.entryname "TalkWallpaper")${CallTalk}
+
+#==============================================================================
+
+
+#ディスプレイ解像度変更(OnDisplayChange)=======================================
+
+#ディスプレイ解像度が変わった際に（解像度、色数のいずれでも）実行されます
+
+event.OnDisplayChange : $(if $([ ${freeze} -eq 0 ]) ${displaychange})
+
+displaychange : $(set DisplayDpp ${system.Reference0} ; set DisplayWidth ${system.Reference1} ; set DisplayHeight ${system.Reference2} ; if ${flagdisplay} $(set kp.entryname "TalkDisplayChange")${CallTalk}  $(set flagdisplay 1))
+
+#==============================================================================
+
+
+#updates2.dau作成関連(OnUpdatedata...)=========================================
+#freezeフラグ設定必要
+
+#updates2.dau作成前(OnUpdatedataCreating)--------------------------------------
+event.OnUpdatedataCreating : $(set freeze 1)$(set kp.entryname "TalkUpdateCreating")${CallTalk}
+
+#updates2.dau完成後(OnUpdatedataCreated)---------------------------------------
+event.OnUpdatedataCreated : $(set freeze 0)$(set kp.entryname "TalkUpdateCreated")${CallTalk}
+
+#==============================================================================
+
+
+#narファイル作成関連(OnNarCreate...)===========================================
+#freezeフラグ設定必要
+
+#narファイル作成前(OnNarCreating)----------------------------------------------
+event.OnNarCreating : $(set freeze 1)$(set kp.entryname "TalkNarCreating")${CallTalk}
+
+#narファイル完成後(OnNarCreated)-----------------------------------------------
+event.OnNarCreated : $(set freeze 0)$(set kp.entryname "TalkNarCreated")${CallTalk}
+
+#==============================================================================
+
+
+#お勧めサイトリストから選択(OnRecommendsiteChoice)=============================
+
+#\0,\1のお勧めサイトが選ばれたときに実行されます。
+#特殊文字除去ルーチンを通して出力されるので注意してください
+
+event.OnRecommendsiteChoice : $(set param1 ${system.Reference0})${CallGetWords}$(set kp.entryname "TalkURL."${answer})${CallTalk}
+
+#==============================================================================
+
+
+#対WinAmp反応(OnMusicPlay)=====================================================
+
+#yuna-sexyfont-pluginが必要です。
+#作曲者名や曲名を喋ってくれます
+
+event.OnMusicPlay : $(if $([ ${freeze} -eq 0 ]) ${OnMusicPlay1})
+
+OnMusicPlay1 : $(if $([ $(expr substr ${system.Reference0} 2 6) != "Buffer" ]) ${OnMusicPlay2})
+OnMusicPlay2 : $(if $([ $(expr substr ${system.Reference0} 2 10) != "ICY 200 OK" ]) ${OnMusicPlay3})
+OnMusicPlay3 : $(if $([ $(expr substr ${system.Reference0} 2 10) != "Connecting" ]) ${OnMusicPlay4})
+OnMusicPlay4 : $(if $([ $(expr substr ${system.Reference0} 2 26) != "error opening sound device" ]) ${OnMusicPlay5})
+OnMusicPlay5 : ${CallWinamp}$(set kp.entryname "TalkWinampplay")${CallTalk}
+
+CallWinamp : $(set param1 $(escape ${system.Reference0}) ; clear Wartist ; if $([ $(expr substr ${param1} 1 2) == "- " ]) $(set Wtitle $(expr substr ${param1} 3 $(expr ( length ${param1} ")"  - 2)))  ${CallWinamp1})
+
+CallWinamp1 : $(set temp $(expr findpos ${param1} " - ") ; if ${temp} $(set Wartist $(expr substr ${param1} 1 ${temp}) ; set Wtitle $(expr substr ${param1} $(expr ${temp} + 3) $(expr "(" $(expr length ${param1}) - ${temp} ")" - 2))) $(set Wtitle ${param1}))
+
+#==============================================================================
+
+
+#だぶるているからのSSTPNotify受信(OnDoubleTailScriptSend)======================
+#ここは変える必要がありません
+event.OnDoubleTailScriptSend : ${system.Reference0}
+#==============================================================================
+
+
+##InputBoxによる入力（OnUserInput）============================================
+
+event.OnUserInput : $(set kp.entryname $(if $([ ${system.Reference1} == "timeout" ]) "TalkInputTimeOut."  "TalkInput.")${system.Reference0})${CallTalk}
+
+#==============================================================================
+
+#==============================================================================
+#以上SHIORI2.2イベント
+#==============================================================================
+
+
+
+
+#==============================================================================
+#以下SHIORI2.5によるリソース取得
+#==============================================================================
+
+#お勧めサイトリスト取得(SHIORI2.5)=============================================
+
+resource.sakura.recommendsites : $(set param1 "sakura")${CallMakeList}
+
+resource.kero.recommendsites : $(set param1 "kero")${CallMakeList}
+
+resource.sakura.portalsites : $(set param1 "portal")${CallMakeList}
+
+CallMakeList : $(if $(entry ${FlagMode}".URL."${param1}) $(set kp.entryname ${Flagmode}".") $(clear kp.entryname))$(if $(entry ${kp.entryname}"randlist."${param1}) ${CallMakeListB} ${CallMakeListA})
+
+CallMakeListA : $(foreach temp ${kp.entryname}"URL."${param1} $(eval ${temp}))
+
+CallMakeListB : $(clear temp ; set temp1 $(entry ${kp.entryname}"URL."${param1}) ; loop $(entry "randlist."${param1}) ${CallMakeListB1} ; eval ${temp})
+
+CallMakeListB1 : $(while $(expr find ${temp} ${temp1}) $(set temp1 $(entry ${kp.entryname}"URL."${param1})) ; set temp ${temp}${temp1})
+
+#==============================================================================
+
+
+#お勧めボタン名取得(SHIORI2.5)=================================================
+
+resource.sakura.recommendbuttoncaption : $(if $(entry ${FlagMode}".Sakura.URLCaption") $(entry ${FlagMode}".Sakura.URLCaption") $(entry "Sakura.URLCaption"))
+
+resource.kero.recommendbuttoncaption   : $(if $(entry ${FlagMode}".Kero.URLCaption") $(entry ${FlagMode}".Kero.URLCaption") $(entry "Kero.URLCaption"))
+
+resource.sakura.portalbuttoncaption    : $(if $(entry ${FlagMode}".Portal.URLCaption") $(entry ${FlagMode}".Portal.URLCaption") $(entry "Portal.URLCaption"))
+
+#==============================================================================
+
+
+#ユーザー名取得(SHIORI2.5)=====================================================
+#ユーザー名が存在しないときは「ユーザーさん」になります
+#（system.Onloadで判定されます）
+resource.username : ${username}
+#==============================================================================
+
+
+#ネットワーク更新ボタン名取得(SHIORI2.5)=======================================
+resource.updatebuttoncaption : $(if $(size ${FlagMode}".UpdateCaption") $(entry ${FlagMode}".UpdateCaption") $(entry "UpdateCaption"))
+#==============================================================================
+
+
+#消滅指示ボタン名取得(SHIORI2.5)===============================================
+resource.vanishbuttoncaption : $(if $(size ${FlagMode}".VanishCaption") $(entry ${FlagMode}".VanishCaption") $(entry "VanishCaption"))
+#==============================================================================
+
+
+#==============================================================================
+#以上SHIORI2.5によるリソース取得
+#==============================================================================
+
+
+
+#==============================================================================
+#文字変換テーブル（CallGetWords、OnFileDropで文字変換に使うエントリ群）
+#
+#全角英字大小＆半角大文字⇒半角小文字
+#全角数字＆ローマ数字　　⇒半角数字
+#一部特殊文字（単位）　　⇒それ相当の半角小文字
+#==============================================================================
+
+ConvTable.０ : 0
+ConvTable.１ , ConvTable.Ⅰ : 1
+ConvTable.２ , ConvTable.Ⅱ : 2
+ConvTable.３ , ConvTable.Ⅲ : 3
+ConvTable.４ , ConvTable.Ⅳ : 4
+ConvTable.５ , ConvTable.Ⅴ : 5
+ConvTable.６ , ConvTable.Ⅵ : 6
+ConvTable.７ , ConvTable.Ⅶ : 7
+ConvTable.８ , ConvTable.Ⅷ : 8
+ConvTable.９ , ConvTable.Ⅸ : 9
+ConvTable.Ⅹ : 10
+ConvTable.ａ , ConvTable.Ａ , ConvTable.A : a
+ConvTable.ｂ , ConvTable.Ｂ , ConvTable.B : b
+ConvTable.ｃ , ConvTable.Ｃ , ConvTable.C : c
+ConvTable.ｄ , ConvTable.Ｄ , ConvTable.D : d
+ConvTable.ｅ , ConvTable.Ｅ , ConvTable.E : e
+ConvTable.ｆ , ConvTable.Ｆ , ConvTable.F : f
+ConvTable.ｇ , ConvTable.Ｇ , ConvTable.G : g
+ConvTable.ｈ , ConvTable.Ｈ , ConvTable.H : h
+ConvTable.ｉ , ConvTable.Ｉ , ConvTable.I : i
+ConvTable.ｊ , ConvTable.Ｊ , ConvTable.J : j
+ConvTable.ｋ , ConvTable.Ｋ , ConvTable.K : k
+ConvTable.ｌ , ConvTable.Ｌ , ConvTable.L : l
+ConvTable.ｍ , ConvTable.Ｍ , ConvTable.M : m
+ConvTable.ｎ , ConvTable.Ｎ , ConvTable.N : n
+ConvTable.ｏ , ConvTable.Ｏ , ConvTable.O : o
+ConvTable.ｐ , ConvTable.Ｐ , ConvTable.P : p
+ConvTable.ｑ , ConvTable.Ｑ , ConvTable.Q : q
+ConvTable.ｒ , ConvTable.Ｒ , ConvTable.R : r
+ConvTable.ｓ , ConvTable.Ｓ , ConvTable.S : s
+ConvTable.ｔ , ConvTable.Ｔ , ConvTable.T : t
+ConvTable.ｕ , ConvTable.Ｕ , ConvTable.U : u
+ConvTable.ｖ , ConvTable.Ｖ , ConvTable.V : v
+ConvTable.ｗ , ConvTable.Ｗ , ConvTable.W : w
+ConvTable.ｘ , ConvTable.Ｘ , ConvTable.X : x
+ConvTable.ｙ , ConvTable.Ｙ , ConvTable.Y : y
+ConvTable.ｚ , ConvTable.Ｚ , ConvTable.Z : z
+ConvTable.㎜ : mm
+ConvTable.㎝ : cm
+ConvTable.㎞ : km
+ConvTable.㎎ : mg
+ConvTable.㎏ : kg
+ConvTable.㏄ : cc
+ConvTable.㎡ : m2
+
+#==============================================================================
+
+
+#==============================================================================
+##以下、未対応
+#==============================================================================
+#event.OnSNTPCorrect : \_q${u0}(栞)時刻を修正しました。${DataResult}\_q\e
+#event.OnFileDropped : \_q${u0}(栞)ファイルがドロップされました。${DataResult}\_q\e
+#event.OnDirectoryDrop : \_q${u0}(栞)ディレクトリがドロップされました。${DataResult}\_q\e
+#event.OnKeyPress : \_q${u0}(栞)キーが押されました。${DataResult}\_q\e
+#event.OnURLDropped : \_q${u0}(栞)ファイルがダウンロードされました。${DataResult}\_q\e
+#event.OnTeachStart : \_q${u0}(栞)「TEACH for」ボックスが開きました。${DataResult}\_q\e
+#DataResult : ${h0}０：${system.Reference0}\n１：${system.Reference1}\n２：${system.Reference2}\n３：${system.Reference3}\n４：${system.Reference4}\n５：${system.Reference5}\n６：${system.Reference6}\n７：${system.Reference7}
+#-----------------------------------------------------------------------------
+
+
+############################################################################
+#
+# Copyright (C) 2002 OpenKEEPS Project Team
+# (Akira Koyama(original works)/UMKS6.p2/A-01/takuru/tommyrot/sato/suikyo)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+

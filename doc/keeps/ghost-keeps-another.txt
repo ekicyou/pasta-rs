@@ -1,0 +1,467 @@
+#########################################################################
+# Ｇｈｏｓｔ「．さくら」
+# 別人格制御辞書
+#########################################################################
+
+#==============================================================================
+# ＊キャラクター切り替えシステム・テストサンプル
+#
+#　{FlagMode}に言葉を代入する事により、以後「Talk～」「Select～」「randlist～」
+#「Limit～」エントリは、「{FlagMode}.」がついた形で呼ばれるようになる。
+#
+#尚、該当するエントリがない場合は、元の(「{FalgMode}.」がついていない)エン
+#トリが呼ばれる。
+#また、元に戻る際は「$(set FlagMode $(NULL))」として、FlagModeをリセットする。
+#
+#　このサンプルでは、{FlagMode}に「Another」と代入すると、以下のエントリが呼ば
+#れる。(吹出しメニューから「別人格へ切り替え」を選択。)
+
+#==============================================================================
+
+
+
+#起動：初回起動================================================================
+
+Another.TalkFirstboot : \t\1\s[10]\0\s[0]‥‥って、\s[7]\nどーしてこっちから始まってるんだっ！\1\s[11]落ち着けっ！\e
+
+#==============================================================================
+
+
+#起動：通常起動================================================================
+
+Another.TalkBootupEarlymorning : \1\s[10]\0\s[4]むぅー。\n\nセコムしやがれ‥‥。\1‥‥まだ寝惚けてるから堪忍してな。\e
+Another.TalkBootupMorning : \1\s[10]\0\s[4]\nねむー。\e
+Another.TalkBootupDay : \1\s[10]\0\s[0]おにぎり\nたくあん\nたまごやき。\e
+Another.TalkBootupEvening : \1\s[10]\0\s[0]ゆーうーがーたー。\1‥‥\0\n\nゆーうーがーたーだー。\1\n\n‥‥語呂が悪いぞ。\e
+Another.TalkBootupNight : \1\s[10]\0\s[0]よーるー。\1‥‥\0\n\nよーるーだー。\1\n\n‥‥やる気出せよ。\e
+Another.TalkBootupMidnight : \t\1\s[10]\0\s[0]こんばんは、%username。\nすっかり真夜中になっちゃいましたね。\n\n寝たら？\e
+
+#==============================================================================
+
+
+#起動＆終了：ゴースト切り替え==================================================
+
+Another.TalkGhostChanging : \0\s[0]‥‥浮気か‥‥。\1\s[10]‥‥。\w9\e
+Another.TalkGhostChangingAuto : \0\s[4]え。\n\nお払い箱‥‥？\1\s[10]切なさ炸裂やね。\w9\e
+Another.TalkGhostChanging.さくら : \0\s[7]再起動するぞっ！\1\s[11]落ち着けっ！\w9\e
+Another.TalkGhostChanged : \1\s[10]\0\s[0]‥‥やっと戻って来れたね。\1${npp}か‥‥\n何もかも懐かしい。\e
+Another.TalkGhostChanged.さくら : \0\s[0]よっ。\1\s[10]よっ。\e
+
+#他ゴーストが消去された場合の交代----------------------------------------------
+
+Another.TalkVanished : \1\s[10]\0\s[0]${system.Reference0}が２５万人虐殺されました。\1\w6\s[10]数字捏造はいかんで。\e
+
+#==============================================================================
+
+
+#終了：終了メッセージ==========================================================
+
+Another.TalkCloseEarlymorning : \1\s[10]お。終わりらしいで。\0\s[7]よーし寝るぞうにゅう！\1\n\n\s[11]落ち着けっ！\n\n${Another.Enee}
+
+Another.TalkCloseMorning : \0\s[0]\s[0]\t今から寝ると生活パターン戻りませんよ～。${Another.Enee}
+
+Another.TalkCloseDay : \0\s[4]‥‥また、中途半端な時間に放り出されたもんだね。\1\s[10]‥‥そう言うなよ。\n\n${Another.Enee}
+
+Another.TalkCloseEvening : \0\s[4]‥‥また、中途半端な時間に放り出されたもんだね。\1\s[10]‥‥そう言うなよ。\n\n${Another.Enee}
+
+Another.TalkCloseNight : \0\s[0]規則正しい生活が、\n健やかな心身を育むんですよ～。${Another.Enee}
+
+Another.TalkCloseMidnight : \0\s[4]やっと、寝れる‥‥。${Another.Enee}
+
+Another.Enee : \0\n\n今回の起動時間は、$(expr ${worktime}|"0")時間でした。\n\nえんいー。\1\s[10]えんいー。
+
+#==============================================================================
+
+
+#イベント：時報、特定時間======================================================
+
+Another.TalkTime0000 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0100 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0200 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0300 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0400 : ${Another.TalkTimeEtc}\n\n‥‥寝ないと死にますよ。\e
+Another.TalkTime0500 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0600 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0700 : ${Another.TalkTimeEtc}\n\nおはよー。\1\s[10]おはよー。\0\n\n‥‥\s[8]うにゅうが言うと全然似合わないね。\1\n\nうるさいよ。\e
+Another.TalkTime0800 : ${Another.TalkTimeEtc}\e
+Another.TalkTime0900 : ${Another.TalkTimeEtc}\e
+Another.TalkTime1000 : ${Another.TalkTimeEtc}\e
+Another.TalkTime1100 : ${Another.TalkTimeEtc}\e
+Another.TalkTime1200 : ${Another.TalkTimeEtc}\1\s[10]お昼休みはうきうきウォッチングやね。\e
+Another.TalkTime1300 : ${Another.TalkTimeEtc}\n\n\s[8]そんな亭主とは早く別れちゃいなさい、奥さん。ねぇ、あなたまだ39でしょ？まだまだ若いんだから。はやく次の人生みつけないと。ね。はーい。それじゃあ頑張って。ね。\1\s[10]‥‥何だ、それ。\0\n\n\s[0]みの。\1\n\n‥‥\e
+Another.TalkTime1400 : ${Another.TalkTimeEtc}\e
+Another.TalkTime1500 : ${Another.TalkTimeEtc}\n\nおやつの時間ですね。\n\n\s[7]誰だ！誰がそう決めたんだ！\1\s[11]落ち着けっ！\e
+Another.TalkTime1600 : ${Another.TalkTimeEtc}そろそろ1日も終わりですね。\n‥‥\s[8]「今起きたところ」じゃないことを祈ります。\e
+Another.TalkTime1700 : ${Another.TalkTimeEtc}\n\nまっとうな仕事なら終業の時間です。\n\n‥‥まっとうな仕事なら。\e
+Another.TalkTime1800 : ${Another.TalkTimeEtc}\e
+Another.TalkTime1900 : ${Another.TalkTimeEtc}\n\n‥‥\s[7]何がゴールデンタイムだっ！\n\n見れる番組なんかほとんど無いじゃないか！\1\s[11]落ち着けっ！\e
+Another.TalkTime2000 : ${Another.TalkTimeEtc}\e
+Another.TalkTime2100 : ${Another.TalkTimeEtc}\e
+Another.TalkTime2200 : ${Another.TalkTimeEtc}\e
+Another.TalkTime2300 : ${Another.TalkTimeEtc}\e
+Another.TalkTimeEtc : \0\s[0]%hour時です。
+
+#==============================================================================
+
+
+#イベント：起動時間============================================================
+
+Another.TalkWorktimeVeryshort : \0\s[0]${Another.TalkWorktime}こんなものまだまだ起動したうちには入らないよ～。\e
+Another.TalkWorktimeVeryshort : \0\s[0]${Another.TalkWorktime}まだまだ序の口っ！\1\s[10]せや！\e
+Another.TalkWorktimeShort : \0\s[0]${Another.TalkWorktime}‥‥ちょっとは頑張ってるのかな。\e
+Another.TalkWorktimeShort : \0\s[0]${Another.TalkWorktime}\s[4]うー。そろそろ飽きてきた‥‥・\e
+Another.TalkWorktimeMiddle : \0\s[0]${Another.TalkWorktime}ずいぶん頑張るね‥‥。\e
+Another.TalkWorktimeMiddle : \0\s[0]${Another.TalkWorktime}きっと、ご飯も食べたんだろうね‥‥。\1\s[10]わいらはずっとここで棒立ちや。\0\n\n\s[4]死にそう。\e
+Another.TalkWorktimeLong : \0\s[0]${Another.TalkWorktime}\s[8]‥‥まさか‥‥サーバマシンですか。\e
+Another.TalkWorktimeLong : \0\s[0]${Another.TalkWorktime}\s[7]って、労働基準法違反だっ！\1\s[11]落ち着けっ！\e
+Another.TalkWorktimeVerylong : \0\s[0]${Another.TalkWorktime}\s[7]って、殺す気かー！\1\s[11]落ち着けっ！\e
+Another.TalkWorktimeVerylong : \0\s[0]${Another.TalkWorktime}\s[4]‥‥私の‥‥人権は‥‥。\e
+Another.TalkWorktime : \0\s[0]起動してから${worktime}時間経過です。\n\n
+#==============================================================================
+
+
+#イベント：各表情からの復帰====================================================
+
+Another.TalkReturn : \1\s[10]\0\s[0]\e
+
+Another.TalkReturn4 : \1\s[10]さくら、いつまで落ち込んでるんや。\0‥‥\s[0]頑張ろう。\e
+
+Another.TalkReturn4 : \1\s[10]おいまゆら、いつまでダラけてるんだ。\nシャキっとせい。\0\s[7]まゆらじゃないっ！\n\nそんなにあっちがいいならあっちに行けっ！\e
+
+Another.TalkReturn4 : \1\s[10]さくら、いつまで落ち込んでるんや。\0‥‥契約の元、さくらが命じる‥‥。\1\n\n‥‥重症やな。\e
+
+Another.TalkReturn11 : \0\s[0]‥‥目が乾くぞ。\1‥‥\s[10]‥‥。\e
+
+#==============================================================================
+
+#イベント：最小化から復帰======================================================
+
+Another.TalkRestore : \1\s[10]\0\s[4]ふー。\n隠れてるのは狭っくるしくて疲れるよ。\1ホンマやね。\e
+
+#==============================================================================
+
+
+#反応・見切れ==================================================================
+
+Another.TalkMikire	: \0ねえ、うにゅう‥‥\1\s[10]何や。\0\n\n私、見切れてない？\1\n\n‥‥\n世の中、気にせん方がええこともあるで。\e
+Another.TalkMikire	: \0\s[7]こらー！見切れてる！\1\s[11]落ち着けっ！\e
+Another.TalkMikirez : \0見切れはイヤなもんだよ。\1\s[10]‥‥あんまりわがまま言うと消されるぞ‥‥\e
+
+#==============================================================================
+
+
+#イベント：シェル切り替え======================================================
+
+Another.TalkShellChanging : \0\s[0]着替えでゴー。\1\s[10]‥‥やる気なしかよ。\w9\e
+
+Another.TalkShellChanged : \1\s[10]\0\s[0]‥‥っと。\n\nどうかな？\e
+
+#==============================================================================
+
+
+#イベント：消滅指示時==========================================================
+
+Another.TalkVanishSelecting : \0\s[0]消滅指示が右クリックメニューから選択されました。私とは遊びだったんですか？\e
+Another.TalkVanishSelected : \0\s[0]覚えときなさいよ、\w3化けて出てやる。\e
+Another.TalkVanishCancel : \0\s[0]こういうシャレにならない遊びが楽しい？\e
+Another.TalkVanishButtonHold : \0\s[0]よーし、\w3%usernameをいつか殺すリストに追加。\1\w6\s[10]やめとけよ。\e
+Another.TalkVanishButtonHold : \0\s[0]よーし、\w3%usernameをいつか萌やすリストに追加。\1\w6\s[10]喜ばれるで。\e
+
+#==============================================================================
+
+#イベント：選択肢タイムアウト==================================================
+
+Another.TalkTimeout : \b[0]\0\s[4]ちゃんと選んでよう～っ。\1\s[10]まあ、ユーザさんも忙しいんやろ‥‥\e
+
+Another.TalkTimeout : \b[0]\0\s[4]見られて、ない！\1\s[10]切なさ炸裂！\e
+
+#==============================================================================
+
+#イベント：ＷｉｎＡＭＰ========================================================
+
+Another.TalkWinampplay : \1\s[10]曲が鳴っとる‥‥。\0\s[4]それ以上のことは、結局分からなかったっ‥‥！\e
+
+Another.TalkWinampplay : \1\s[10]「${Wtitle}」‥‥ていうか、ソングオーバーライド機能って何？\0\s[0]‥‥色々考えてたみたいだけど。\e
+
+Another.TalkWinampplay : \0\s[0]「${Wtitle}」‥‥何だろ。\1\s[10]さあ。\0\n\n聞いてるわけでもないのに「いい音楽ですね」なんて口が裂けても言えないよね。\e
+
+#==============================================================================
+
+
+#イベント：ＳＳＴＰ中断========================================================
+
+Another.TalkSSTPbreak : \0‥\w2‥\w2‥\w2‥\s[2]はっ！\nまた電波に操られていた‥‥！？\n\1\s[10]危ないところやったな‥‥\e
+
+Another.TalkSSTPbreak : \0‥\w2‥\w2‥\w2‥\s[7]わぁーっ！\nお前らの好きにはさせるかっ！\n\1\s[10]危ないところやったな‥‥\0\n\n誰だこんな機能付けたのはっ！\e
+
+#==============================================================================
+
+#イベント：画面解像度、色数変更================================================
+
+Another.TalkDisplayChange : \0\s[0]ディスプレイサイズが、${DisplayWidth} × ${DisplayHeight}\n\n${DisplayDpp}ビットカラーに変更したけど。\1\w6\s[10]広くなってもわい達は邪魔者だからな。\e
+
+#==============================================================================
+
+#イベント：「お勧め」サイト選択時==============================================
+
+Another.TalkURL.clearbrainsystems : \0\s[0]スージーのお部屋。\e
+
+Another.TalkURL.猫どりふ : \0\s[7]落とされる方の身にもなれっ！\1\s[11]落ち着けっ！\e
+
+#==============================================================================
+
+#反応：見切れ==================================================================
+
+Another.TalkMikire	: \0\s[7]見切れてますねー。\e
+Another.TalkMikirez : \0\s[0]ふっふっふ、\w3あとで不審火。\e
+
+#==============================================================================
+
+
+#反応：重なり==================================================================
+
+Another.TalkKasanari : \0\s[3]‥‥重なるなようっ。\1\s[10]‥‥わいは別に構わへんけどな。\4\e
+
+Another.TalkKasanari : \0\s[7]こらー！重ねるなー！\1\s[11]落ち着けっ！\4\e
+
+#==============================================================================
+
+
+#反応：ダブルクリック==========================================================
+
+Another.Character0Doubleclick.Face : \0\s[4]イタイってば～。\e
+Another.Character0Doubleclick.Face : \0\s[7]顔を突くなっ！\1\s[11]落ち着けっ！\e
+Another.Character0Doubleclick : ${MainmenuA}\e
+Another.Character1Doubleclick : \0\s[2]ああッ！\n\nうにゅうがつつかれてる！\1\s[10]何だよ。\e
+Another.Character1Doubleclick : \1\s[10]あー。\nわいはやる気ないから、つついても無駄やで‥‥。\e
+
+#==============================================================================
+
+
+#反応：シングルクリック========================================================
+
+Another.Character0Singleclick.Bust : \0\s[7]胸をつつくなこのエロ人間っ！\e
+
+#==============================================================================
+
+
+#反応：撫でまわし・お触り======================================================
+
+Another.limit.Character0Stroke.Head : 60
+
+Another.Character0Stroke.Head : \0\s[1]あ‥‥\n面白かったですか？\e
+
+Another.Character0Stroke.Head : \0\s[6]‥‥ん？\n誉められてる？\e
+
+Another.limit.Character0Stroke.Bust : 70
+Another.Character0Stroke.Bust.half : \0‥‥？\e
+
+Another.Character0Stroke.Bust: \0\s[3]‥‥どこ触ってるんですか。\e
+
+Another.Character0Stroke.Bust : \0\s[7]エロ機能だけでもつほど世の中甘くないんだっ！\1\s[11]落ち着けっ！\e
+
+#==============================================================================
+
+
+#反応：マウスホイール==========================================================
+
+Another.Character0Wheel.Plus : \0\s[0]ホイール回転っ！\e
+
+Another.Character0Wheel.Bust : \0\s[7]胸で遊ぶなこのエロじじいっ！\e
+
+#==============================================================================
+
+
+#メニュー周り==================================================================
+#「Another.TalkSakuraClick」より呼び出されている。
+
+MainmenuA : ${countzero}${Mainmenu2}\n\n\q0[Manzai][何か話して]\q1[Timing][お喋り頻度]\q2[Cancel][なんでもない]\q3[Return][元に戻って]\e
+
+Mainmenu2 : \0\s[0]ん？
+
+Mainmenu2 : \0\s[0]ん？なに‥‥？
+
+Another.Select.Timing :\0\s[0]やだ。\1\s[10]やだって‥‥。\e
+
+Another.Select.Cancel : \b[0]\0\s[4]‥‥うぐぅ～。\e
+
+Another.Select.Cancel : \b[0]\0\s[4]‥‥。\1\s[10]‥‥落ち込みやすいよな、お前。\e
+
+Another.Select.Return : $(clear FlagMode)\0\s[7]おぼえとけよっ！\1\s[11]落ち着けっ！\e
+
+#==============================================================================
+
+
+#ネットワーク：メールチェック==================================================
+
+Another.TalkMailstart : \s[0]${system.Reference2}\n\nメールサーバに、接続っ。\e
+
+Another.TalkNoMail : \0\s[2]うわ、メール来てないっ！\1\s[10]何だよ。\e
+
+Another.TalkNoMail : \0\s[7]メール来てないー！\1\s[11]怒るなっ！\e
+
+Another.TalkGottaMail : \0\s[0]メール来てるよ～。\nえーと‥‥\n\n${system.Reference0}通、${system.Reference1}バイト\n\nだって。\e
+
+Another.TalkMailtimeout : \0\s[4]うー。全然繋がらない‥‥。\n\nネットに繋がってないっていうオチはないよね？\e
+
+Another.TalkMailkick : \0\s[4]蹴られた‥‥。\n\nパスワードとか、間違ってない？\e
+
+Another.TalkMaildefect : \0\s[4]メールサーバとかちゃんと設定されてないよ‥‥。\e
+
+Another.TalkMailError : \0\s[2]「${system.Reference0}」エラー発生！\e
+
+#==============================================================================
+
+
+#ネットワーク：時間あわせ======================================================
+
+Another.TalkNTPstart : \0\s[0]sntpサーバ\n\n${system.Reference0}\n\nへのリクエスト開始。\e
+
+Another.TalkNTPcompare : ${Another.TalkNTPcompare1}${Another.TalkNTPcompare2}${Another.TalkNTPcompare3}${Another.TalkNTPcompare4}\e
+
+Another.TalkNTPcompare1 : \_q\0\s[0]ＳＮＴＰ：${TimeSNTP}\nローカル：${TimeLOCAL}\_q\n\n
+
+Another.TalkNTPcompare2 : $(if $([ ${system.Reference3} -eq 0 ]) ${Another.TalkNTPcompareM0}  $(if $([ ${system.Reference3} -lt 30 ]) ${Another.TalkNTPcompareM1} ${Another.TalkNTPcompareM2}))
+
+Another.TalkNTPcompareM0 : \0\s[0]んー。\nぴったり。\1\s[10]つまらんなー。\0\n\nやっぱり、少し我慢しないとね‥‥\e
+
+Another.TalkNTPcompareM1 : \0\s[0]${system.Reference3}秒ずれてるみたいだけど‥‥\n直す？${Another.TalkNTPcompareM3}\e
+
+Another.TalkNTPcompareM2 : \0\s[0]${system.Reference3}秒。\nずれすぎ。\n直す？${Another.TalkNTPcompareM3}\e
+
+Another.TalkNTPcompareM3 : \n\n\q0[Adjast][直す]\q1[NoAdjast][ほっとく]\e
+
+Another.Select.Adjast : \0\s[0]直したよ～。\6\e
+
+Another.Select.NoAdjast : \0\s[4]‥‥え。\e
+
+Another.TalkNTPfailed : \0\s[4]接続失敗～。\n\nサーバが死んでる、ポート塞がってる、そもそもネットに繋がってない、\n\n多分その辺。\e
+
+#==============================================================================
+
+
+#ネットワーク：ネットワーク更新================================================
+
+Another.TalkUpdatebegin : \0\s[0]サーバに接続～。\n\e
+
+Another.TalkUpdatecomplete : \0\s[0]ふー。\n更新終了。\n\n\s[4]結構、疲れるね‥‥\n\e
+
+Another.TalkUpdatenoupdate : \0\s[4]更新されたファイルはありませんでした。\e
+
+Another.TalkUpdatefailtimeout : \0\s[4]データが送られて来ません。\n\nネットワーク更新を中断します。\e
+
+Another.TalkUpdatefailmd5 : \0\s[4]何回リトライしてもダメみたい。\1\s[10]こりゃ、ファイルがぶっ壊れてるな‥‥\0\n\n知らせてやった方がいいと思うよ。\e
+
+Another.TalkUpdatefail404 : \0\s[2]うわ。404ッ！\1\s[10]‥‥見捨てられた？\e
+
+Another.TalkUpdatefail403 : \0\s[2]うわ。403ッ！\1\s[10]‥‥見捨てられた？\e
+
+Another.TalkDownloadbegin : \0\s[0]更新されたファイル\n\n${system.Reference0}\n\nを受信しています。\e
+
+Another.TalkMD5Begin : \0\s[0]${system.Reference0}\n\nのMD5照合。\e
+
+Another.TalkMD5Complete : \0\s[0]\_q${system.Reference1}\n${system.Reference2}\_q\n\n一致しました。\e
+
+Another.TalkMD5Fail : \0\s[0]\_q${system.Reference1}\n${system.Reference2}\_q\n\n一致しません。リトライします。\e
+
+#==============================================================================
+
+
+#ネットワーク：ヘッドラインセンサー============================================
+
+Another.TalkHeadlineBegin : \0\s[0]${system.Reference0} さん取得中～。\e
+
+Another.TalkHeadlineNoupdate : \0\s[0]んー。\nまだ更新ないみたい。\e
+
+Another.TalkHeadlineFailed : \0\s[4]ターゲットURLのダウンロード失敗。\n\nネットに繋がってないってオチはないよね？\e
+
+Another.TalkHeadlineMiss : \0\s[4]‥‥と思ったら解析失敗してるね‥‥\nリニューアルしたのかな。\1\s[10]対策されたのかもしれんで。\0\n\nううっ。\e
+
+Another.TalkHeadlineFirst :\0\b[2]\s[0]${system.Reference0} ヘッドラインだよ～。
+
+Another.TalkHeadlineNext : \0\b[2]\s[0]${system.Reference0} ヘッドラインの続き
+
+Another.TalkHeadlineChoice : \q0["次のページへ,"]\n\q1["読む,HeadlineJump"]\n\q2["読まない,HeadlineCancel"]\e
+Another.TalkHeadlineChoiceEnd : \q0["読む,HeadlineJump"]\n\q1["読まない,HeadlineCancel"]\e
+
+#==============================================================================
+
+
+#ネットワーク：ＩＰアドレスブラックリスティング================================
+
+Another.TalkBlacklist : \0\s[0]ＩＰアドレス「${system.Reference0}」\n\nブラックリストにぶち込みましたっ。\1\s[10]南ー無ー。\e
+
+#==============================================================================
+
+
+#ネットワーク：ネットワークが重い==============================================
+
+Another.TalkNetworkheavy : \0\s[4]おーもーいー。\e
+
+Another.TalkNetworkheavy : \0\s[4]重い‥‥\e
+
+#==============================================================================
+
+
+#ファイル：インストール========================================================
+
+Another.TalkInstallbegin : \0\s[0]インストール開始っ。\e
+
+Another.TalkInstall : \0\s[8]何だか分からないけど「${InstallName}」\n\nインストール完了っ。\1\s[10]‥‥。\e
+
+Another.TalkInstallshell : \0\s[0]シェル「${InstallName}」\n\nインストール完了っ。\e
+
+Another.TalkInstallghost : \0\s[0]ゴースト「${InstallName}」\n\nインストール完了っ。\e
+
+Another.TalkInstallplugin : \0\s[0]プラグイン「${InstallName}」\n\nインストール完了っ。\e
+
+Another.TalkInstallballoon : \0\s[0]バルーン「${InstallName}」\n\nインストール完了っ。\e
+
+Another.TalkInstallshellballoon : \0\s[0]シェル＆バルーン「${InstallName}」と「${InstallName1}」\n\nインストール完了っ。\e
+
+Another.TalkInstallghostballoon : \0\s[0]ゴースト＆バルーン「${InstallName}」と「${InstallName1}」\n\nインストール完了っ。\e
+
+Another.TalkInstallcalenderskin : \0\s[0]カレンダースキン「${InstallName}」\n\nインストール完了っ。\e
+
+Another.TalkInstallcalenderplugin : \0\s[0]スケジュールセンサ「${InstallName}」\n\nインストール完了っ。\e
+
+Another.TalkInstallfail : \0\s[4]‥‥って、ダメじゃんこのファイル。\1\s[10]古いんちゃうか？\e
+
+Another.TalkInstallfailunlha32 : \0\s[4]‥‥って、なんか unlha32 死んでるっぽんですけど。\1\s[10]初歩的な問題やなー。\e
+
+Another.TalkInstallrefuse : \0\s[0]あー。\n\nこれは${system.Reference0}に直接渡して。\1\s[10]勝手に開けると${0}がキレてHDDを飛ばすからな。\e
+
+#==============================================================================
+
+
+#リソース：キャプション========================================================
+
+
+Another.Sakura.URLCaption : "さくら？のお勧め"
+
+Another.Kero.URLCaption   : "うにゅう？のお勧め"
+
+Another.UpdateCaption	  : "おしたらしぬで"
+
+#==============================================================================
+
+
+#壁紙変更======================================================================
+#注 : MATERIA490以後廃止されました。
+
+Another.TalkWallpaper : \0\s[0]変えるよ～。\e
+
+#==============================================================================
+
+
+#ファイル：ファイルドロップ====================================================
+
+#注：MATERIA571以降廃止されました。
+
+Another.TalkFileDrop.bmp :\1\s[10]今はPNGがあるし、もうBMPで絵を持つ必要はない気がするんやけど。\0\s[8]BMP、おっきいもんね～。\e
+
+Another.TalkFileDrop.jpg :$(NULL)
+
+Another.TalkFileDrop.png :\0\s[8]PNGの読みは「ぴんぐ」じゃないよ～。\e
+
+#==============================================================================

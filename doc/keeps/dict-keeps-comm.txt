@@ -1,0 +1,63 @@
+#==============================================================================
+#
+# 「華和梨」イベント処理用簡易スクリプト(Kawari Easy Event Programmed Script)
+#  コミュニケーション制御
+#
+# ＫＥＥＰＳ製作   ：こやま☆あきら
+# OpenKEEPS製作    : ＯｐｅｎＫＥＥＰＳプロジェクトチーム
+# OpenKEEPSページ : http://keeps.sourceforge.jp
+#
+#==============================================================================
+# 動作対象：「華和梨」Phase 7.3.1 及び上位互換版を使用。
+#           「何か」（現「伺か」）MATERIA period 480 及び上位互換ソフトを使用。
+#==============================================================================
+
+
+#コミュニケーション・応答======================================================
+
+system.OnResponse : ${Communication1}${Communication2}${Communication3}${Communication4}${Communication5}${Communication6}$(set system.Response0 "Test")
+
+Communication1 : $(set OtherGhost ${system.Sender} ; set temp $(expr index ${system.Sender} " 　") ; if ${temp} $(set param1 $(expr substr ${system.Sender} 1 $(expr ${temp} - 1 )))  $(set param1 ${system.Sender}) )
+
+Communication2 : ${CallGetWords}$(if ${FlagMode} $(set temp ${FlagMode}".") $(clear temp) ; if $(entry ${temp}"Comm."${answer}) $(set CommSender ${temp}"Comm."${answer}) $(set CommSender ${temp}"Comm.user") )
+
+Communication3 : $(split temp ${system.Surface} "," ; set Sakura.Surface ${temp.1} ; set Kero.Surface ${temp.2})
+
+Communication4 : $(split temp ${system.Sentence} $(chr 1) ; set param1 ${temp.1})${CallGetWords}$(set param2 ${answer} ; set maxwords 0 ; set talking "*" ; foreach param1 ${CommSender} ${CommunicationA}${CommunicationB})
+
+CommunicationA : $(split temp ${param1} "," ; set temp1 0 ; set flagloop 0 ; set flagwords 0)
+
+CommunicationB : $(until ${flagloop} ${CommunicationC} ; if $([ ${flagwords} -gt ${maxwords} ]) $(set talking $(entry "temp."${temp.size}) ; set maxwords ${flagwords}) )
+
+CommunicationC : $(inc temp1 ; if $([ ${temp.size} -eq ${temp1} ]) $(set flagloop 1) $(if $(expr find ${param2} $(entry "temp."${temp1})) $(inc flagwords) $(set flagloop 1 ; set flagwords 0) ))
+
+Communication5 : $(if $(expr $([ ${system.Age} -gt ${Comm.Limit} ]) | $(expr index ${talking} "*")) $(set system.communicate "stop") $(set system.communicate ${system.Sender}))
+
+Communication6 : $(if ${maxwords} $(eval ${talking}) $(eval "$(eval ${"${CommSender}".Unknown})"))
+
+#==============================================================================
+
+
+#コミュニケーション・呼びかけ==================================================
+
+Select.Comm : \0\c${CallModeSet}$(if ${system.OtherGhost} $(set system.communicate ${system.OtherGhost} ; set param1 ${system.OtherGhost})${CallGetWords}$(if $(entry ${temp}"Comm."${answer}".Call") $(entry ${temp}"Comm."${answer}".Call") $(entry ${temp}"Comm.Etc.Call")) $(set system.communicate "stop" ; entry ${temp}"Comm.NoExist.Call"))
+
+#==============================================================================
+
+
+#コミュニケーション・トークを使った呼びかけ====================================
+
+sentenceC : $(if $([ $(rand 5) -eq 0 ]) $(set system.communicate ${system.OtherGhost})  $(set system.communicate "stop") ; expr $(entry ${FlagMode}".sentence") | ${sentence}")
+
+CallModeSet : $(if ${FlagMode} $(set temp ${FlagMode}".") $(clear temp))
+
+#==============================================================================
+
+
+#ゴースト情報通知==============================================================
+
+system.OnNotifyOther : $(set ${FlagOtherGhost} "1" ; if ${system.OtherGhostEx} ${CallGetFace} $(clear OtherGhost))
+
+CallGetFace : $(split temp ${system.OtherGhostEx} $(chr 1) ; set OtherGhost ${temp.1} ; set Sakura.Surface ${temp.2} ; set Kero.Surface ${temp.3})
+
+#==============================================================================
