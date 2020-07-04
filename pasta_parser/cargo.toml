@@ -9,9 +9,11 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-log = "0.4.2"
-pest = { git = "https://github.com/pest-parser/pest", branch = "master" }
-pest_derive = { git = "https://github.com/pest-parser/pest", branch = "master" }
+log = "0.4.*"
+pest = "2.1.*"
+pest_derive = "2.1.*"
 
 [dev-dependencies]
-env_logger = "0.5"
+env_logger = "0.7.*"
+
+

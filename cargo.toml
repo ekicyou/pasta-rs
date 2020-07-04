@@ -1,0 +1,8 @@
+[workspace]
+license = "MIT"
+members = [
+    "pasta_parser",
+]
+
+[replace]
+# "winapi:0.3" =  {version = "0.3", features = ["winerror", "d3d11", "dcomp"]}
