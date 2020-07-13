@@ -1,4 +1,19 @@
-field = { (ASCII_DIGIT | "." | "-")+ }
+// token
 
+id      = @{ XID_START ~ XID_CONTINUE* }
 
-AT = @{ "＠" | "@" }
+spaces  = @{ SP+ }
+
+// MARK, CHAR
+
+SP      = @{ SPACE_SEPARATOR | TAB }
+TAB     = @{ "\t" }
+
+AT      = @{ "＠" | "@" }
+DOT     = @{ "・" | "･" }
+COLON   = @{ "：" | ":" }
+CONMA   = @{ "、" |"，" |  "," }
+SHARP   = @{ "＃" | "#"| "♯" }
+EOL     = @{ "\r\n" | "\n" | "\r" }
+
+// EOF
