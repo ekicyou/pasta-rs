@@ -23,4 +23,12 @@ fn char_test1() {
         let m = parse(Rule::id, "あいでー５@").unwrap().next().unwrap();
         assert_eq!("あいでー５", m.as_str());
     }
+    {
+        let m = parse(Rule::esc2, "#").unwrap().next().unwrap();
+        assert_eq!("#", m.as_str());
+    }
+    {
+        let m = parse(Rule::esc_char, "＠＠").unwrap().next().unwrap();
+        assert_eq!("＠＠", m.as_str());
+    }
 }
