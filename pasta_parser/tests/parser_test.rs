@@ -3,12 +3,8 @@ use pasta_parser::{parse, Rule};
 #[test]
 fn char_test1() {
     {
-        let m = parse(Rule::AT, "@").unwrap();
-        println!("{:?}", m);
-    }
-    {
-        let m = parse(Rule::AT, "＠").unwrap();
-        println!("{:?}", m);
+        parse(Rule::AT, "@").unwrap();
+        parse(Rule::AT, "＠").unwrap();
     }
     {
         let m = parse(Rule::id, "id1@").unwrap().next().unwrap();
