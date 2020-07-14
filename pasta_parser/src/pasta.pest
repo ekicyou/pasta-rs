@@ -5,15 +5,16 @@
 //      「＠」の直後の文字が空白以外、かつキーワード文字以外であるとき、
 //      その文字を文字としてそのまま扱う。
 //  例）＠＠　→「＠」
-esc_char    = @{ esc1 ~ esc2 }
+esc_char    = ${ esc1 ~ esc2 }
 esc1        = _{ AT }
 esc2        = @{ !( XID_CONTINUE | SP | EOL ) ~ ANY }
 
 
 // ２．コメント、空行、文書コメント
 // 2-1  「＃」文字から行末までをコメントとする。
-
-
+comment         = @{ comment_mark ~ comment_str ~ EOL }
+comment_mark    = _{ SHARP }
+comment_str     = @{ ( !EOL ~ ANY )* }
 
 // token
 
@@ -23,14 +24,14 @@ spaces  = @{ SP+ }
 
 // MARK, CHAR
 
-SP      = @{ SPACE_SEPARATOR | TAB }
-TAB     = @{ "\t" }
+SP      = _{ SPACE_SEPARATOR | TAB }
+TAB     = _{ "\t" }
 
-AT      = @{ "＠" | "@" }
-DOT     = @{ "・" | "･" }
-COLON   = @{ "：" | ":" }
-CONMA   = @{ "、" |"，" |  "," }
-SHARP   = @{ "＃" | "#"| "♯" }
-EOL     = @{ "\r\n" | "\n" | "\r" }
+AT      = _{ "＠" | "@" }
+DOT     = _{ "・" | "･" }
+COLON   = _{ "：" | ":" }
+CONMA   = _{ "、" |"，" |  "," }
+SHARP   = _{ "＃" | "#"| "♯" }
+EOL     = _{ "\r\n" | "\n" | "\r" | EOI }
 
 // EOF
