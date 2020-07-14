@@ -35,9 +35,21 @@ fn char_test1() {
 }
 
 #[test]
-fn char_test2() {
+fn comment_test() {
     {
         let m = parse(Rule::comment, "#123").unwrap().next().unwrap();
         assert_eq!("#123", m.as_str());
+    }
+    {
+        let m = parse(Rule::spaces_line, "#123").unwrap().next().unwrap();
+        assert_eq!("#123", m.as_str());
+    }
+    {
+        let m = parse(Rule::spaces_line, "   #123").unwrap().next().unwrap();
+        assert_eq!("   #123", m.as_str());
+    }
+    {
+        let m = parse(Rule::spaces_line, "   ").unwrap().next().unwrap();
+        assert_eq!("   ", m.as_str());
     }
 }
