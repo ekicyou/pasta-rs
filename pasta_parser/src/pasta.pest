@@ -12,13 +12,29 @@ esc2        = @{ !( XID_CONTINUE | SP | EOL ) ~ ANY }
 
 // ２．コメント、空行、文書コメント
 // 2-1  「＃」文字から行末までをコメントとする。
-comment         = ${ comment_mark ~ comment_str }
+comment         = ${ SP* ~ comment_mark ~ comment_str }
 comment_mark    = _{ SHARP }
 comment_str     = @{ ( !EOL ~ ANY )* }
 
-// 2-2  空白のみで構成される行を空行とする。
+// 2-2  残りが空白のみで構成される行を空行とする。
 spaces_line     = @{ SP* ~ comment? ~ EOL }
 
+// 2-3  最初の柱行までは文頭コメントとして無視する。
+doc_comment         = @{ doc_comment_line* }
+doc_comment_line    = @{ !hasira_mark ~ ( !EOL ~ ANY )* ~ EOL } 
+
+// ３．柱（セクション）
+// 3.1  「・」で始まる行を柱（セクション開始）とする。
+
+hasira_mark = _{ DOT }
+
+// 3.2 柱はマーク・タイトル・属性の列挙で構成される。
+hasira      = @{ hasira_mark ~ title? ~ attrs? ~ spaces_line }
+title       = @{ id }
+attrs       = @{ attr1 ~ attr2* }
+attr1       = @{ SP* ~ COLON ~ attr }
+attr2       = @{ SP* ~ COLON ~ attr }
+attr        = @{ SP* ~ id }
 
 // token
 

@@ -52,4 +52,8 @@ fn comment_test() {
         let m = parse(Rule::spaces_line, "   ").unwrap().next().unwrap();
         assert_eq!("   ", m.as_str());
     }
+    {
+        let m = parse(Rule::doc_comment, "123\nABC\n・柱").unwrap().next().unwrap();
+        assert_eq!("123\nABC\n", m.as_str());
+    }
 }
