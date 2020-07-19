@@ -23,7 +23,7 @@ spaces_line     = @{ SP* ~ comment? ~ EOL }
 doc_comment         = @{ doc_comment_line* }
 doc_comment_line    = @{ !hasira_mark ~ ( !EOL ~ ANY )* ~ EOL } 
 
-// ３．柱（セクション）
+// ３．柱行（セクション）
 // 3.1  「・」で始まる行を柱（セクション開始）とする。
 
 hasira_mark = _{ DOT }
@@ -35,6 +35,16 @@ attrs       = @{ attr1 ~ attr2* }
 attr1       = @{ SP* ~ COLON ~ attr }
 attr2       = @{ SP* ~ COLON ~ attr }
 attr        = @{ SP* ~ id }
+
+// ４． ト書き行（属性）
+
+
+// ５． 人物指定行
+
+// ６． セリフ行
+
+
+
 
 // token
 
