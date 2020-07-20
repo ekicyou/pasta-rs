@@ -42,7 +42,7 @@ line = @{ ( hasira ) ~ eol_check }
 /// 柱行は空白またはEOLで始まってはならない。
 
 hasira_mark     = _{ DOT }
-hasira_start    = _{ !( SP | EOL ) ~ hasira_mark* }
+hasira_start    = _{ !( SP | EOL | comment_mark ) ~ hasira_mark* }
 
 /// ### 3.2
 /// 柱はマーク・タイトル・属性の列挙で構成される。
