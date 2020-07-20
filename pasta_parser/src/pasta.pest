@@ -1,67 +1,102 @@
-// パスタスクリプト　字句構造
-
-// １．エスケープ文字
-// 1-1  「＠」を識別文字として使える文脈で、
-//      「＠」の直後の文字が空白以外、かつキーワード文字以外であるとき、
-//      その文字を文字としてそのまま扱う。
-//  例）＠＠　→「＠」
+/// # パスタスクリプト　字句構造
+///
+/// ## 1 エスケープ文字
+/// ### 1-1 「＠」を識別文字として使える文脈で、
+/// 「＠」の直後の文字が空白以外、かつキーワード文字以外であるとき、
+/// その文字を文字としてそのまま扱う。
+/// > 例）＠＠　→「＠」
 esc_char    = ${ esc1 ~ esc2 }
 esc1        = _{ AT }
 esc2        = @{ !( XID_CONTINUE | SP | EOL ) ~ ANY }
 
 
-// ２．コメント、空行、文書コメント
-// 2-1  「＃」文字から行末までをコメントとする。
-comment         = ${ SP* ~ comment_mark ~ comment_str }
-comment_mark    = _{ SHARP }
-comment_str     = @{ ( !EOL ~ ANY )* }
+/// ## 2 行の定義とコメント、空行、文書コメント
+/// ### 2-1 「＃」文字から行末までをコメントとする。
+comment         = ${ comment_mark ~ comment_str }
+comment_mark    = _{ SHARP ~ skip_sp }
+comment_str     = @{ skip_eol }
 
-// 2-2  残りが空白のみで構成される行を空行とする。
-spaces_line     = @{ SP* ~ comment? ~ EOL }
+/// ### 2-2 残りが空白のみで構成される行を空行とする。
+spaces_line     = @{ skip_sp ~ comment? ~ EOL }
 
-// 2-3  最初の柱行までは文頭コメントとして無視する。
+/// ### 2-3 最初の柱行までは文頭コメントとして無視する。
 doc_comment         = @{ doc_comment_line* }
-doc_comment_line    = @{ !hasira_mark ~ ( !EOL ~ ANY )* ~ EOL } 
+doc_comment_line    = @{ !hasira_mark ~ skip_line } 
 
-// ３．柱行（セクション）
-// 3.1  「・」で始まる行を柱（セクション開始）とする。
+/// ### 2.4 識別エラーの判定
+/// 行末は、コメント・識別エラーのいずれかで始まり、
+/// EOLで終わる。
+eol_check   = @{ skip_sp ~ ( comment | error ) ~ EOL }
+error       = @{ error_token ~ skip_eol }
+error_token = @{ NOT_EOL }
 
-hasira_mark = _{ DOT }
-
-// 3.2 柱はマーク・タイトル・属性の列挙で構成される。
-hasira      = @{ hasira_mark ~ title? ~ attrs? ~ spaces_line }
-title       = @{ id }
-attrs       = @{ attr1 ~ attr2* }
-attr1       = @{ SP* ~ COLON ~ attr }
-attr2       = @{ SP* ~ COLON ~ attr }
-attr        = @{ SP* ~ id }
-
-// ４． ト書き行（属性）
+/// ### 2.5 行定義
+/// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
+/// 未識別文字列について行末まで確認する。
+line = @{ ( hasira ) ~ eol_check }
 
 
-// ５． 人物指定行
+/// ## 3 [柱/アクター]行（セクション）
+/// ### 3.1
+/// ０以上の「・」に続けて有効な文字列で始まる柱行（セクション開始）とする。
+/// 柱行は空白またはEOLで始まってはならない。
 
-// ６． セリフ行
+hasira_mark     = _{ DOT }
+hasira_start    = _{ !( SP | EOL ) ~ hasira_mark* }
+
+/// ### 3.2
+/// 柱はマーク・タイトル・属性の列挙で構成される。
+hasira      = @{ hasira_start ~ title? ~ attrs? }
+title       = @{ (!end_title ~ ANY)+ }
+end_title   = _{ (COLON | SP | comment_mark) ~ skip_sp }
+attrs       = @{ end_title ~ attr* }
+attr        = @{ ( action | require | either | forget | memory ) ~ skip_sp }
+action      = @{ AT     ~ expr }    /// ＠アクション
+require     = @{ EXC    ~ expr }    /// ！すべてに一致
+either      = @{ QUE    ~ expr }    /// ？いずれかに一致
+forget      = @{ MINUS  ~ expr }    /// ー忘れる
+memory      = @{ PLUS   ~ expr }    /// ＋覚える
+expr        = @{ id }
+
+
+// ## 4 ト書き行（属性）
+
+
+// ## 5 アクター行
+
+
+// ## 6 セリフ行
 
 
 
 
 // token
 
-id      = @{ XID_START ~ XID_CONTINUE* }
+id          = @{ XID_START ~ XID_CONTINUE* }
 
-spaces  = @{ SP+ }
+spaces      = @{ SP+ }
+skip_sp     = _{ SP* }
+skip_eol    = _{ NOT_EOL* }
+skip_line   = _{ skip_eol ~ EOL }
 
 // MARK, CHAR
 
 SP      = _{ SPACE_SEPARATOR | TAB }
 TAB     = _{ "\t" }
-
-AT      = _{ "＠" | "@" }
 DOT     = _{ "・" | "･" }
+AT      = _{ "＠" | "@" }
+EXC     = _{"！" | "!" }
+
+QUE     = _{ "？" | "?" }
+PLUS    = _{ "＋" | "+" }
+MINUS   = _{ "－" | "-" }
+
 COLON   = _{ "：" | ":" }
-CONMA   = _{ "、" |"，" |  "," }
-SHARP   = _{ "＃" | "#"| "♯" }
+CONMA   = _{ "、" |"，" |"､" |"," }
+SHARP   = _{ "＃" | "♯" | "#" }
+
 EOL     = _{ "\r\n" | "\n" | "\r" | EOI }
+NOT_EOL = _{ !EOL ~ ANY }
 
 // EOF
+
