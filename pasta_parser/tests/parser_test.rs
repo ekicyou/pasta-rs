@@ -53,7 +53,29 @@ fn comment_test() {
         assert_eq!("   ", m.as_str());
     }
     {
-        let m = parse(Rule::doc_comment, "123\nABC\n・柱").unwrap().next().unwrap();
+        let m = parse(Rule::doc_comment, "123\nABC\n・柱")
+            .unwrap()
+            .nth(0)
+            .unwrap();
         assert_eq!("123\nABC\n", m.as_str());
+    }
+}
+
+#[test]
+fn parse11() {
+    {
+        let m = parse(Rule::esc1, "@").unwrap();
+        assert_eq!("", m.as_str());
+    }
+    {
+        let m = parse(Rule::esc2, "@").unwrap();
+        assert_eq!("@", m.as_str());
+    }
+    {
+        let m = parse(Rule::esc_char, "@#").unwrap();
+        println!("{:?}", m);
+        let m = m.flatten().nth(1).unwrap();
+        println!("{:?}", m);
+        assert_eq!("#", m.as_str());
     }
 }

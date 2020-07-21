@@ -2,12 +2,12 @@
 ///
 /// ## 1 エスケープ文字
 /// ### 1-1 「＠」を識別文字として使える文脈で、
-/// 「＠」の直後の文字が空白以外、かつキーワード文字以外であるとき、
+/// 「＠」の直後の文字が「＠、＃」の場合、
 /// その文字を文字としてそのまま扱う。
 /// > 例）＠＠　→「＠」
-esc_char    = ${ esc1 ~ esc2 }
+esc_char    =  { esc1 ~ esc2 }
 esc1        = _{ AT }
-esc2        = @{ !( XID_CONTINUE | SP | EOL ) ~ ANY }
+esc2        = @{ AT | SHARP }
 
 
 /// ## 2 行の定義とコメント、空行、文書コメント
@@ -67,10 +67,9 @@ t_attr      = @{ ( action ) ~ skip_sp }
 /// １つ以上の列挙で構成される。
 /// ### 5.2
 /// 「＠」「＃」を使いたい場合は、それぞれ「＠＠」「＠＃」を使う。
-serif       = @{ (s_normal | s_escape )+ }
+serif       =  { (s_normal | s_escape )+ }
 s_normal    = @{ !( AT | SHARP | EOL ) ~ ANY }
-s_escape    = ${ AT ~ s_esc_char }
-s_esc_char  = @{ ( AT | SHARP ) } 
+s_escape    =  { esc_char }
 
 
 /// ## 6 属性
