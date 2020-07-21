@@ -1,34 +1,38 @@
-use pasta_parser::{parse, Rule};
+use pasta_parser::{parse, parse_nth, Rule};
+use pest::iterators::{Pair, Pairs};
+
+fn p(rule: Rule, input: &str) -> Pairs<Rule> {
+    parse(rule, input).unwrap()
+}
+fn n(rule: Rule, n: usize, input: &str) -> Pair<Rule> {
+    parse_nth(rule, n, input).unwrap()
+}
 
 #[test]
 fn char_test1() {
     {
-        parse(Rule::AT, "@").unwrap();
-        parse(Rule::AT, "＠").unwrap();
+        p(Rule::AT, "@");
+        p(Rule::AT, "＠");
     }
     {
-        let m = parse(Rule::id, "id1@").unwrap().next().unwrap();
+        let m = n(Rule::id, 0, "id1@");
         assert_eq!("id1", m.as_str());
     }
     {
-        let m = parse(Rule::id, "id_2@").unwrap().next().unwrap();
+        let m = n(Rule::id, 0, "id_2@");
         assert_eq!("id_2", m.as_str());
     }
     {
-        let m = parse(Rule::id, "あいでー５@").unwrap().next().unwrap();
+        let m = n(Rule::id, 0, "あいでー５@");
         assert_eq!("あいでー５", m.as_str());
     }
     {
-        let m = parse(Rule::esc2, "#").unwrap().next().unwrap();
+        let m = n(Rule::esc2, 0, "#");
         assert_eq!("#", m.as_str());
     }
     {
         // esc_char の対象文字取得
-        let m = parse(Rule::esc_char, "＠＠")
-            .unwrap()
-            .flatten()
-            .nth(1)
-            .unwrap();
+        let m = n(Rule::esc_char, 1, "＠＠");
         println!("{:?}", m);
         assert_eq!("＠", m.as_str());
     }
@@ -37,26 +41,23 @@ fn char_test1() {
 #[test]
 fn comment_test() {
     {
-        let m = parse(Rule::comment, "#123").unwrap().next().unwrap();
+        let m = n(Rule::comment, 0, "#123");
         assert_eq!("#123", m.as_str());
     }
     {
-        let m = parse(Rule::spaces_line, "#123").unwrap().next().unwrap();
+        let m = n(Rule::spaces_line, 0, "#123");
         assert_eq!("#123", m.as_str());
     }
     {
-        let m = parse(Rule::spaces_line, "   #123").unwrap().next().unwrap();
+        let m = n(Rule::spaces_line, 0, "   #123");
         assert_eq!("   #123", m.as_str());
     }
     {
-        let m = parse(Rule::spaces_line, "   ").unwrap().next().unwrap();
+        let m = n(Rule::spaces_line, 0, "   ");
         assert_eq!("   ", m.as_str());
     }
     {
-        let m = parse(Rule::doc_comment, "123\nABC\n・柱")
-            .unwrap()
-            .nth(0)
-            .unwrap();
+        let m = n(Rule::doc_comment, 0, "123\nABC\n・柱");
         assert_eq!("123\nABC\n", m.as_str());
     }
 }
@@ -64,11 +65,11 @@ fn comment_test() {
 #[test]
 fn parse11() {
     {
-        let m = parse(Rule::esc1, "@").unwrap();
+        let m = p(Rule::esc1, "@");
         assert_eq!("", m.as_str());
     }
     {
-        let m = parse(Rule::esc2, "@").unwrap();
+        let m = p(Rule::esc2, "@");
         assert_eq!("@", m.as_str());
     }
     {
