@@ -46,11 +46,11 @@ hasira_start    = _{ !( SP | EOL | comment_mark ) ~ hasira_mark* }
 
 /// ### 3.2
 /// 柱はマーク・タイトル・属性の列挙で構成される。
-hasira      = @{ hasira_start ~ title? ~ attrs? }
-title       = @{ (!end_title ~ ANY)+ }
+hasira      = @{ hasira_start ~ h_title? ~ h_attrs? }
+h_title     = @{ (!end_title ~ ANY)+ }
 end_title   = _{ (COLON | SP | comment_mark) ~ skip_sp }
-attrs       = @{ end_title ~ attr* }
-attr        = @{ ( action | require | either | forget | memory ) ~ skip_sp }
+h_attrs     = @{ end_title ~ h_attr* }
+h_attr      = @{ ( action | require | either | forget | memory ) ~ skip_sp }
 action      = @{ AT     ~ expr }    /// ＠アクション
 require     = @{ EXC    ~ expr }    /// ！すべてに一致
 either      = @{ QUE    ~ expr }    /// ？いずれかに一致
@@ -59,15 +59,24 @@ memory      = @{ PLUS   ~ expr }    /// ＋覚える
 expr        = @{ id }
 
 
-// ## 4 ト書き行（属性）
+// ## 4 [ト書き/セリフ]行
+/// ### 4.1
+/// ト書き/セリフ行はスペースで始まり、有効要素が１つ以上並ぶ。
+togaki      = @{t_start ~ t_item+ }
+t_start     = _{ spaces }
+t_item      = @{ serif | t_attr }
+t_attr      = @{ ( action ) ~ skip_sp }
 
-
-// ## 5 アクター行
-
-
-// ## 6 セリフ行
-
-
+// ## 5 セリフ
+/// ### 5.1
+/// セリフはコメント・アクション・EOLと認識されないすべての文字の
+/// １つ以上の列挙で構成される。
+/// ### 5.2
+/// 「＠」「＃」を使いたい場合は、それぞれ「＠＠」「＠＃」を使う。
+serif       = @{ (s_normal | s_escape )+ }
+s_normal    = @{ !( AT | SHARP | EOL ) ~ ANY }
+s_escape    = ${ AT ~ s_esc_char }
+s_esc_char  = @{ ( AT | SHARP ) } 
 
 
 // token
