@@ -50,13 +50,7 @@ hasira      = @{ hasira_start ~ h_title? ~ h_attrs? }
 h_title     = @{ (!end_title ~ ANY)+ }
 end_title   = _{ (COLON | SP | comment_mark) ~ skip_sp }
 h_attrs     = @{ end_title ~ h_attr* }
-h_attr      = @{ ( action | require | either | forget | memory ) ~ skip_sp }
-action      = @{ AT     ~ expr }    /// ＠アクション
-require     = @{ EXC    ~ expr }    /// ！すべてに一致
-either      = @{ QUE    ~ expr }    /// ？いずれかに一致
-forget      = @{ MINUS  ~ expr }    /// ー忘れる
-memory      = @{ PLUS   ~ expr }    /// ＋覚える
-expr        = @{ id }
+h_attr      = @{ ( require | either | forget | memory | action ) ~ skip_sp }
 
 
 // ## 4 [ト書き/セリフ]行
@@ -77,6 +71,18 @@ serif       = @{ (s_normal | s_escape )+ }
 s_normal    = @{ !( AT | SHARP | EOL ) ~ ANY }
 s_escape    = ${ AT ~ s_esc_char }
 s_esc_char  = @{ ( AT | SHARP ) } 
+
+
+/// ## 6 属性
+/// ### 6.1
+/// 属性式
+action      = @{ AT     ~ expr }    /// ＠アクション
+require     = @{ EXC    ~ expr }    /// ！すべてに一致
+either      = @{ QUE    ~ expr }    /// ？いずれかに一致
+forget      = @{ MINUS  ~ expr }    /// ー忘れる
+memory      = @{ PLUS   ~ expr }    /// ＋覚える
+expr        = @{ id }
+
 
 
 // token
