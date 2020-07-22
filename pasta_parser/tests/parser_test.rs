@@ -256,3 +256,32 @@ fn parse52() {
         assert!(f.next().is_none());
     }
 }
+
+fn match_chars(rule: Rule) -> String {
+    let mut buf = String::new();
+    let mut s = String::with_capacity(6);
+    for c in '\u{0000}'..'\u{ffff}' {
+        s.clear();
+        s.push(c);
+        match r(rule, &s) {
+            Ok(_) => buf.push(c),
+            _ => {}
+        }
+    }
+    buf
+}
+
+//#[test]
+fn print_matchs() {
+    fn print(rule: Rule) {
+        println!("{:?}: {}", rule, match_chars(rule));
+    }
+
+    print(Rule::Pc);
+    print(Rule::Pd);
+    print(Rule::Ps);
+    print(Rule::Pe);
+    print(Rule::Pi);
+    print(Rule::Pf);
+    print(Rule::Po);
+}
