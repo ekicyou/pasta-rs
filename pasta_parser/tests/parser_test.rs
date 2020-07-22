@@ -1,6 +1,10 @@
 use pasta_parser::{parse, parse_nth, Rule};
+use pest::error::Error;
 use pest::iterators::{Pair, Pairs};
 
+fn r(rule: Rule, input: &str) -> Result<Pairs<Rule>, Error<Rule>> {
+    parse(rule, input)
+}
 fn p(rule: Rule, input: &str) -> Pairs<Rule> {
     parse(rule, input).unwrap()
 }
@@ -111,9 +115,11 @@ fn parse23() {
 #[test]
 fn parse24() {
     {
-        let mut f = p(Rule::eol_check, "  #comment").flatten();
+        let m = p(Rule::eol_check, "  #comment\r\n");
+        println!("{}", m);
+        let mut f = m.flatten();
         let m = f.next().unwrap();
-        assert_eq!("  #comment", m.as_str());
+        assert_eq!("  #comment\r\n", m.as_str());
         let m = f.next().unwrap();
         assert_eq!("#comment", m.as_str());
         let m = f.next().unwrap();
@@ -121,9 +127,11 @@ fn parse24() {
         assert!(f.next().is_none());
     }
     {
-        let mut f = p(Rule::eol_check, "  エラー").flatten();
+        let m = p(Rule::eol_check, "  エラー\r\n");
+        println!("{}", m);
+        let mut f = m.flatten();
         let m = f.next().unwrap();
-        assert_eq!("  エラー", m.as_str());
+        assert_eq!("  エラー\r\n", m.as_str());
         let m = f.next().unwrap();
         assert_eq!("エラー", m.as_str());
         let m = f.next().unwrap();
@@ -177,5 +185,55 @@ fn parse32() {
         f.next();
         let m = f.next().unwrap();
         assert_eq!(Rule::memory, m.as_rule())
+    }
+}
+
+#[test]
+fn parse41() {
+    {
+        let mut f = p(Rule::hasira_start, "・・・セクション").flatten();
+        let m = f.next().unwrap();
+        assert_eq!("・・・", m.as_str());
+        assert!(f.next().is_none());
+    }
+    {
+        let mut f = p(Rule::hasira_start, "アクター").flatten();
+        let m = f.next().unwrap();
+        assert_eq!("", m.as_str());
+        assert!(f.next().is_none());
+    }
+    {
+        assert!(r(Rule::hasira_start, "　エラー").is_err());
+    }
+}
+
+#[test]
+fn parse42() {
+    {
+        let mut f = p(Rule::h_title, "柱のタイトルなの　ね").flatten();
+        let m = f.next().unwrap();
+        assert_eq!("柱のタイトルなの", m.as_str());
+        assert!(f.next().is_none());
+    }
+    {
+        let m = p(Rule::hasira, "・タイトル：！属性１？属性２　＃コメント1");
+        println!("{}", m);
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::hasira, m.as_rule());
+        let mut f = m.into_inner();
+        let m = f.next().unwrap();
+        assert_eq!(Rule::hasira_start, m.as_rule());
+        assert_eq!("・", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!(Rule::h_title, m.as_rule());
+        assert_eq!("タイトル", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!(Rule::h_attr, m.as_rule());
+        assert_eq!("！属性１", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!(Rule::h_attr, m.as_rule());
+        assert_eq!("？属性２　", m.as_str());
+        assert!(f.next().is_none());
     }
 }
