@@ -237,3 +237,22 @@ fn parse42() {
         assert!(f.next().is_none());
     }
 }
+#[test]
+fn parse52() {
+    {
+        let m = p(Rule::serif, "セリフっぽいのです。＠＠エスケープ大丈夫？");
+        println!("{}", m);
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::serif, m.as_rule());
+        let mut f = m.into_inner();
+        //
+        let m = f.next().unwrap();
+        assert_eq!("セリフっぽいのです。", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("＠＠", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("エスケープ大丈夫？", m.as_str());
+        assert!(f.next().is_none());
+    }
+}

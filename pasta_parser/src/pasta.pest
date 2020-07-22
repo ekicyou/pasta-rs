@@ -72,9 +72,8 @@ h_attr      =  { ( require | either | forget | memory | action ) ~ skip_sp }
 
 /// ### 5.2
 /// 「＠」「＃」を使いたい場合は、それぞれ「＠＠」「＠＃」を使う。
-serif       =  { (s_normal | s_escape )+ }
-s_normal    = @{ !( AT | SHARP | EOL ) ~ ANY }
-s_escape    =  { esc_char }
+serif       =  { (s_normal | esc_char )+ }
+s_normal    = @{ ( !( AT | SHARP | EOL ) ~ ANY )+ }
 
 /// ### 5.3
 /// ト書き/セリフ行はスペースで始まり、１つ以上のセリフまたは属性を列挙する。。
@@ -118,6 +117,16 @@ SHARP   = _{ "＃" | "♯" | "#" }
 
 EOL     = _{ "\r\n" | "\n" | "\r" | EOI }
 NOT_EOL = _{ !EOL ~ ANY }
+
+//行頭禁則
+//、。，．・？！゛゜ヽヾゝゞ々ー）］｝」』!),.:;?]}｡｣､･ｰﾞﾟ
+
+//行末禁則
+//（［｛「『([{｢
+
+//ぶら下げ
+//、。，．,.
+
 
 // EOF
 
