@@ -12,39 +12,58 @@ esc2        = @{ AT | SHARP }
 
 /// ## 2 行の定義とコメント、空行、文書コメント
 /// ### 2-1 「＃」文字から行末までをコメントとする。
-comment         = ${ comment_mark ~ comment_str }
+comment         =  { comment_mark ~ comment_str }
 comment_mark    = _{ SHARP ~ skip_sp }
 comment_str     = @{ skip_eol }
 
 /// ### 2-2 残りが空白のみで構成される行を空行とする。
-spaces_line     = @{ skip_sp ~ comment? ~ EOL }
+spaces_line     =  { skip_sp ~ comment? ~ EOL }
 
 /// ### 2-3 最初の柱行までは文頭コメントとして無視する。
-doc_comment         = @{ doc_comment_line* }
+doc_comment         =  { doc_comment_line* }
 doc_comment_line    = @{ !hasira_mark ~ skip_line } 
 
 /// ### 2.4 識別エラーの判定
 /// 行末は、コメント・識別エラーのいずれかで始まり、
 /// EOLで終わる。
-eol_check   = @{ skip_sp ~ ( comment | error ) ~ EOL }
-error       = @{ error_token ~ skip_eol }
-error_token = @{ NOT_EOL }
+eol_check       =  { skip_sp ~ ( comment | error ) ~ EOL }
+error           =  { error_token ~ error_remain }
+error_token     = @{ NOT_EOL }
+error_remain    = @{ skip_eol }
 
-/// ### 2.5 行定義
+
+/// ## 3 属性
+/// ### 3.1
+/// 属性式は現在１キーワードで構成する。終端空白を消費してスキップする。
+/// 将来拡張にて式・関数をサポート予定。
+expr            =  { expr_keyword ~ skip_sp }
+expr_keyword    = @{ id }
+
+/// ### 3.2
+/// 属性種別は以下の5種類
+action      =  { AT     ~ expr }    /// ＠アクション
+require     =  { EXC    ~ expr }    /// ！すべてに一致
+either      =  { QUE    ~ expr }    /// ？いずれかに一致
+forget      =  { MINUS  ~ expr }    /// ー忘れる
+memory      =  { PLUS   ~ expr }    /// ＋覚える
+all_attr    =  {( action | require | either | forget | memory ) ~ skip_sp }
+
+/// ## 4 行
+/// ### 4.1 行定義
 /// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
 /// 未識別文字列について行末まで確認する。
-line = @{ ( hasira ) ~ eol_check }
+line = @{ ( togaki | hasira ) ~ eol_check }
 
 
-/// ## 3 [柱/アクター]行（セクション）
-/// ### 3.1
+/// ## 5 [柱/アクター]行（セクション）
+/// ### 5.1
 /// ０以上の「・」に続けて有効な文字列で始まる柱行（セクション開始）とする。
 /// 柱行は空白またはEOLで始まってはならない。
 
 hasira_mark     = _{ DOT }
 hasira_start    = _{ !( SP | EOL | comment_mark ) ~ hasira_mark* }
 
-/// ### 3.2
+/// ### 5.2
 /// 柱はマーク・タイトル・属性の列挙で構成される。
 hasira      = @{ hasira_start ~ h_title? ~ h_attrs? }
 h_title     = @{ (!end_title ~ ANY)+ }
@@ -53,34 +72,23 @@ h_attrs     = @{ end_title ~ h_attr* }
 h_attr      = @{ ( require | either | forget | memory | action ) ~ skip_sp }
 
 
-// ## 4 [ト書き/セリフ]行
-/// ### 4.1
+// ## 6 [ト書き/セリフ]行
+/// ### 6.1
 /// ト書き/セリフ行はスペースで始まり、有効要素が１つ以上並ぶ。
-togaki      = @{t_start ~ t_item+ }
+togaki      =  { t_start ~ t_item+ }
 t_start     = _{ spaces }
-t_item      = @{ serif | t_attr }
-t_attr      = @{ ( action ) ~ skip_sp }
+t_item      =  { serif | t_attr }
+t_attr      =  { ( action ) ~ skip_sp }
 
-// ## 5 セリフ
-/// ### 5.1
+/// ### 6.2
 /// セリフはコメント・アクション・EOLと認識されないすべての文字の
 /// １つ以上の列挙で構成される。
-/// ### 5.2
+
+/// ### 6.3
 /// 「＠」「＃」を使いたい場合は、それぞれ「＠＠」「＠＃」を使う。
 serif       =  { (s_normal | s_escape )+ }
 s_normal    = @{ !( AT | SHARP | EOL ) ~ ANY }
 s_escape    =  { esc_char }
-
-
-/// ## 6 属性
-/// ### 6.1
-/// 属性式
-action      = @{ AT     ~ expr }    /// ＠アクション
-require     = @{ EXC    ~ expr }    /// ！すべてに一致
-either      = @{ QUE    ~ expr }    /// ？いずれかに一致
-forget      = @{ MINUS  ~ expr }    /// ー忘れる
-memory      = @{ PLUS   ~ expr }    /// ＋覚える
-expr        = @{ id }
 
 
 

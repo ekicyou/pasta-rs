@@ -80,3 +80,102 @@ fn parse11() {
         assert_eq!("#", m.as_str());
     }
 }
+
+#[test]
+fn parse21() {
+    {
+        let m = p(Rule::comment, "# 123");
+        assert_eq!("# 123", m.as_str());
+        let mut f = m.flatten();
+        let m = f.nth(1).unwrap();
+        assert_eq!("123", m.as_str());
+    }
+}
+
+#[test]
+fn parse22() {
+    {
+        let m = p(Rule::spaces_line, "  # 12345\r\n123");
+        assert_eq!("  # 12345\r\n", m.as_str());
+    }
+}
+
+#[test]
+fn parse23() {
+    {
+        let m = p(Rule::doc_comment, "12\r\n34\r\n・柱");
+        assert_eq!("12\r\n34\r\n", m.as_str());
+    }
+}
+
+#[test]
+fn parse24() {
+    {
+        let mut f = p(Rule::eol_check, "  #comment").flatten();
+        let m = f.next().unwrap();
+        assert_eq!("  #comment", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("#comment", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("comment", m.as_str());
+        assert!(f.next().is_none());
+    }
+    {
+        let mut f = p(Rule::eol_check, "  エラー").flatten();
+        let m = f.next().unwrap();
+        assert_eq!("  エラー", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("エラー", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("エ", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("ラー", m.as_str());
+        assert!(f.next().is_none());
+    }
+}
+
+#[test]
+fn parse31() {
+    {
+        let mut f = p(Rule::expr, "keyword   keyword").flatten();
+        let m = f.next().unwrap();
+        assert_eq!("keyword   ", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("keyword", m.as_str());
+        assert!(f.next().is_none());
+    }
+}
+
+#[test]
+fn parse32() {
+    {
+        let mut f = p(Rule::all_attr, "@keyword").flatten();
+        f.next();
+        let m = f.next().unwrap();
+        assert_eq!(Rule::action, m.as_rule())
+    }
+    {
+        let mut f = p(Rule::all_attr, "!keyword").flatten();
+        f.next();
+        let m = f.next().unwrap();
+        assert_eq!(Rule::require, m.as_rule())
+    }
+    {
+        let mut f = p(Rule::all_attr, "?keyword").flatten();
+        f.next();
+        let m = f.next().unwrap();
+        assert_eq!(Rule::either, m.as_rule())
+    }
+    {
+        let mut f = p(Rule::all_attr, "-keyword").flatten();
+        f.next();
+        let m = f.next().unwrap();
+        assert_eq!(Rule::forget, m.as_rule())
+    }
+    {
+        let mut f = p(Rule::all_attr, "+keyword").flatten();
+        f.next();
+        let m = f.next().unwrap();
+        assert_eq!(Rule::memory, m.as_rule())
+    }
+}
