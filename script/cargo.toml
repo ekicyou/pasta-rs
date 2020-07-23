@@ -1,10 +1,10 @@
 [package]
 authors = ["ekicyou <dot.station@gmail.com>"]
-description = "pasta parser"
+description = "pasta script parser"
 edition = "2018"
 keywords = ["pasta", "ghost", "shiori", "ukagaka"]
 license = "MIT"
-name = "pasta_parser"
+name = "pasta_script"
 readme = "README.md"
 repository = "https://github.com/ekicyou/pasta-rs"
 version = "0.3.0"
@@ -13,6 +13,7 @@ version = "0.3.0"
 itertools = "0.9"
 log = "0.4"
 pest = {ver = "2.1", features = ["pretty-print"]}
+pest_consume = "1.0"
 pest_derive = "2.1"
 
 [dev-dependencies]

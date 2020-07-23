@@ -1,7 +1,7 @@
 [workspace]
 license = "MIT"
 members = [
-    "pasta_parser",
+  "script",
 ]
 
 [replace]

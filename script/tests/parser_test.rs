@@ -1,4 +1,4 @@
-use pasta_parser::{parse, parse_nth, Rule};
+use pasta_script::{parse, parse_nth, Rule};
 use pest::error::Error;
 use pest::iterators::{Pair, Pairs};
 
@@ -31,12 +31,12 @@ fn char_test1() {
         assert_eq!("あいでー５", m.as_str());
     }
     {
-        let m = n(Rule::esc2, 0, "#");
+        let m = n(Rule::esc_char, 0, "#");
         assert_eq!("#", m.as_str());
     }
     {
-        // esc_char の対象文字取得
-        let m = n(Rule::esc_char, 1, "＠＠");
+        // escape の対象文字取得
+        let m = n(Rule::escape, 1, "＠＠");
         println!("{:?}", m);
         assert_eq!("＠", m.as_str());
     }
@@ -69,15 +69,15 @@ fn comment_test() {
 #[test]
 fn parse11() {
     {
-        let m = p(Rule::esc1, "@");
+        let m = p(Rule::esc_mark, "@");
         assert_eq!("", m.as_str());
     }
     {
-        let m = p(Rule::esc2, "@");
+        let m = p(Rule::esc_char, "@");
         assert_eq!("@", m.as_str());
     }
     {
-        let m = parse(Rule::esc_char, "@#").unwrap();
+        let m = parse(Rule::escape, "@#").unwrap();
         println!("{:?}", m);
         let m = m.flatten().nth(1).unwrap();
         println!("{:?}", m);
@@ -119,8 +119,6 @@ fn parse24() {
         println!("{}", m);
         let mut f = m.flatten();
         let m = f.next().unwrap();
-        assert_eq!("  #comment\r\n", m.as_str());
-        let m = f.next().unwrap();
         assert_eq!("#comment", m.as_str());
         let m = f.next().unwrap();
         assert_eq!("comment", m.as_str());
@@ -130,8 +128,6 @@ fn parse24() {
         let m = p(Rule::eol_check, "  エラー\r\n");
         println!("{}", m);
         let mut f = m.flatten();
-        let m = f.next().unwrap();
-        assert_eq!("  エラー\r\n", m.as_str());
         let m = f.next().unwrap();
         assert_eq!("エラー", m.as_str());
         let m = f.next().unwrap();
@@ -160,6 +156,7 @@ fn parse32() {
         let mut f = p(Rule::all_attr, "@keyword").flatten();
         f.next();
         let m = f.next().unwrap();
+        println!("{}", m);
         assert_eq!(Rule::action, m.as_rule())
     }
     {
@@ -237,6 +234,7 @@ fn parse42() {
         assert!(f.next().is_none());
     }
 }
+
 #[test]
 fn parse52() {
     {
@@ -255,33 +253,83 @@ fn parse52() {
         assert_eq!("エスケープ大丈夫？", m.as_str());
         assert!(f.next().is_none());
     }
+    {
+        let m = p(Rule::serif, "セリフっぽいのです。＠エスケープ大丈夫？");
+        println!("{}", m);
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::serif, m.as_rule());
+        let mut f = m.into_inner();
+        //
+        let m = f.next().unwrap();
+        assert_eq!("セリフっぽいのです。", m.as_str());
+        assert!(f.next().is_none());
+    }
 }
 
-fn match_chars(rule: Rule) -> String {
-    let mut buf = String::new();
-    let mut s = String::with_capacity(6);
-    for c in '\u{0000}'..'\u{ffff}' {
-        s.clear();
-        s.push(c);
-        match r(rule, &s) {
-            Ok(_) => buf.push(c),
-            _ => {}
-        }
+#[test]
+fn parse53() {
+    {
+        let m = p(
+            Rule::togaki,
+            "　　セリフっぽいのです。＠属性　＠！必須　＠＠エスケープ大丈夫？",
+        );
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::togaki, m.as_rule());
+        let mut f = m.into_inner();
+        //
+        let m = f.next().unwrap();
+        println!("{}", m);
+        assert_eq!("セリフっぽいのです。", m.as_str());
+        let m = f.next().unwrap();
+        println!("{}", m);
+        assert_eq!("＠属性　", m.as_str());
+        let m = f.next().unwrap();
+        println!("{}", m);
+        assert_eq!("！必須　", m.as_str());
+        let m = f.next().unwrap();
+        println!("{}", m);
+        assert_eq!("＠＠エスケープ大丈夫？", m.as_str());
+        assert!(f.next().is_none());
     }
-    buf
 }
 
-//#[test]
-fn print_matchs() {
-    fn print(rule: Rule) {
-        println!("{:?}: {}", rule, match_chars(rule));
+#[test]
+fn parse61() {
+    {
+        let m = p(Rule::line, "・タイトル：！属性１？属性２　＃コメント1\r\n");
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::hasira, m.as_rule());
+        let m = f.next().unwrap();
+        assert_eq!(Rule::comment, m.as_rule());
+        assert!(f.next().is_none());
     }
-
-    print(Rule::Pc);
-    print(Rule::Pd);
-    print(Rule::Ps);
-    print(Rule::Pe);
-    print(Rule::Pi);
-    print(Rule::Pf);
-    print(Rule::Po);
+    {
+        let m = p(
+            Rule::line,
+            "　　セリフっぽいのです。＠属性　＃コメント1\r\n",
+        );
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::togaki, m.as_rule());
+        let m = f.next().unwrap();
+        assert_eq!(Rule::comment, m.as_rule());
+        assert!(f.next().is_none());
+    }
+    {
+        let m = p(
+            Rule::line,
+            "　　セリフっぽいのです。＠属性　＠＊おかしい？＃コメント\r\n",
+        );
+        let mut f = m;
+        let m = f.next().unwrap();
+        println!("[{}]", m);
+        assert_eq!(Rule::togaki, m.as_rule());
+        let m = f.next().unwrap();
+        println!("[{}]", m);
+        assert_eq!(Rule::error, m.as_rule());
+        assert!(f.next().is_none());
+    }
 }
