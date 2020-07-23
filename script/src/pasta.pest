@@ -26,7 +26,7 @@ doc_comment_line    = @{ !hasira_mark ~ skip_line }
 /// ### 2.4 識別エラーの判定
 /// 行末は、コメント・識別エラーのいずれかで始まり、
 /// EOLで終わる。
-eol_check       = _{ skip_sp ~ ( comment | error ) ~ EOL }
+err_or_comment  = _{ skip_sp ~ ( comment | error ) ~ EOL }
 error           = ${ error_token ~ error_remain }
 error_token     = @{ NOT_EOL }
 error_remain    = @{ skip_eol }
@@ -51,18 +51,21 @@ all_attr    = ${( action | require | either | forget | memory ) ~ skip_sp }
 
 /// ## 4 [柱/アクター]行（セクション）
 /// ### 4.1
-/// ０以上の「・」に続けて有効な文字列で始まる柱行（セクション開始）とする。
+/// ０以上の「＠」に続けて有効な文字列で始まる柱行（セクション開始）とする。
 /// 柱行は空白またはEOLで始まってはならない。
 
-hasira_mark     = _{ DOT }
-hasira_start    = @{ !( SP | EOL | comment_mark ) ~ hasira_mark* }
+hasira_mark         = _{ AT }
+hasira_not_title    = _{ SP | SHARP | EOL }
+hasira_start        = @{ !hasira_not_title ~ hasira_mark* }
 
 /// ### 4.2
 /// 柱はマーク・タイトル・属性の列挙で構成される。
-hasira      = ${ hasira_start ~ h_title? ~ ( end_title ~ h_attr* ) }
-h_title     = @{ (!end_title ~ ANY)+ }
-end_title   = _{ (COLON | SP | comment_mark) ~ skip_sp }
-h_attr      = ${ ( require | either | forget | memory | action ) ~ skip_sp }
+/// 属性の手前に空白を入れる。
+hasira  = ${ hasira_start ~ h_title? ~ h_attrs? }
+h_title = @{ ( !hasira_not_title ~ ANY )+ }
+h_attrs = ${ h_split ~ h_attr+ }
+h_split = _{ skip_sp1n }
+h_attr  = _{ ( require | either | forget | memory | action ) ~ skip_sp }
 
 
 // ## 5 [ト書き/セリフ]行
@@ -86,11 +89,11 @@ t_attr      = _{ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ 
 /// ### 6.1 行定義
 /// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
 /// 未識別文字列について行末まで確認する。
-line = _{ ( togaki | hasira ) ~ eol_check }
+line = ${ ( togaki | hasira ) ~ err_or_comment }
 
 /// ### 6.2 文書定義
 /// 文章は文書コメントの後、行を列挙する。
-document    = _{ doc_comment ~ line* }
+script  = _{ doc_comment ~ line* }
 
 // token
 
@@ -118,7 +121,7 @@ COLON   = _{ "：" | ":" }
 CONMA   = _{ "、" |"，" |"､" |"," }
 SHARP   = _{ "＃" | "♯" | "#" }
 
-EOL     = _{ "\r\n" | "\n" | "\r" | EOI }
+EOL     = _{ "\r\n" | "\n" | "\r" }
 NOT_EOL = _{ !EOL ~ ANY }
 
 
