@@ -10,6 +10,7 @@ esc_mark    = _{ AT }
 esc_char        = @{ AT | SHARP }
 
 
+
 /// ## 2 行の定義とコメント、空行、文書コメント
 /// ### 2-1 「＃」文字から行末までをコメントとする。
 comment         = ${ comment_mark ~ comment_str }
@@ -20,7 +21,7 @@ comment_str     = @{ skip_eol }
 spaces_line     = ${ skip_sp ~ comment? ~ EOL }
 
 /// ### 2-3 最初の柱行までは文頭コメントとして無視する。
-doc_comment         = ${ doc_comment_line* }
+doc_comment         = ${ doc_comment_line+ }
 doc_comment_line    = @{ !hasira_mark ~ skip_line } 
 
 /// ### 2.4 識別エラーの判定
@@ -29,6 +30,7 @@ err_or_comment  = _{ skip_sp ~ ( comment | error ) }
 error           = ${ error_token ~ error_remain }
 error_token     = @{ NOT_EOL }
 error_remain    = @{ skip_eol }
+
 
 
 /// ## 3 属性
@@ -46,6 +48,7 @@ either      = ${ QUE    ~ expr }    /// ？いずれかに一致
 forget      = ${ MINUS  ~ expr }    /// ー忘れる
 memory      = ${ PLUS   ~ expr }    /// ＋覚える
 all_attr    = ${( action | require | either | forget | memory ) ~ skip_sp }
+
 
 
 /// ## 4 [柱/アクター]行（セクション）
@@ -67,6 +70,7 @@ h_split = _{ skip_sp1n }
 h_attr  = _{ ( require | either | forget | memory | action ) ~ skip_sp }
 
 
+
 // ## 5 [ト書き/セリフ]行
 /// ### 5.1
 /// セリフはコメント・アクション・EOLと認識されないすべての文字の
@@ -84,6 +88,7 @@ t_start     = _{ skip_sp1n }
 t_attr      = _{ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ skip_sp }
 
 
+
 /// ## 6 行と文書
 /// ### 6.1 行定義
 /// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
@@ -93,6 +98,8 @@ line    = ${ ( togaki | hasira ) ~ err_or_comment }
 /// ### 6.2 文書定義
 /// 文章は文書コメントの後、行を列挙する。
 script  = _{ doc_comment? ~ (line ~ EOL)* ~ (line ~ EOI)? }
+
+
 
 // token
 

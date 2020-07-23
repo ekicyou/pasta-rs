@@ -320,9 +320,9 @@ fn parse53() {
 }
 
 #[test]
-fn parse61() {
+fn parse61_1() {
     {
-        let m = p(Rule::line, "・タイトル　！属性１？属性２　＃コメント1\r\n");
+        let m = p(Rule::line, "＠タイトル　！属性１？属性２　＃コメント1\r\n");
         let mut f = m;
         let m = f.next().unwrap();
         assert_eq!(Rule::line, m.as_rule());
@@ -368,13 +368,51 @@ fn parse61() {
 }
 
 #[test]
-fn parse62() {
+fn parse61_2() {
+    {
+        let m = p(Rule::line, "＠＠＠  ！起動トーク\r\n");
+        let mut f = m;
+        let m = f.next().unwrap();
+        assert_eq!(Rule::line, m.as_rule());
+        let mut f = m.into_inner();
+        let m = f.next().unwrap();
+        println!("[{}]", m);
+        assert_eq!(Rule::hasira, m.as_rule());
+        let m = f.next().unwrap();
+        println!("[{}]", m);
+        assert_eq!(Rule::error, m.as_rule());
+        assert!(f.next().is_none());
+    }
+}
+
+#[test]
+fn parse62_1() {
+    {
+        let text = r#"パスタスクリプトテスト構文
+
+最初の柱まではドキュメントコメントとします。
+
+＠タイトル　！属性１？属性２　＃コメント
+"#;
+        let mut f = p(Rule::script, text);
+        println!("[{}]", f);
+        let m = f.next().unwrap();
+        println!("[{}]", m);
+        println!("[{}]", m.as_str());
+        assert_eq!(Rule::doc_comment, m.as_rule());
+        let m = f.next().unwrap();
+        println!("[{}]", m);
+        println!("[{}]", m.as_str());
+        assert_eq!(Rule::line, m.as_rule());
+        assert!(f.next().is_none());
+    }
+}
+#[test]
+fn parse62_2() {
     {
         let text = include_str!("parse62.pasta");
-
-        let m = p(Rule::script, text);
-        println!("[{}]", m);
-        let mut f = m;
+        let mut f = p(Rule::script, text);
+        println!("[{}]", f);
         let m = f.next().unwrap();
         println!("[{}]", m);
         println!("[{}]", m.as_str());
