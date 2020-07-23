@@ -24,9 +24,8 @@ doc_comment         = ${ doc_comment_line* }
 doc_comment_line    = @{ !hasira_mark ~ skip_line } 
 
 /// ### 2.4 識別エラーの判定
-/// 行末は、コメント・識別エラーのいずれかで始まり、
-/// EOLで終わる。
-err_or_comment  = _{ skip_sp ~ ( comment | error ) ~ EOL }
+/// 行末の未処理文字列は、行末あるいはコメントである。
+err_or_comment  = _{ skip_sp ~ ( comment | error ) }
 error           = ${ error_token ~ error_remain }
 error_token     = @{ NOT_EOL }
 error_remain    = @{ skip_eol }
@@ -89,11 +88,11 @@ t_attr      = _{ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ 
 /// ### 6.1 行定義
 /// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
 /// 未識別文字列について行末まで確認する。
-line = ${ ( togaki | hasira ) ~ err_or_comment }
+line    = ${ ( togaki | hasira ) ~ err_or_comment }
 
 /// ### 6.2 文書定義
 /// 文章は文書コメントの後、行を列挙する。
-script  = _{ doc_comment ~ line* }
+script  = _{ doc_comment? ~ (line ~ EOL)* ~ (line ~ EOI)? }
 
 // token
 
