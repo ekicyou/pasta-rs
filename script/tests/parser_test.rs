@@ -199,24 +199,35 @@ fn parse41() {
         assert!(f.next().is_none());
     }
     {
-        let mut f = p(Rule::hasira_start, "アクター").flatten();
+        let mut f = p(Rule::hasira_header, "＠柱タイトル　");
+        println!("{}", f);
         let m = f.next().unwrap();
-        assert_eq!("", m.as_str());
+        assert_eq!("＠", m.as_str());
+        let m = f.next().unwrap();
+        assert_eq!("柱タイトル", m.as_str());
         assert!(f.next().is_none());
     }
     {
-        assert!(r(Rule::hasira_start, "　エラー").is_err());
+        assert!(r(Rule::hasira_header, "　エラー").is_err());
     }
 }
 
 #[test]
 fn parse42() {
     {
-        let mut f = p(Rule::h_title, "柱のタイトルなの　ね").flatten();
+        let mut f = p(Rule::actor_header, "アクター");
+        println!("{}", f);
         let m = f.next().unwrap();
-        assert_eq!("柱のタイトルなの", m.as_str());
+        assert_eq!("アクター", m.as_str());
         assert!(f.next().is_none());
     }
+    {
+        assert!(r(Rule::actor_header, "　エラー").is_err());
+    }
+}
+
+#[test]
+fn parse43() {
     {
         let m = p(
             Rule::hasira,
@@ -230,12 +241,12 @@ fn parse42() {
         assert_eq!(Rule::hasira_start, m.as_rule());
         assert_eq!("＠", m.as_str());
         let m = f.next().unwrap();
-        assert_eq!(Rule::h_title, m.as_rule());
+        assert_eq!(Rule::hasira_title, m.as_rule());
         assert_eq!("タイトル", m.as_str());
 
         let m = f.next().unwrap();
         assert_eq!(Rule::h_attrs, m.as_rule());
-        assert_eq!("　！属性１？属性２　", m.as_str());
+        assert_eq!("！属性１？属性２　", m.as_str());
         assert!(f.next().is_none());
     }
     {
@@ -244,7 +255,7 @@ fn parse42() {
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
         assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_start);
-        assert_eq!(f.next().unwrap().as_rule(), Rule::h_title);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_title);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
     }
@@ -369,8 +380,18 @@ fn parse61_1() {
 
 #[test]
 fn parse61_2() {
+    let text = "＠＠＠  ！起動トーク\r\n";
     {
-        let m = p(Rule::line, "＠＠＠  ！起動トーク\r\n");
+        let mut f = r(Rule::hasira, text).unwrap();
+        let m = f.next().unwrap();
+        assert_eq!(m.as_rule(), Rule::hasira);
+        let mut f = m.into_inner();
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_start);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
+        assert!(f.next().is_none());
+    }
+    {
+        let m = r(Rule::line, text).unwrap();
         let mut f = m;
         let m = f.next().unwrap();
         assert_eq!(Rule::line, m.as_rule());
@@ -378,9 +399,6 @@ fn parse61_2() {
         let m = f.next().unwrap();
         println!("[{}]", m);
         assert_eq!(Rule::hasira, m.as_rule());
-        let m = f.next().unwrap();
-        println!("[{}]", m);
-        assert_eq!(Rule::error, m.as_rule());
         assert!(f.next().is_none());
     }
 }

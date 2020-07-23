@@ -43,7 +43,7 @@ expr_keyword    = @{ id }
 /// ### 3.2
 /// 属性種別は以下の5種類
 action      = ${ AT     ~ expr }    /// ＠アクション
-require     = ${ EXC    ~ expr }    /// ！すべてに一致
+require     = ${ EXC    ~ expr }    /// ！必須キーワード
 either      = ${ QUE    ~ expr }    /// ？いずれかに一致
 forget      = ${ MINUS  ~ expr }    /// ー忘れる
 memory      = ${ PLUS   ~ expr }    /// ＋覚える
@@ -52,22 +52,24 @@ all_attr    = ${( action | require | either | forget | memory ) ~ skip_sp }
 
 
 /// ## 4 [柱/アクター]行（セクション）
-/// ### 4.1
-/// ０以上の「＠」に続けて有効な文字列で始まる柱行（セクション開始）とする。
-/// 柱行は空白またはEOLで始まってはならない。
-
+/// ### 4.1 柱行ヘッダ
+/// １以上の「＠」の後で始まる。タイトルを続けることができる。
+hasira_header       = _{ hasira_start ~ hasira_title? ~ skip_sp }
 hasira_mark         = _{ AT }
-hasira_not_title    = _{ SP | SHARP | EOL }
-hasira_start        = @{ !hasira_not_title ~ hasira_mark* }
+hasira_start        = @{ hasira_mark+ }
+hasira_title        = @{ ( !(SP | EOL) ~ ANY )+ }
 
-/// ### 4.2
+/// ### 4.2 アクター行ヘッダ
+/// アクター名識別子で始まる。
+actor_header    = _{ actor ~ skip_sp }
+actor           = @{ id }
+
+/// ### 4.3
 /// 柱はマーク・タイトル・属性の列挙で構成される。
 /// 属性の手前に空白を入れる。
-hasira  = ${ hasira_start ~ h_title? ~ h_attrs? }
-h_title = @{ ( !hasira_not_title ~ ANY )+ }
-h_attrs = ${ h_split ~ h_attr+ }
-h_split = _{ skip_sp1n }
-h_attr  = _{ ( require | either | forget | memory | action ) ~ skip_sp }
+hasira      = ${ ( hasira_header | actor_header ) ~ h_attrs? }
+h_attrs     = ${ h_attr+ }
+h_attr      = _{ ( require | either | forget | memory | action ) ~ skip_sp }
 
 
 
@@ -83,8 +85,7 @@ s_normal    = @{ ( !( AT | SHARP | EOL ) ~ ANY )+ }
 
 /// ### 5.3
 /// ト書き/セリフ行はスペースで始まり、１つ以上のセリフまたは属性を列挙する。。
-togaki      = ${ t_start ~ ( t_attr | serif )+ }
-t_start     = _{ skip_sp1n }
+togaki      = ${ SP+ ~ ( t_attr | serif )+ }
 t_attr      = _{ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ skip_sp }
 
 
@@ -93,7 +94,7 @@ t_attr      = _{ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ 
 /// ### 6.1 行定義
 /// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
 /// 未識別文字列について行末まで確認する。
-line    = ${ ( togaki | hasira ) ~ err_or_comment }
+line    = ${ ( togaki | hasira ) ~ err_or_comment? }
 
 /// ### 6.2 文書定義
 /// 文章は文書コメントの後、行を列挙する。
