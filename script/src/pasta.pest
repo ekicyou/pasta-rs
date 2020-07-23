@@ -133,13 +133,13 @@ NOT_EOL = _{ !EOL ~ ANY }
 
 
 // Unicode Category
-Pc  = _{ CONNECTOR_PUNCTUATION }    //  Pc: _‿⁀⁔︳︴﹍﹎﹏＿
-Pd  = _{ DASH_PUNCTUATION }         //  Pd: -֊־᐀᠆‐‑‒–—―⸗⸚⸺⸻⹀〜〰゠︱︲﹘﹣－
-Ps  = _{ OPEN_PUNCTUATION }         //  Ps: ([{⌈⌊ ...
-Pe  = _{ CLOSE_PUNCTUATION }        //  Pe: )]}⌉⌋ ...
-Pi  = _{ INITIAL_PUNCTUATION }      //  Pi: «‘‛“‟‹⸂⸄⸉⸌⸜⸠
-Pf  = _{ FINAL_PUNCTUATION }        //  Pf: »’”›⸃⸅⸊⸍⸝⸡
-Po  = _{ OTHER_PUNCTUATION }        //  Po: ︐︑︒︓︔︕︖ ...
+//Pc  = _{ CONNECTOR_PUNCTUATION }    //  Pc: _‿⁀⁔︳︴﹍﹎﹏＿
+//Pd  = _{ DASH_PUNCTUATION }         //  Pd: -֊־᐀᠆‐‑‒–—―⸗⸚⸺⸻⹀〜〰゠︱︲﹘﹣－
+//Ps  = _{ OPEN_PUNCTUATION }         //  Ps: ([{⌈⌊ ...
+//Pe  = _{ CLOSE_PUNCTUATION }        //  Pe: )]}⌉⌋ ...
+//Pi  = _{ INITIAL_PUNCTUATION }      //  Pi: «‘‛“‟‹⸂⸄⸉⸌⸜⸠
+//Pf  = _{ FINAL_PUNCTUATION }        //  Pf: »’”›⸃⸅⸊⸍⸝⸡
+//Po  = _{ OTHER_PUNCTUATION }        //  Po: ︐︑︒︓︔︕︖ ...
 
 
 //行頭禁則
