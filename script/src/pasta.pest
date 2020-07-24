@@ -54,9 +54,9 @@ all_attr    = ${( action | require | either | forget | memory ) ~ skip_sp }
 /// ## 4 [柱/アクター]行（セクション）
 /// ### 4.1 柱行ヘッダ
 /// １以上の「＠」の後で始まる。タイトルを続けることができる。
-hasira_header       = _{ hasira_start ~ hasira_title? ~ skip_sp }
+hasira_header       = _{ hasira_level ~ hasira_title? ~ skip_sp }
 hasira_mark         = _{ AT }
-hasira_start        = @{ hasira_mark+ }
+hasira_level        = @{ hasira_mark+ }
 hasira_title        = @{ ( !(SP | EOL) ~ ANY )+ }
 
 /// ### 4.2 アクター行ヘッダ

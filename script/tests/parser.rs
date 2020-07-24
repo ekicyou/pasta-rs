@@ -13,5 +13,5 @@ fn comment_test() {
     let text = "#コメントです。";
     let node = parse_node(Rule::comment, text).unwrap().single().unwrap();
     let ast = PastaParser::comment(node).unwrap();
-    assert_eq!(ast, AST::comment("#コメントです。"));
+    assert_eq!(ast, AST::comment(text.to_owned()));
 }

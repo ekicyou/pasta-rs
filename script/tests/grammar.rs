@@ -193,7 +193,7 @@ fn parse32() {
 #[test]
 fn parse41() {
     {
-        let mut f = p(Rule::hasira_start, "＠＠＠セクション").flatten();
+        let mut f = p(Rule::hasira_level, "＠＠＠セクション").flatten();
         let m = f.next().unwrap();
         assert_eq!("＠＠＠", m.as_str());
         assert!(f.next().is_none());
@@ -238,7 +238,7 @@ fn parse43() {
         assert_eq!(Rule::hasira, m.as_rule());
         let mut f = m.into_inner();
         let m = f.next().unwrap();
-        assert_eq!(Rule::hasira_start, m.as_rule());
+        assert_eq!(Rule::hasira_level, m.as_rule());
         assert_eq!("＠", m.as_str());
         let m = f.next().unwrap();
         assert_eq!(Rule::hasira_title, m.as_rule());
@@ -254,7 +254,7 @@ fn parse43() {
         let m = f.next().unwrap();
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_start);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_level);
         assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_title);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
@@ -264,7 +264,7 @@ fn parse43() {
         let m = f.next().unwrap();
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_start);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_level);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
     }
@@ -386,7 +386,7 @@ fn parse61_2() {
         let m = f.next().unwrap();
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_start);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_level);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
     }

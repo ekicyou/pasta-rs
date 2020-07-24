@@ -42,9 +42,29 @@ pub type Nodes<'i> = pest_consume::Nodes<'i, Rule, ()>;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AST<'i> {
+pub enum AST {
+    not_implement,
+    doc_comment(String),
+    error(i32, i32, String),
+    comment(String),
+
+    attrs(Vec<AST>),
+    action(Box<AST>),
+    require(Box<AST>),
+    either(Box<AST>),
+    forget(Box<AST>),
+    memory(Box<AST>),
+    expr(String),
+
+    hasira(i32, String, Box<AST>),
+    hasira_level(i32),
+    hasira_title(String),
+    actor(String),
+
+    togaki(Box<AST>),
+    serif(Vec<AST>),
+    s_normal(String),
     escape(char),
-    comment(&'i str),
 }
 
 #[allow(dead_code)]
@@ -57,14 +77,81 @@ impl PastaParser {
         Ok(())
     }
 
-    pub fn escape<'i>(n: Node<'i>) -> Result<AST<'i>> {
+    pub fn doc_comment(n: Node) -> Result<AST> {
+        Ok(AST::comment(n.as_str().to_owned()))
+    }
+
+    pub fn error(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::error(i32, i32, String)
+    }
+    pub fn comment(n: Node) -> Result<AST> {
+        Ok(AST::comment(n.as_str().to_owned()))
+    }
+
+    pub fn h_attrs(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::attrs(Vec<AST>)
+    }
+    pub fn action(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::action(Box<AST>)
+    }
+    pub fn require(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::require(Box<AST>)
+    }
+    pub fn either(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::either(Box<AST>)
+    }
+    pub fn forget(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::forget(Box<AST>)
+    }
+    pub fn memory(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::memory(Box<AST>)
+    }
+
+    pub fn expr(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::expr(String)
+    }
+
+    pub fn hasira(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::hasira(i32, String, Box<AST>)
+    }
+    pub fn hasira_level(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::hasira_level(i32)
+    }
+    pub fn hasira_title(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::hasira_title(String)
+    }
+    pub fn actor(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::actor(String)
+    }
+
+    pub fn togaki(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::togaki(Box<AST>)
+    }
+    pub fn serif(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::serif(Vec<AST>)
+    }
+    pub fn s_normal(n: Node) -> Result<AST> {
+        Ok(AST::not_implement)
+        //AST::s_normal(String)
+    }
+    pub fn escape(n: Node) -> Result<AST> {
         let m = n.children().next().ok_or(n.error(BUG))?;
         let c = m.as_str().chars().next().ok_or(n.error(BUG))?;
         Ok(AST::escape(c))
-    }
-
-    pub fn comment<'i>(n: Node<'i>) -> Result<AST<'i>> {
-        Ok(AST::comment(n.as_str()))
     }
 }
 
