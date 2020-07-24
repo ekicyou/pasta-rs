@@ -45,7 +45,7 @@ pub type Nodes<'i> = pest_consume::Nodes<'i, Rule, ()>;
 pub enum AST {
     not_implement,
     doc_comment(String),
-    error(i32, i32, String),
+    error(usize, usize, char, String),
     comment(String),
 
     attrs(Vec<AST>),
@@ -82,8 +82,14 @@ impl PastaParser {
     }
 
     pub fn error(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::error(i32, i32, String)
+        let span = n.as_span();
+        let start = span.start();
+        let end = span.end();
+        let error_str = n.as_str().to_owned();
+        let mut items = n.children();
+        let m = items.next().ok_or(n.error(BUG))?;
+        let error_token = m.as_str().chars().next().ok_or(n.error(BUG))?;
+        Ok(AST::error(start, end, error_token, error_str))
     }
     pub fn comment(n: Node) -> Result<AST> {
         Ok(AST::comment(n.as_str().to_owned()))
