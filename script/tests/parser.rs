@@ -6,7 +6,7 @@ fn escape() {
     let text = "＠＠";
     let node = parse_one(rule, text).unwrap();
     let ast = PastaParser::escape(node).unwrap();
-    assert_eq!(ast, AST::escape('＠'));
+    assert_eq!(ast, '＠');
 }
 
 #[test]

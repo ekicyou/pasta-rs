@@ -61,9 +61,7 @@ pub enum AST {
 
     hasira(usize, String, Option<Box<AST>>),
 
-    serif(Vec<AST>),
-    s_normal(String),
-    escape(char),
+    serif(String),
     togaki(Box<AST>),
 }
 
@@ -191,9 +189,14 @@ impl PastaParser {
         Ok(AST::hasira(level, title, attrs))
     }
 
-    pub fn togaki(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::togaki(Box<AST>)
+    pub fn s_normal(n: Node) -> Result<&str> {
+        Ok(n.as_str())
+    }
+
+    pub fn escape(n: Node) -> Result<char> {
+        let m = n.children().next().ok_or(n.error(BUG))?;
+        let c = m.as_str().chars().next().ok_or(n.error(BUG))?;
+        Ok(c)
     }
 
     pub fn serif(n: Node) -> Result<AST> {
@@ -201,15 +204,9 @@ impl PastaParser {
         //AST::serif(Vec<AST>)
     }
 
-    pub fn s_normal(n: Node) -> Result<AST> {
+    pub fn togaki(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
-        //AST::s_normal(String)
-    }
-
-    pub fn escape(n: Node) -> Result<AST> {
-        let m = n.children().next().ok_or(n.error(BUG))?;
-        let c = m.as_str().chars().next().ok_or(n.error(BUG))?;
-        Ok(AST::escape(c))
+        //AST::togaki(Box<AST>)
     }
 }
 
