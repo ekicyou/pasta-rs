@@ -48,13 +48,13 @@ pub enum AST {
     error(usize, usize, char, String),
     comment(String),
 
+    expr(String),
     attrs(Vec<AST>),
     action(Box<AST>),
     require(Box<AST>),
     either(Box<AST>),
     forget(Box<AST>),
     memory(Box<AST>),
-    expr(String),
 
     hasira(i32, String, Box<AST>),
     hasira_level(i32),
@@ -96,48 +96,57 @@ impl PastaParser {
         Ok(AST::comment(n.as_str().to_owned()))
     }
 
-    pub fn h_attrs(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::attrs(Vec<AST>)
+    pub fn expr(n: Node) -> Result<AST> {
+        let mut items = n.children();
+        let m = items.next().ok_or(n.error(BUG))?;
+        let keyword = m.as_str().to_owned();
+        Ok(AST::expr(keyword))
     }
+
     pub fn action(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::action(Box<AST>)
     }
+
     pub fn require(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::require(Box<AST>)
     }
+
     pub fn either(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::either(Box<AST>)
     }
+
     pub fn forget(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::forget(Box<AST>)
     }
+
     pub fn memory(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::memory(Box<AST>)
     }
-
-    pub fn expr(n: Node) -> Result<AST> {
+    pub fn h_attrs(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
-        //AST::expr(String)
+        //AST::attrs(Vec<AST>)
     }
 
     pub fn hasira(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::hasira(i32, String, Box<AST>)
     }
+
     pub fn hasira_level(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::hasira_level(i32)
     }
+
     pub fn hasira_title(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::hasira_title(String)
     }
+
     pub fn actor(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::actor(String)
@@ -147,14 +156,17 @@ impl PastaParser {
         Ok(AST::not_implement)
         //AST::togaki(Box<AST>)
     }
+
     pub fn serif(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::serif(Vec<AST>)
     }
+
     pub fn s_normal(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::s_normal(String)
     }
+
     pub fn escape(n: Node) -> Result<AST> {
         let m = n.children().next().ok_or(n.error(BUG))?;
         let c = m.as_str().chars().next().ok_or(n.error(BUG))?;
@@ -165,4 +177,8 @@ impl PastaParser {
 pub fn parse_node<'i>(rule: Rule, input_str: &'i str) -> Result<Nodes<'i>> {
     use pest_consume::Parser;
     PastaParser::parse(rule, input_str)
+}
+
+pub fn parse_one<'i>(rule: Rule, input_str: &'i str) -> Result<Node<'i>> {
+    parse_node(rule, input_str)?.single()
 }
