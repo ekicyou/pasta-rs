@@ -238,7 +238,6 @@ fn parse43() {
         let m = f.next().unwrap();
         assert_eq!(Rule::hasira_header, m.as_rule());
         assert_eq!("＠タイトル　", m.as_str());
- 
         let m = f.next().unwrap();
         assert_eq!(Rule::h_attrs, m.as_rule());
         assert_eq!("！属性１？属性２　", m.as_str());
@@ -316,7 +315,8 @@ fn parse53() {
         assert_eq!("＠属性　", m.as_str());
         let m = f.next().unwrap();
         println!("{}", m);
-        assert_eq!("！必須　", m.as_str());
+        assert_eq!("＠！必須　", m.as_str());
+        assert_eq!(Rule::t_item, m.as_rule());
         let m = f.next().unwrap();
         println!("{}", m);
         assert_eq!("＠＠エスケープ大丈夫？", m.as_str());

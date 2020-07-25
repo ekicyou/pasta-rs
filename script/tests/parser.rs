@@ -156,6 +156,7 @@ fn hasira_header() {
         assert_eq!(ast, (2, "柱"));
     }
 }
+
 #[test]
 fn actor_header() {
     let rule = Rule::actor_header;
@@ -195,5 +196,37 @@ fn hasira() {
             }
             _ => assert!(false),
         }
+    }
+}
+
+#[test]
+fn serif() {
+    let rule = Rule::serif;
+    {
+        let text = "セリフ＠＠セリフ";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::serif(node).unwrap();
+        assert_eq!(ast, AST::serif("セリフ＠セリフ".to_owned()));
+    }
+}
+
+#[test]
+fn t_attr() {
+    let rule = Rule::t_attr;
+    fn x<S: Into<String>>(s: S) -> Box<AST> {
+        let keyword = s.into();
+        Box::new(AST::expr(keyword))
+    }
+    {
+        let text = "＠アクション";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::t_attr(node).unwrap();
+        assert_eq!(ast, AST::action(x("アクション")));
+    }
+    {
+        let text = "＠!アクション";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::t_attr(node).unwrap();
+        assert_eq!(ast, AST::require(x("アクション")));
     }
 }

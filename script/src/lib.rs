@@ -199,11 +199,39 @@ impl PastaParser {
         Ok(c)
     }
 
-    pub fn serif(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::serif(Vec<AST>)
+    pub fn s_token(n: Node) -> Result<(Option<&str>, Option<char>)> {
+        Ok(match_nodes!(n.into_children();
+            [s_normal(s)] => (Some(s), None),
+            [escape(c)] => (None, Some(c)),
+        ))
     }
 
+    pub fn serif(n: Node) -> Result<AST> {
+        Ok(match_nodes!(n.into_children();
+            [s_token(tokens)..] => {
+                let mut buf = String::new();
+                for t in tokens{
+                    if let (Some(s),_) = t {
+                        buf.push_str(s);
+                    }
+                    if let (_,Some(c)) = t {
+                        buf.push(c);
+                    }
+                }
+                AST::serif(buf)
+            },
+        ))
+    }
+
+    pub fn t_attr(n: Node) -> Result<AST> {
+        Ok(match_nodes!(n.into_children();
+            [require(a)]=> a,
+            [either(a)]=> a,
+            [forget(a)]=> a,
+            [memory(a)]=> a,
+            [action(a)]=> a,
+        ))
+    }
     pub fn togaki(n: Node) -> Result<AST> {
         Ok(AST::not_implement)
         //AST::togaki(Box<AST>)

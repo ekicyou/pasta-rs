@@ -80,14 +80,15 @@ h_attr      = ${ ( require | either | forget | memory | action ) ~ skip_sp }
 
 /// ### 5.2
 /// 「＠」「＃」を使いたい場合は、それぞれ「＠＠」「＠＃」を使う。
-serif       = ${ ( s_normal | escape )+ }
+serif       = ${ s_token+ }
+s_token     = ${ s_normal | escape }
 s_normal    = @{ ( !( AT | SHARP | EOL ) ~ ANY )+ }
 
 /// ### 5.3
 /// ト書き/セリフ行はスペースで始まり、１つ以上のセリフまたは属性を列挙する。。
-togaki      = ${ SP+ ~ ( t_attr | serif )+ }
-t_attr      = _{ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ skip_sp }
-
+togaki  = ${ SP+ ~ t_item+ }
+t_item  = ${ t_attr | serif }
+t_attr  = ${ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ skip_sp }
 
 
 /// ## 6 行と文書
