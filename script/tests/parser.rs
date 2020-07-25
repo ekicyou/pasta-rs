@@ -142,10 +142,20 @@ fn hasira_title() {
         let text = "タイトル文字列　";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira_title(node).unwrap();
-        assert_eq!(ast, AST::hasira_title("タイトル文字列".to_owned()));
+        assert_eq!(ast, "タイトル文字列");
     }
 }
 
+#[test]
+fn hasira_header() {
+    let rule = Rule::hasira_header;
+    {
+        let text = "@@柱　";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::hasira_header(node).unwrap();
+        assert_eq!(ast, AST::hasira_header(2, "柱".to_owned()));
+    }
+}
 #[test]
 fn actor_header() {
     let rule = Rule::actor_header;

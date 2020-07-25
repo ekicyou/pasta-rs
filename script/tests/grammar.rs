@@ -202,9 +202,7 @@ fn parse41() {
         let mut f = p(Rule::hasira_header, "＠柱タイトル　");
         println!("{}", f);
         let m = f.next().unwrap();
-        assert_eq!("＠", m.as_str());
-        let m = f.next().unwrap();
-        assert_eq!("柱タイトル", m.as_str());
+        assert_eq!("＠柱タイトル　", m.as_str());
         assert!(f.next().is_none());
     }
     {
@@ -238,12 +236,9 @@ fn parse43() {
         assert_eq!(Rule::hasira, m.as_rule());
         let mut f = m.into_inner();
         let m = f.next().unwrap();
-        assert_eq!(Rule::hasira_level, m.as_rule());
-        assert_eq!("＠", m.as_str());
-        let m = f.next().unwrap();
-        assert_eq!(Rule::hasira_title, m.as_rule());
-        assert_eq!("タイトル", m.as_str());
-
+        assert_eq!(Rule::hasira_header, m.as_rule());
+        assert_eq!("＠タイトル　", m.as_str());
+ 
         let m = f.next().unwrap();
         assert_eq!(Rule::h_attrs, m.as_rule());
         assert_eq!("！属性１？属性２　", m.as_str());
@@ -254,8 +249,7 @@ fn parse43() {
         let m = f.next().unwrap();
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_level);
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_title);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_header);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
     }
@@ -264,7 +258,7 @@ fn parse43() {
         let m = f.next().unwrap();
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_level);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_header);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
     }
@@ -386,7 +380,7 @@ fn parse61_2() {
         let m = f.next().unwrap();
         assert_eq!(m.as_rule(), Rule::hasira);
         let mut f = m.into_inner();
-        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_level);
+        assert_eq!(f.next().unwrap().as_rule(), Rule::hasira_header);
         assert_eq!(f.next().unwrap().as_rule(), Rule::h_attrs);
         assert!(f.next().is_none());
     }

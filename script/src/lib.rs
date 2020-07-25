@@ -58,8 +58,7 @@ pub enum AST {
     memory(Box<AST>),
 
     hasira(usize, String, Box<AST>),
-    hasira_title(String),
-    actor(String),
+    hasira_header(usize, String),
     actor_header(String),
 
     togaki(Box<AST>),
@@ -155,11 +154,16 @@ impl PastaParser {
         Ok(count)
     }
 
-    pub fn hasira_title(n: Node) -> Result<AST> {
-        let text = n.as_str().to_owned();
-        Ok(AST::hasira_title(text))
+    pub fn hasira_title(n: Node) -> Result<String> {
+        Ok(n.as_str().to_owned())
     }
 
+    pub fn hasira_header(n: Node) -> Result<AST> {
+        Ok(match_nodes!(n.into_children();
+            [hasira_level(l),hasira_title(s)] =>
+                AST::hasira_header(l,s),
+        ))
+    }
     pub fn actor(n: Node) -> Result<String> {
         Ok(n.as_str().to_owned())
     }
