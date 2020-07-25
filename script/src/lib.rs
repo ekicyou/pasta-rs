@@ -45,26 +45,26 @@ pub type Nodes<'i> = pest_consume::Nodes<'i, Rule, ()>;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AST {
     not_implement,
+
     doc_comment(String),
     error(usize, usize, char, String),
     comment(String),
 
     expr(String),
-    attrs(Vec<AST>),
+
     action(Box<AST>),
     require(Box<AST>),
     either(Box<AST>),
     forget(Box<AST>),
     memory(Box<AST>),
+    attrs(Vec<AST>),
 
-    hasira(usize, String, Box<AST>),
-    hasira_header(usize, String),
-    actor_header(String),
+    hasira(usize, String, Option<Box<AST>>),
 
-    togaki(Box<AST>),
     serif(Vec<AST>),
     s_normal(String),
     escape(char),
+    togaki(Box<AST>),
 }
 
 #[allow(dead_code)]
@@ -158,25 +158,35 @@ impl PastaParser {
         Ok(n.as_str().to_owned())
     }
 
-    pub fn hasira_header(n: Node) -> Result<AST> {
+    pub fn hasira_header(n: Node) -> Result<(usize, String)> {
         Ok(match_nodes!(n.into_children();
-            [hasira_level(l),hasira_title(s)] =>
-                AST::hasira_header(l,s),
+            [hasira_level(l),hasira_title(s)] => (l,s),
         ))
     }
     pub fn actor(n: Node) -> Result<String> {
         Ok(n.as_str().to_owned())
     }
 
-    pub fn actor_header(n: Node) -> Result<AST> {
+    pub fn actor_header(n: Node) -> Result<String> {
         Ok(match_nodes!(n.children();
-            [actor(a)]=>AST::actor_header(a),
+            [actor(a)] => a,
         ))
     }
 
     pub fn hasira(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::hasira(i32, String, Box<AST>)
+        let (level, title) = match_nodes!(n.children();
+            [hasira_header(a),_] => {
+                let (l,s)=a;
+                (l,s)
+            },
+            [actor_header(a),_] => (0,a),
+        );
+        let attrs = match_nodes!(n.children();
+            [_,h_attrs(a)] => Some(Box::new(a)),
+            [_,_]          => None,
+        );
+
+        Ok(AST::hasira(level, title, attrs))
     }
 
     pub fn togaki(n: Node) -> Result<AST> {

@@ -153,7 +153,7 @@ fn hasira_header() {
         let text = "@@柱　";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira_header(node).unwrap();
-        assert_eq!(ast, AST::hasira_header(2, "柱".to_owned()));
+        assert_eq!(ast, (2, "柱".to_owned()));
     }
 }
 #[test]
@@ -163,6 +163,6 @@ fn actor_header() {
         let text = "アクター名　";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::actor_header(node).unwrap();
-        assert_eq!(ast, AST::actor_header("アクター名".to_owned()));
+        assert_eq!(ast, "アクター名");
     }
 }
