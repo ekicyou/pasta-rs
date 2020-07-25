@@ -69,7 +69,7 @@ actor           = @{ id }
 /// 属性の手前に空白を入れる。
 hasira      = ${ ( hasira_header | actor_header ) ~ h_attrs? }
 h_attrs     = ${ h_attr+ }
-h_attr      = _{ ( require | either | forget | memory | action ) ~ skip_sp }
+h_attr      = ${ ( require | either | forget | memory | action ) ~ skip_sp }
 
 
 
