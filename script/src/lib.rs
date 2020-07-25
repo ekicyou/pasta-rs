@@ -161,6 +161,7 @@ impl PastaParser {
     pub fn hasira_header(n: Node) -> Result<(usize, String)> {
         Ok(match_nodes!(n.into_children();
             [hasira_level(l),hasira_title(s)] => (l,s),
+            [hasira_level(l)] => (l,String::new()),
         ))
     }
     pub fn actor(n: Node) -> Result<String> {
@@ -174,16 +175,17 @@ impl PastaParser {
     }
 
     pub fn hasira(n: Node) -> Result<AST> {
-        let (level, title) = match_nodes!(n.children();
-            [hasira_header(a),_] => {
+        let (level, title, attrs) = match_nodes!(n.children();
+            [hasira_header(a),h_attrs(attrs)] => {
                 let (l,s)=a;
-                (l,s)
+                (l,s,Some(Box::new(attrs)))
             },
-            [actor_header(a),_] => (0,a),
-        );
-        let attrs = match_nodes!(n.children();
-            [_,h_attrs(a)] => Some(Box::new(a)),
-            [_,_]          => None,
+            [actor_header(a),h_attrs(attrs)] => (0,a,Some(Box::new(attrs))),
+            [hasira_header(a)] => {
+                let (l,s)=a;
+                (l,s,None)
+            },
+            [actor_header(a)] => (0,a,None),
         );
 
         Ok(AST::hasira(level, title, attrs))

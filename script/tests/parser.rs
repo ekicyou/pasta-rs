@@ -166,3 +166,34 @@ fn actor_header() {
         assert_eq!(ast, "アクター名");
     }
 }
+
+#[test]
+fn hasira() {
+    let rule = Rule::hasira;
+    {
+        let text = "@@@柱　＠属性１！属性２　";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::hasira(node).unwrap();
+        match ast {
+            AST::hasira(level, title, attrs) => {
+                assert_eq!(level, 3);
+                assert_eq!(title, "柱");
+                assert!(attrs.is_some());
+            }
+            _ => assert!(false),
+        }
+    }
+    {
+        let text = "アクター　";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::hasira(node).unwrap();
+        match ast {
+            AST::hasira(level, title, attrs) => {
+                assert_eq!(level, 0);
+                assert_eq!(title, "アクター");
+                assert!(attrs.is_none());
+            }
+            _ => assert!(false),
+        }
+    }
+}
