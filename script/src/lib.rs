@@ -62,7 +62,7 @@ pub enum AST {
     hasira(usize, String, Option<Box<AST>>),
 
     serif(String),
-    togaki(Box<AST>),
+    togaki(Vec<AST>),
 }
 
 #[allow(dead_code)]
@@ -232,9 +232,18 @@ impl PastaParser {
             [action(a)]=> a,
         ))
     }
+
+    pub fn t_item(n: Node) -> Result<AST> {
+        Ok(match_nodes!(n.into_children();
+            [t_attr(a)]=> a,
+            [serif(a)]=> a,
+        ))
+    }
+
     pub fn togaki(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::togaki(Box<AST>)
+        Ok(AST::togaki(match_nodes!(n.into_children();
+            [t_item(a)..]=> a.collect(),
+        )))
     }
 }
 

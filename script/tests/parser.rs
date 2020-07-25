@@ -230,3 +230,24 @@ fn t_attr() {
         assert_eq!(ast, AST::require(x("アクション")));
     }
 }
+
+#[test]
+fn togaki() {
+    let rule = Rule::togaki;
+    fn action<S: Into<String>>(s: S) -> AST {
+        let keyword = s.into();
+        let expr = Box::new(AST::expr(keyword));
+        AST::action(expr)
+    }
+    fn serif<S: Into<String>>(s: S) -> AST {
+        AST::serif(s.into())
+    }
+    {
+        let text = "　セリフ＠＠だね。＠アクション";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::togaki(node).unwrap();
+
+        let vv = vec![serif("セリフ＠だね。"), action("アクション")];
+        assert_eq!(ast, AST::togaki(vv));
+    }
+}
