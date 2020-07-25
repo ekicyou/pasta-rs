@@ -1,7 +1,7 @@
 use pasta_script::{parse_node, PastaParser, Rule, AST};
 
 #[test]
-fn escape_test() {
+fn escape() {
     let text = "＠＠";
     let node = parse_node(Rule::escape, text).unwrap().single().unwrap();
     let ast = PastaParser::escape(node).unwrap();
@@ -9,15 +9,7 @@ fn escape_test() {
 }
 
 #[test]
-fn comment_test() {
-    let text = "#コメントです。";
-    let node = parse_node(Rule::comment, text).unwrap().single().unwrap();
-    let ast = PastaParser::comment(node).unwrap();
-    assert_eq!(ast, AST::comment(text.to_owned()));
-}
-
-#[test]
-fn error_test() {
+fn error() {
     let text = "＠エラーです";
     let node = parse_node(Rule::error, text).unwrap().single().unwrap();
     let ast = PastaParser::error(node).unwrap();
@@ -30,4 +22,12 @@ fn error_test() {
         }
         _ => assert!(false, "{:?}", ast),
     }
+}
+
+#[test]
+fn comment() {
+    let text = "#コメントです。";
+    let node = parse_node(Rule::comment, text).unwrap().single().unwrap();
+    let ast = PastaParser::comment(node).unwrap();
+    assert_eq!(ast, AST::comment(text.to_owned()));
 }

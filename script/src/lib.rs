@@ -91,6 +91,7 @@ impl PastaParser {
         let error_token = m.as_str().chars().next().ok_or(n.error(BUG))?;
         Ok(AST::error(start, end, error_token, error_str))
     }
+
     pub fn comment(n: Node) -> Result<AST> {
         Ok(AST::comment(n.as_str().to_owned()))
     }
