@@ -61,7 +61,7 @@ hasira_title        = @{ ( !(SP | EOL) ~ ANY )+ }
 
 /// ### 4.2 アクター行ヘッダ
 /// アクター名識別子で始まる。
-actor_header    = _{ actor ~ skip_sp }
+actor_header    = ${ actor ~ skip_sp }
 actor           = @{ id }
 
 /// ### 4.3

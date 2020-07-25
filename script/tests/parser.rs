@@ -131,7 +131,7 @@ fn hasira_level() {
         let text = "@@@";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira_level(node).unwrap();
-        assert_eq!(ast, AST::hasira_level(3));
+        assert_eq!(ast, 3);
     }
 }
 
@@ -143,5 +143,16 @@ fn hasira_title() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira_title(node).unwrap();
         assert_eq!(ast, AST::hasira_title("タイトル文字列".to_owned()));
+    }
+}
+
+#[test]
+fn actor_header() {
+    let rule = Rule::actor_header;
+    {
+        let text = "アクター名　";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::actor_header(node).unwrap();
+        assert_eq!(ast, AST::actor_header("アクター名".to_owned()));
     }
 }
