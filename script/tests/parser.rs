@@ -123,3 +123,25 @@ fn h_attrs() {
         assert_eq!(ast, right);
     }
 }
+
+#[test]
+fn hasira_level() {
+    let rule = Rule::hasira_level;
+    {
+        let text = "@@@";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::hasira_level(node).unwrap();
+        assert_eq!(ast, AST::hasira_level(3));
+    }
+}
+
+#[test]
+fn hasira_title() {
+    let rule = Rule::hasira_title;
+    {
+        let text = "タイトル文字列　";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::hasira_title(node).unwrap();
+        assert_eq!(ast, AST::hasira_title("タイトル文字列".to_owned()));
+    }
+}

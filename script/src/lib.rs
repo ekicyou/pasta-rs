@@ -57,8 +57,8 @@ pub enum AST {
     forget(Box<AST>),
     memory(Box<AST>),
 
-    hasira(i32, String, Box<AST>),
-    hasira_level(i32),
+    hasira(usize, String, Box<AST>),
+    hasira_level(usize),
     hasira_title(String),
     actor(String),
 
@@ -156,13 +156,13 @@ impl PastaParser {
     }
 
     pub fn hasira_level(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::hasira_level(i32)
+        let count = n.as_str().chars().count();
+        Ok(AST::hasira_level(count))
     }
 
     pub fn hasira_title(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::hasira_title(String)
+        let text = n.as_str().to_owned();
+        Ok(AST::hasira_title(text))
     }
 
     pub fn actor(n: Node) -> Result<AST> {
