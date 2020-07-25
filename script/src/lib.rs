@@ -111,23 +111,27 @@ impl PastaParser {
     }
 
     pub fn require(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::require(Box<AST>)
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::require(Box::new(a)),
+        ))
     }
 
     pub fn either(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::either(Box<AST>)
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::either(Box::new(a)),
+        ))
     }
 
     pub fn forget(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::forget(Box<AST>)
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::forget(Box::new(a)),
+        ))
     }
 
     pub fn memory(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::memory(Box<AST>)
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::memory(Box::new(a)),
+        ))
     }
     pub fn h_attrs(n: Node) -> Result<AST> {
         Ok(AST::not_implement)

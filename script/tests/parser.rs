@@ -56,3 +56,47 @@ fn action() {
         assert_eq!(ast, AST::action(Box::new(AST::expr("式".to_owned()))));
     }
 }
+
+#[test]
+fn require() {
+    let rule = Rule::require;
+    {
+        let text = "!式";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::require(node).unwrap();
+        assert_eq!(ast, AST::require(Box::new(AST::expr("式".to_owned()))));
+    }
+}
+
+#[test]
+fn either() {
+    let rule = Rule::either;
+    {
+        let text = "?式";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::either(node).unwrap();
+        assert_eq!(ast, AST::either(Box::new(AST::expr("式".to_owned()))));
+    }
+}
+
+#[test]
+fn forget() {
+    let rule = Rule::forget;
+    {
+        let text = "-式";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::forget(node).unwrap();
+        assert_eq!(ast, AST::forget(Box::new(AST::expr("式".to_owned()))));
+    }
+}
+
+#[test]
+fn memory() {
+    let rule = Rule::memory;
+    {
+        let text = "＋式";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::memory(node).unwrap();
+        assert_eq!(ast, AST::memory(Box::new(AST::expr("式".to_owned()))));
+    }
+}
