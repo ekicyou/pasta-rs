@@ -100,3 +100,26 @@ fn memory() {
         assert_eq!(ast, AST::memory(Box::new(AST::expr("式".to_owned()))));
     }
 }
+
+#[test]
+fn h_attrs() {
+    let rule = Rule::h_attrs;
+    fn x<S: Into<String>>(s: S) -> Box<AST> {
+        let keyword = s.into();
+        Box::new(AST::expr(keyword))
+    }
+    {
+        let text = "！必須？どれか＋追加＠関数";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::h_attrs(node);
+        let ast = ast.unwrap();
+
+        let mut vv = Vec::new();
+        vv.push(AST::require(x("必須")));
+        vv.push(AST::either(x("どれか")));
+        vv.push(AST::memory(x("追加")));
+        vv.push(AST::action(x("関数")));
+        let right = AST::attrs(vv);
+        assert_eq!(ast, right);
+    }
+}

@@ -133,9 +133,21 @@ impl PastaParser {
             [expr(a)]=> AST::memory(Box::new(a)),
         ))
     }
+
     pub fn h_attrs(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::attrs(Vec<AST>)
+        let mut attrs = Vec::new();
+        for child in n.children() {
+            let ast = match child.as_rule() {
+                Rule::require => Self::require(child)?,
+                Rule::either => Self::either(child)?,
+                Rule::forget => Self::forget(child)?,
+                Rule::memory => Self::memory(child)?,
+                Rule::action => Self::action(child)?,
+                _ => return Err(n.error(BUG)),
+            };
+            attrs.push(ast);
+        }
+        Ok(AST::attrs(attrs))
     }
 
     pub fn hasira(n: Node) -> Result<AST> {
