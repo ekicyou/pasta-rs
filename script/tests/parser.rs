@@ -45,3 +45,14 @@ fn expr() {
         assert_eq!(ast, AST::expr(text.to_owned()));
     }
 }
+
+#[test]
+fn action() {
+    let rule = Rule::action;
+    {
+        let text = "＠式";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::action(node).unwrap();
+        assert_eq!(ast, AST::action(Box::new(AST::expr("式".to_owned()))));
+    }
+}

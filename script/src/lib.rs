@@ -35,6 +35,7 @@ pub fn parse_nth(rule: Rule, n: usize, input: &str) -> GrammarResult<Pair<Rule>>
     }
 }
 
+use pest_consume::match_nodes;
 pub type ParserError = pest_consume::Error<Rule>;
 pub type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
 pub type Node<'i> = pest_consume::Node<'i, Rule, ()>;
@@ -104,8 +105,9 @@ impl PastaParser {
     }
 
     pub fn action(n: Node) -> Result<AST> {
-        Ok(AST::not_implement)
-        //AST::action(Box<AST>)
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::action(Box::new(a)),
+        ))
     }
 
     pub fn require(n: Node) -> Result<AST> {
