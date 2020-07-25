@@ -153,7 +153,7 @@ fn hasira_header() {
         let text = "@@柱　";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira_header(node).unwrap();
-        assert_eq!(ast, (2, "柱".to_owned()));
+        assert_eq!(ast, (2, "柱"));
     }
 }
 #[test]
