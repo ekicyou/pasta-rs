@@ -275,3 +275,46 @@ fn togaki() {
         assert_eq!(ast, AST::togaki(vv));
     }
 }
+
+#[test]
+fn line() {
+    let rule = Rule::line;
+
+    fn x<T>(src: T) -> Box<T> {
+        Box::new(src)
+    };
+    fn y<T>(src: Option<T>) -> Option<Box<T>> {
+        src.map(|x| Box::new(x))
+    }
+    {
+        let text = "＠柱　　不思議だね";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::line(node).unwrap();
+
+        let a = AST::hasira(1, "柱".to_owned(), None);
+        let e = Some(AST::error(12, 27, '不', "不思議だね".to_owned()));
+        let c = None;
+        let a = x(a);
+        let e = y(e);
+        let c = y(c);
+        let left = AST::line(a, e, c);
+
+        assert_eq!(ast, left);
+    }
+    {
+        let text = "　トークです。＃コメント";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::line(node).unwrap();
+
+        let t_items = vec![AST::serif("トークです。".to_owned())];
+        let a = AST::togaki(t_items);
+        let e = None;
+        let c = Some(AST::comment("＃コメント".to_owned()));
+        let a = x(a);
+        let e = y(e);
+        let c = y(c);
+        let left = AST::line(a, e, c);
+
+        assert_eq!(ast, left);
+    }
+}

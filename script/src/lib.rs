@@ -255,6 +255,24 @@ impl PastaParser {
             [t_item(a)..]=> a.collect(),
         )))
     }
+
+    pub fn line(n: Node) -> Result<AST> {
+        let (a, b) = match_nodes!(n.into_children();
+            [togaki(a)] => (a, None),
+            [hasira(a)] => (a, None),
+            [togaki(a), err_or_comment(b)] => (a, Some(b)),
+            [hasira(a), err_or_comment(b)] => (a, Some(b)),
+        );
+        let a = Box::new(a);
+        let (err, comment) = match b {
+            Some(AST::error(_, _, _, _)) => (b, None),
+            Some(AST::comment(_)) => (None, b),
+            _ => (None, None),
+        };
+        let err = err.map(|x| Box::new(x));
+        let comment = comment.map(|x| Box::new(x));
+        Ok(AST::line(a, err, comment))
+    }
 }
 
 pub fn parse_node<'i>(rule: Rule, input_str: &'i str) -> Result<Nodes<'i>> {
