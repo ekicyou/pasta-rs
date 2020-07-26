@@ -36,6 +36,30 @@ fn comment() {
 }
 
 #[test]
+fn err_or_comment() {
+    let rule = Rule::err_or_comment;
+    {
+        let text = "#コメントです。";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::err_or_comment(node).unwrap();
+        assert_eq!(ast, AST::comment(text.to_owned()));
+    }
+    {
+        let text = "エラーなんです。";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::err_or_comment(node).unwrap();
+        if let AST::error(s, e, c, t) = ast {
+            assert_eq!(s, 0);
+            assert_eq!(e, 24);
+            assert_eq!(c, 'エ');
+            assert_eq!(t, "エラーなんです。");
+        } else {
+            assert!(false);
+        }
+    }
+}
+
+#[test]
 fn expr() {
     let rule = Rule::expr;
     {
