@@ -413,6 +413,9 @@ fn parse62_1() {
         let mut f = p(Rule::script, text);
         println!("[{}]", f);
         let m = f.next().unwrap();
+        assert_eq!(Rule::script, m.as_rule());
+        let mut f = m.into_inner();
+        let m = f.next().unwrap();
         println!("[{}]", m);
         println!("[{}]", m.as_str());
         assert_eq!(Rule::doc_comment, m.as_rule());
@@ -429,6 +432,10 @@ fn parse62_2() {
         let text = include_str!("parse62.pasta");
         let mut f = p(Rule::script, text);
         println!("[{}]", f);
+        let m = f.next().unwrap();
+        assert_eq!(Rule::script, m.as_rule());
+        
+        let mut f = m.into_inner();
         let m = f.next().unwrap();
         println!("[{}]", m);
         println!("[{}]", m.as_str());

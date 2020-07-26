@@ -79,7 +79,7 @@ impl PastaParser {
     }
 
     pub fn doc_comment(n: Node) -> Result<AST> {
-        Ok(AST::comment(n.as_str().to_owned()))
+        Ok(AST::doc_comment(n.as_str().to_owned()))
     }
 
     pub fn error(n: Node) -> Result<AST> {
@@ -272,6 +272,23 @@ impl PastaParser {
         let err = err.map(|x| Box::new(x));
         let comment = comment.map(|x| Box::new(x));
         Ok(AST::line(a, err, comment))
+    }
+
+    pub fn script(n: Node) -> Result<AST> {
+        let (doc_comment, lines) = match_nodes!(n.into_children();
+            [doc_comment(a),line(b)..] => (Some(a),Some(b.collect())),
+            [doc_comment(a)] => (Some(a),None),
+            [line(b)..] => (None,Some(b.collect())),
+        );
+        let mut vv = Vec::new();
+        if let Some(a) = doc_comment {
+            vv.push(a);
+        }
+        if let Some(b) = lines {
+            let mut b = b;
+            vv.append(&mut b);
+        }
+        Ok(AST::script(vv))
     }
 }
 

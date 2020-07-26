@@ -318,3 +318,36 @@ fn line() {
         assert_eq!(ast, left);
     }
 }
+
+#[test]
+fn script() {
+    let rule = Rule::script;
+
+    fn x<T>(src: T) -> Box<T> {
+        Box::new(src)
+    };
+    fn y<T>(src: Option<T>) -> Option<Box<T>> {
+        src.map(|x| Box::new(x))
+    }
+    {
+        let text = include_str!("parse62.pasta");
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::script(node).unwrap();
+        if let AST::script(lines) = ast {
+            match &lines[0] {
+                AST::doc_comment(..) => {}
+                x => {
+                    assert!(false, "doc_comment {:?}", x);
+                }
+            }
+            match &lines[1] {
+                AST::line(..) => {}
+                x => {
+                    assert!(false, "hasira {:?}", x);
+                }
+            }
+        } else {
+            assert!(false);
+        }
+    }
+}

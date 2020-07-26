@@ -99,7 +99,7 @@ line    = ${ ( togaki | hasira ) ~ err_or_comment? }
 
 /// ### 6.2 文書定義
 /// 文章は文書コメントの後、行を列挙する。
-script  = _{ doc_comment? ~ (line ~ EOL)* ~ (line ~ EOI)? }
+script  = ${ doc_comment? ~ (line ~ EOL)* ~ (line ~ EOI)? }
 
 
 
