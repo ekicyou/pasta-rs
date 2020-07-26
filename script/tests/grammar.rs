@@ -124,6 +124,8 @@ fn parse24() {
         println!("{}", m);
         let mut f = m.flatten();
         let m = f.next().unwrap();
+        assert_eq!("  #comment", m.as_str());
+        let m = f.next().unwrap();
         assert_eq!("#comment", m.as_str());
         let m = f.next().unwrap();
         assert_eq!("comment", m.as_str());
@@ -133,6 +135,8 @@ fn parse24() {
         let m = p(Rule::err_or_comment, "  エラー\r\n");
         println!("{}", m);
         let mut f = m.flatten();
+        let m = f.next().unwrap();
+        assert_eq!("  エラー", m.as_str());
         let m = f.next().unwrap();
         assert_eq!("エラー", m.as_str());
         let m = f.next().unwrap();
@@ -335,7 +339,7 @@ fn parse61_1() {
         let m = f.next().unwrap();
         assert_eq!(Rule::hasira, m.as_rule());
         let m = f.next().unwrap();
-        assert_eq!(Rule::comment, m.as_rule());
+        assert_eq!(Rule::err_or_comment, m.as_rule());
         assert!(f.next().is_none());
     }
     {
@@ -350,7 +354,7 @@ fn parse61_1() {
         let m = f.next().unwrap();
         assert_eq!(Rule::togaki, m.as_rule());
         let m = f.next().unwrap();
-        assert_eq!(Rule::comment, m.as_rule());
+        assert_eq!(Rule::err_or_comment, m.as_rule());
         assert!(f.next().is_none());
     }
     {
@@ -367,7 +371,7 @@ fn parse61_1() {
         assert_eq!(Rule::togaki, m.as_rule());
         let m = f.next().unwrap();
         println!("[{}]", m);
-        assert_eq!(Rule::error, m.as_rule());
+        assert_eq!(Rule::err_or_comment, m.as_rule());
         assert!(f.next().is_none());
     }
 }

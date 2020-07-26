@@ -63,6 +63,9 @@ pub enum AST {
 
     serif(String),
     togaki(Vec<AST>),
+
+    line(Box<AST>, Option<Box<AST>>, Option<Box<AST>>),
+    script(Vec<AST>),
 }
 
 #[allow(dead_code)]
@@ -92,6 +95,13 @@ impl PastaParser {
 
     pub fn comment(n: Node) -> Result<AST> {
         Ok(AST::comment(n.as_str().to_owned()))
+    }
+
+    pub fn err_or_comment(n: Node) -> Result<AST> {
+        Ok(match_nodes!(n.into_children();
+            [comment(a)]=> a,
+            [error(a)]=> a,
+        ))
     }
 
     pub fn expr(n: Node) -> Result<AST> {

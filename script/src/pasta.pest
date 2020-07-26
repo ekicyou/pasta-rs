@@ -26,7 +26,7 @@ doc_comment_line    = @{ !hasira_mark ~ skip_line }
 
 /// ### 2.4 識別エラーの判定
 /// 行末の未処理文字列は、行末あるいはコメントである。
-err_or_comment  = _{ skip_sp ~ ( comment | error ) }
+err_or_comment  = ${ skip_sp ~ ( comment | error ) }
 error           = ${ error_token ~ error_remain }
 error_token     = @{ NOT_EOL }
 error_remain    = @{ skip_eol }
