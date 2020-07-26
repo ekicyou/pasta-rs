@@ -280,9 +280,6 @@ fn togaki() {
 fn line() {
     let rule = Rule::line;
 
-    fn x<T>(src: T) -> Box<T> {
-        Box::new(src)
-    };
     fn y<T>(src: Option<T>) -> Option<Box<T>> {
         src.map(|x| Box::new(x))
     }
@@ -291,10 +288,10 @@ fn line() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::line(node).unwrap();
 
-        let a = AST::hasira(1, "柱".to_owned(), None);
+        let a = Some(AST::hasira(1, "柱".to_owned(), None));
         let e = Some(AST::error(12, 27, '不', "不思議だね".to_owned()));
         let c = None;
-        let a = x(a);
+        let a = y(a);
         let e = y(e);
         let c = y(c);
         let left = AST::line(a, e, c);
@@ -307,10 +304,10 @@ fn line() {
         let ast = PastaParser::line(node).unwrap();
 
         let t_items = vec![AST::serif("トークです。".to_owned())];
-        let a = AST::togaki(t_items);
+        let a = Some(AST::togaki(t_items));
         let e = None;
         let c = Some(AST::comment("＃コメント".to_owned()));
-        let a = x(a);
+        let a = y(a);
         let e = y(e);
         let c = y(c);
         let left = AST::line(a, e, c);
@@ -322,18 +319,14 @@ fn line() {
 #[test]
 fn script() {
     let rule = Rule::script;
-
-    fn x<T>(src: T) -> Box<T> {
-        Box::new(src)
-    };
-    fn y<T>(src: Option<T>) -> Option<Box<T>> {
-        src.map(|x| Box::new(x))
-    }
     {
         let text = include_str!("parse62.pasta");
         let node = parse_one(rule, text).unwrap();
+        println!("{:?}\n", node);
         let ast = PastaParser::script(node).unwrap();
+        println!("{:?}", ast);
         if let AST::script(lines) = ast {
+            assert_eq!(lines.len(), 18);
             match &lines[0] {
                 AST::doc_comment(..) => {}
                 x => {
@@ -341,6 +334,12 @@ fn script() {
                 }
             }
             match &lines[1] {
+                AST::line(..) => {}
+                x => {
+                    assert!(false, "hasira {:?}", x);
+                }
+            }
+            match &lines[2] {
                 AST::line(..) => {}
                 x => {
                     assert!(false, "hasira {:?}", x);

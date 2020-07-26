@@ -95,7 +95,7 @@ t_attr  = ${ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ skip
 /// ### 6.1 行定義
 /// 行定義は「[柱/アクター]行」・「[ト書き/セリフ]行」・「空行」のいずれかで認識され、
 /// 未識別文字列について行末まで確認する。
-line    = ${ ( togaki | hasira ) ~ err_or_comment? }
+line    = ${ ( togaki | hasira | SP+ )? ~ err_or_comment? }
 
 /// ### 6.2 文書定義
 /// 文章は文書コメントの後、行を列挙する。

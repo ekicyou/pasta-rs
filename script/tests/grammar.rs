@@ -415,14 +415,23 @@ fn parse62_1() {
         let m = f.next().unwrap();
         assert_eq!(Rule::script, m.as_rule());
         let mut f = m.into_inner();
+
         let m = f.next().unwrap();
         println!("[{}]", m);
         println!("[{}]", m.as_str());
         assert_eq!(Rule::doc_comment, m.as_rule());
+
         let m = f.next().unwrap();
         println!("[{}]", m);
         println!("[{}]", m.as_str());
         assert_eq!(Rule::line, m.as_rule());
+
+        let m = f.next().unwrap();
+        assert_eq!(Rule::line, m.as_rule());
+
+        let m = f.next().unwrap();
+        assert_eq!(Rule::EOI, m.as_rule());
+
         assert!(f.next().is_none());
     }
 }
@@ -434,7 +443,6 @@ fn parse62_2() {
         println!("[{}]", f);
         let m = f.next().unwrap();
         assert_eq!(Rule::script, m.as_rule());
-        
         let mut f = m.into_inner();
         let m = f.next().unwrap();
         println!("[{}]", m);

@@ -64,7 +64,7 @@ pub enum AST {
     serif(String),
     togaki(Vec<AST>),
 
-    line(Box<AST>, Option<Box<AST>>, Option<Box<AST>>),
+    line(Option<Box<AST>>, Option<Box<AST>>, Option<Box<AST>>),
     script(Vec<AST>),
 }
 
@@ -257,36 +257,41 @@ impl PastaParser {
     }
 
     pub fn line(n: Node) -> Result<AST> {
-        let (a, b) = match_nodes!(n.into_children();
-            [togaki(a)] => (a, None),
-            [hasira(a)] => (a, None),
-            [togaki(a), err_or_comment(b)] => (a, Some(b)),
-            [hasira(a), err_or_comment(b)] => (a, Some(b)),
-        );
-        let a = Box::new(a);
-        let (err, comment) = match b {
-            Some(AST::error(_, _, _, _)) => (b, None),
-            Some(AST::comment(_)) => (None, b),
-            _ => (None, None),
-        };
+        let mut code = None;
+        let mut err = None;
+        let mut comment = None;
+        for n in n.children() {
+            match n.as_rule() {
+                Rule::togaki => code = Some(Self::togaki(n)?),
+                Rule::hasira => code = Some(Self::hasira(n)?),
+                Rule::err_or_comment => {
+                    let ast = Self::err_or_comment(n)?;
+                    match ast {
+                        AST::error(..) => err = Some(ast),
+                        AST::comment(..) => comment = Some(ast),
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+        let code = code.map(|x| Box::new(x));
         let err = err.map(|x| Box::new(x));
         let comment = comment.map(|x| Box::new(x));
-        Ok(AST::line(a, err, comment))
+        Ok(AST::line(code, err, comment))
     }
 
     pub fn script(n: Node) -> Result<AST> {
-        let (doc_comment, lines) = match_nodes!(n.into_children();
-            [doc_comment(a),line(b)..] => (Some(a),Some(b.collect())),
-            [doc_comment(a)] => (Some(a),None),
-            [line(b)..] => (None,Some(b.collect())),
-        );
         let mut vv = Vec::new();
-        if let Some(a) = doc_comment {
-            vv.push(a);
-        }
-        if let Some(b) = lines {
-            let mut b = b;
-            vv.append(&mut b);
+        for n in n.children() {
+            let ast = match n.as_rule() {
+                Rule::doc_comment => Self::doc_comment(n)?,
+                Rule::line => Self::line(n)?,
+                _ => {
+                    continue;
+                }
+            };
+            vv.push(ast);
         }
         Ok(AST::script(vv))
     }
