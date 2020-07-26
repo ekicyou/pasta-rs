@@ -1,4 +1,4 @@
-use pasta_script::{parse_one, PastaParser, Rule, AST};
+use pasta_script::parser::{parse_one, PastaParser, Rule, AST};
 
 #[test]
 fn escape() {
