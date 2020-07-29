@@ -15,7 +15,12 @@ log = "0.4"
 pest = {ver = "2.1", features = ["pretty-print"]}
 pest_consume = "1.0"
 pest_derive = "2.1"
-rhai = "0.17"
+
+[dependencies.rhai]
+branch = "master"
+features = ["only_i32", "unicode-xid-ident", "internals", "serde"]
+git = "https://github.com/jonathandturner/rhai"
+version = "0.18"
 
 [dev-dependencies]
 env_logger = "0.7"
