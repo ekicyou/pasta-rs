@@ -1,7 +1,7 @@
-use rhai::{Engine, EvalAltResult, ParseErrorType, RegisterFn, INT};
+use rhai::{Engine, EvalAltResult, INT};
 
 #[test]
-fn eval()-> Result<(), Box<EvalAltResult>> {
+fn eval() -> Result<(), Box<EvalAltResult>> {
     let engine = Engine::new();
     let result = engine.eval::<INT>(
         r"

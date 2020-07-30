@@ -10,9 +10,10 @@ repository = "https://github.com/ekicyou/pasta-rs"
 version = "0.3.0"
 
 [dependencies]
+base32 = "0.4"
 itertools = "0.9"
 log = "0.4"
-pest = {ver = "2.1", features = ["pretty-print"]}
+pest = "2.1"
 pest_consume = "1.0"
 pest_derive = "2.1"
 
