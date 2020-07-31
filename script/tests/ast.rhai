@@ -18,36 +18,9 @@ let h = #{
         {   // @@
             let h = h;
             h require "通常会話"
-            {
-// @
-let h = h;
-h seq   "ぎんな"
-    emo     "興奮"
-    talk    "アヒルやアヒル！"
-    talk    "11年ぶり、大阪にアヒルが"
-    talk    "帰ってくるねんで！"
-  seq   "エモ"
-    emo
-    ;
-
-
-fn _(u){
-    u.ぎんな 
-        emo  "興奮"
-        talk "アヒルやアヒル！"
-        talk "11年ぶり、大阪にアヒルが"
-        talk "帰ってくるねんで！"
-        ;
-    u.エモ
-        emo  "あきれ"
-        talk "11年ぶりって、"
-        talk "君、生まれてたの？"
-        ;
-    u
-}
-hasira(h);
-}
-
+            {   // @
+                let h = h;
+                h scene "s1";
             }
         }
     }
