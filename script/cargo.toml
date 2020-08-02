@@ -16,6 +16,7 @@ log = "0.4"
 pest = "2.1"
 pest_consume = "1.0"
 pest_derive = "2.1"
+pretty = "0.10"
 
 [dependencies.rhai]
 branch = "master"

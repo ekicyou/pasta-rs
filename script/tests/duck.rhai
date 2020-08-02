@@ -1,7 +1,7 @@
 //  パスタスクリプト　AST変換試験データ
 //  （EMOの辞書）
 //
-let h = #{
+let h9 = #{
     env: #{},
     s: Fn("noop"),
     a: Fn("add_action"),    // @
@@ -11,21 +11,17 @@ let h = #{
     m: Fn("add_memory"),    // +
     h: Fn("register_hasira"),
 };
-{   // @@@@
-    let h = h;
-    {   // @@@
-        let h = h;
-        {   // @@
-            let h = h;
-            h require "通常会話"
-            {   // @
-                let h = h;
-                h scene "s1";
-            }
-        }
-    }
-}
 
+let h4 = h9;
+
+let h3 = h4;
+
+let h2 = h3;
+h2 require "通常会話"
+
+let h1 = h2;
+h1 title    "ダックが返ってくる！"
+h1 scene    "s1";
 fn s1(u){
     u.ぎんな 
         emo  "興奮"
