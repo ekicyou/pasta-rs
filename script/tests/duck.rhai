@@ -1,18 +1,26 @@
 //  パスタスクリプト　AST変換試験データ
 //  （EMOの辞書）
 //
-let h9 = #{
-    env: #{},
-    s: Fn("noop"),
-    a: Fn("add_action"),    // @
-    r: Fn("add_require"),   // !
-    e: Fn("add_either"),    // ?
-    f: Fn("add_forget"),    // -
-    m: Fn("add_memory"),    // +
-    h: Fn("register_hasira"),
-};
+let h = hasira();
 
-let h4 = h9;
+{   // @4
+    let h = h;
+    {   // @3
+        let h = h;
+        {   // @2
+            let h = h;
+            h scene "通常会話";
+            {   // @1
+                let h = h;
+                h title "ダックが帰ってくる！";
+                h script |u| {
+
+
+                };
+            }
+        }
+    }
+}
 
 let h3 = h4;
 

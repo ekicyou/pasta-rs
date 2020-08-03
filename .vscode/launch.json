@@ -3,15 +3,119 @@
     // 既存の属性の説明をホバーして表示します。
     // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [{
-        "type": "lua",
-        "request": "launch",
-        "name": "Launch",
-        "program": "${file}",
-        "env": {
-            "WORK_SPACE_DOLDER": "${workspaceFolder}"
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pasta_script'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pasta_script"
+                ],
+                "filter": {
+                    "name": "pasta_script",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
         },
-        "stopOnEntry": false,
-        "path": "${workspaceFolder}/script/profile/emo/save/?.lua;${workspaceFolder}/script/profile/emo/save/?/init.lua;${workspaceFolder}/script/test/?.lua;${workspaceFolder}/script/test/?/init.lua;${workspaceFolder}/script/dic/?.lua;${workspaceFolder}/script/dic/?/init.lua;${workspaceFolder}/script/emo/?.lua;${workspaceFolder}/script/emo/?/init.lua"
-    }]
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'repl'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=repl",
+                    "--package=pasta_script"
+                ],
+                "filter": {
+                    "name": "repl",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'repl'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=repl",
+                    "--package=pasta_script"
+                ],
+                "filter": {
+                    "name": "repl",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'grammar'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=grammar",
+                    "--package=pasta_script"
+                ],
+                "filter": {
+                    "name": "grammar",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'parser'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=parser",
+                    "--package=pasta_script"
+                ],
+                "filter": {
+                    "name": "parser",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'rhai'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=rhai",
+                    "--package=pasta_script"
+                ],
+                "filter": {
+                    "name": "rhai",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
 }

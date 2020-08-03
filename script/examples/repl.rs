@@ -60,7 +60,7 @@ fn print_help() {
 
 fn main() {
     let mut engine = Engine::new();
-    init_pasta(&mut engine);
+    init_pasta(&mut engine).unwrap();
 
     #[cfg(not(feature = "no_optimize"))]
     engine.set_optimization_level(OptimizationLevel::None);
@@ -194,6 +194,10 @@ impl Hasira {
     fn set_title(&mut self, value: ImmutableString) -> () {
         self.title = value;
     }
+    fn set_title_op(&mut self, value: ImmutableString) -> i32 {
+        self.set_title(value);
+        0
+    }
 }
 
 impl fmt::Display for Hasira {
@@ -225,7 +229,7 @@ impl Hasira {
     }
 }
 
-fn init_pasta(engine: &mut Engine) {
+fn init_pasta(engine: &mut Engine) -> Result<(), String> {
     fn add_len(x: i32, s: ImmutableString) -> i32 {
         let y: i32 = TryFrom::try_from(s.len()).unwrap();
         x + y
@@ -237,5 +241,9 @@ fn init_pasta(engine: &mut Engine) {
         .register_fn("hasira", Hasira::new)
         .register_fn("print", Hasira::print)
         .register_fn("debug", Hasira::debug)
-        .register_get_set("title", Hasira::title, Hasira::set_title);
+        // title
+        .register_get_set("title", Hasira::title, Hasira::set_title)
+        .register_fn("tt", Hasira::set_title_op)
+        .register_custom_operator("tt", 0)?;
+    Ok(())
 }
