@@ -187,16 +187,26 @@ impl Hasira {
     fn new() -> Self {
         Default::default()
     }
+}
 
+impl Hasira {
     fn title(&mut self) -> ImmutableString {
         self.title.clone()
     }
     fn set_title(&mut self, value: ImmutableString) -> () {
         self.title = value;
     }
-    fn set_title_op(&mut self, value: ImmutableString) -> i32 {
-        self.set_title(value);
-        0
+    fn push_require(&mut self, value: ImmutableString) -> () {
+        self.require.push(value);
+    }
+    fn push_either(&mut self, value: ImmutableString) -> () {
+        self.either.push(value);
+    }
+    fn push_forget(&mut self, value: ImmutableString) -> () {
+        self.forget.push(value);
+    }
+    fn push_memory(&mut self, value: ImmutableString) -> () {
+        self.memory.push(value);
     }
 }
 
@@ -229,21 +239,15 @@ impl Hasira {
     }
 }
 
-fn init_pasta(engine: &mut Engine) -> Result<(), String> {
-    fn add_len(x: i32, s: ImmutableString) -> i32 {
-        let y: i32 = TryFrom::try_from(s.len()).unwrap();
-        x + y
-    }
-
-    engine
-        .register_fn("add", add_len)
-        .register_type::<Hasira>()
-        .register_fn("hasira", Hasira::new)
-        .register_fn("print", Hasira::print)
-        .register_fn("debug", Hasira::debug)
-        // title
-        .register_get_set("title", Hasira::title, Hasira::set_title)
-        .register_fn("tt", Hasira::set_title_op)
-        .register_custom_operator("tt", 0)?;
+fn init_pasta(eng: &mut Engine) -> Result<(), String> {
+    eng.register_type::<Hasira>();
+    eng.register_fn("print", Hasira::print);
+    eng.register_fn("debug", Hasira::debug);
+    eng.register_fn("hasira", Hasira::new);
+    eng.register_get_set("title", Hasira::title, Hasira::set_title);
+    eng.register_set("require", Hasira::push_require);
+    eng.register_set("either", Hasira::push_either);
+    eng.register_set("forget", Hasira::push_forget);
+    eng.register_set("memory", Hasira::push_memory);
     Ok(())
 }

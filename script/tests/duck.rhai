@@ -9,13 +9,25 @@ let h = hasira();
         let h = h;
         {   // @2
             let h = h;
-            h scene "通常会話";
+            h.scene = "通常会話";
             {   // @1
                 let h = h;
-                h title "ダックが帰ってくる！";
-                h script |u| {
-
-
+                h.title = "ダックが帰ってくる！";
+                h.script = |a| {
+a.ぎんな 
+    emo  "興奮"
+    talk "アヒルやアヒル！"
+    talk "11年ぶり、大阪にアヒルが"
+    talk "帰ってくるねんで！"
+    ;
+a.エモ
+    emo  "あきれ"
+    talk "11年ぶりって、"
+    talk "君、生まれてたの？"
+    ;
+// scriptの途中キャンセル方法は？
+// 非同期に待機する方法は？スレッド作って待機でOK？
+}
                 };
             }
         }
