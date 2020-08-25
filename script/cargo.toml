@@ -18,9 +18,7 @@ pest_consume = "1.0"
 pest_derive = "2.1"
 
 [dependencies.rhai]
-branch = "master"
-features = ["only_i32", "unicode-xid-ident", "internals", "serde"]
-git = "https://github.com/jonathandturner/rhai"
+features = ["unicode-xid-ident", "internals", "serde"]
 version = "0.18"
 
 [dev-dependencies]
