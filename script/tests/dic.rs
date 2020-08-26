@@ -71,10 +71,10 @@ fn test_screenplay() -> Result<(), Box<EvalAltResult>> {
             let h = hasira();
             h.title = "明日の天気";
             play.push(h, |p| {
-                p.actor("むらさき")
-                    E "興奮状態"
-                    T "アヒルやアヒル！"
-                    ;
+                p A "むらさき"
+                        E "興奮笑顔"
+                        T "アヒルやアヒル！"
+                        ;
                 p.action();
             });
         }

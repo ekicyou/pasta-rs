@@ -50,14 +50,13 @@
 //!    }
 //!}
 //! ```
-use rhai::{
-    Dynamic, Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, Position, RegisterFn,
-};
+use rhai::{Dynamic, Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, RegisterFn};
+use std::any::Any;
 use std::borrow::Borrow;
+use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use std::convert::From;
 use std::fmt;
-use std::rc::Weak;
+use std::rc::Rc;
 use std::vec::Vec;
 
 pub type FuncReturn<T> = Result<T, Box<EvalAltResult>>;
@@ -165,44 +164,192 @@ impl Condition {
 /// ビルダーコールバック
 #[derive(Clone, Default, Debug)]
 pub struct PlayBuilderCallbackItem {
+    fn_actor: FnPtr,
     fn_emote: FnPtr,
     fn_talk: FnPtr,
     fn_word: FnPtr,
 }
-pub trait PlayBuilderCallback {
-    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem;
+impl PlayBuilderCallbackItem {
+    fn set_fn_actor(&mut self, p: FnPtr) {
+        self.fn_actor = p;
+    }
+    fn set_fn_emote(&mut self, p: FnPtr) {
+        self.fn_emote = p;
+    }
+    fn set_fn_talk(&mut self, p: FnPtr) {
+        self.fn_talk = p;
+    }
+    fn set_fn_word(&mut self, p: FnPtr) {
+        self.fn_word = p;
+    }
 
-    fn get_rhai_env(&self) -> (&Engine, &Module);
+    fn fn_actor(&self) -> FnPtr {
+        self.fn_actor.clone()
+    }
+    fn fn_emote(&self) -> FnPtr {
+        self.fn_emote.clone()
+    }
+    fn fn_talk(&self) -> FnPtr {
+        self.fn_talk.clone()
+    }
+    fn fn_word(&self) -> FnPtr {
+        self.fn_word.clone()
+    }
 
     /// emote 適用
-    fn emote<S: Into<ImmutableString>>(&self, text: S) -> FuncReturn<&Self> {
-        let (engine, lib) = self.get_rhai_env();
-        let cb = &self.playbuilder_callback_item().fn_emote;
+    fn actor<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &Module,
+        text: S,
+    ) -> FuncReturn<()> {
         let a1 = Dynamic::from(text.into());
-        let _ = cb.call_dynamic(engine, lib, None, [a1])?;
-        Ok(self)
+        let _ = self.fn_actor.call_dynamic(engine, lib, None, [a1])?;
+        Ok(())
+    }
+
+    /// emote 適用
+    fn emote<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &Module,
+        text: S,
+    ) -> FuncReturn<()> {
+        let a1 = Dynamic::from(text.into());
+        let _ = self.fn_emote.call_dynamic(engine, lib, None, [a1])?;
+        Ok(())
     }
 
     /// talk 適用
-    fn talk<S: Into<ImmutableString>>(&self, text: S) -> FuncReturn<&Self> {
-        let (engine, lib) = self.get_rhai_env();
-        let cb = &self.playbuilder_callback_item().fn_talk;
+    fn talk<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &Module,
+        text: S,
+    ) -> FuncReturn<()> {
         let a1 = Dynamic::from(text.into());
-        let _ = cb.call_dynamic(engine, lib, None, [a1])?;
-        Ok(self)
+        let _ = self.fn_talk.call_dynamic(engine, lib, None, [a1])?;
+        Ok(())
     }
 
-    /// word 適用後、talk 適用
-    fn word<S: Into<ImmutableString>>(&self, text: S) -> FuncReturn<&Self> {
-        let (engine, lib) = self.get_rhai_env();
-        let cb = &self.playbuilder_callback_item().fn_word;
+    /// word 取得後、talk 適用
+    fn word<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &Module,
+        text: S,
+    ) -> FuncReturn<()> {
         let a1 = Dynamic::from(text.into());
         let word = {
-            let dy = cb.call_dynamic(engine, lib, None, [a1])?;
-            dy.take_string()
-                .map_err(|e| EvalAltResult::ErrorRuntime(e.into(), Position::none()))?
+            let dy = self.fn_word.call_dynamic(engine, lib, None, [a1])?;
+            dy.take_string()?
         };
-        self.talk(word)
+        self.talk(engine, lib, word)
+    }
+}
+
+pub trait PlayBuilderCallbackAccess: Any + Clone {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem;
+    fn playbuilder_callback_item_mut(&mut self) -> &mut PlayBuilderCallbackItem;
+
+    fn set_fn_actor(&mut self, p: FnPtr) {
+        self.playbuilder_callback_item_mut().set_fn_actor(p)
+    }
+    fn set_fn_emote(&mut self, p: FnPtr) {
+        self.playbuilder_callback_item_mut().set_fn_emote(p)
+    }
+    fn set_fn_talk(&mut self, p: FnPtr) {
+        self.playbuilder_callback_item_mut().set_fn_talk(p)
+    }
+    fn set_fn_word(&mut self, p: FnPtr) {
+        self.playbuilder_callback_item_mut().set_fn_word(p)
+    }
+
+    fn fn_actor(&self) -> FnPtr {
+        self.playbuilder_callback_item().fn_actor()
+    }
+    fn fn_emote(&self) -> FnPtr {
+        self.playbuilder_callback_item().fn_emote()
+    }
+    fn fn_talk(&self) -> FnPtr {
+        self.playbuilder_callback_item().fn_talk()
+    }
+    fn fn_word(&self) -> FnPtr {
+        self.playbuilder_callback_item().fn_word()
+    }
+
+    fn rhai_fn_actor(&mut self) -> FnPtr {
+        self.fn_actor()
+    }
+    fn rhai_fn_emote(&mut self) -> FnPtr {
+        self.fn_emote()
+    }
+    fn rhai_fn_talk(&mut self) -> FnPtr {
+        self.fn_talk()
+    }
+    fn rhai_fn_word(&mut self) -> FnPtr {
+        self.fn_word()
+    }
+    /// rhaiへの登録
+    fn register_rhai_callback_access(eng: &mut Engine) -> Result<(), String> {
+        eng.register_type::<Self>();
+        eng.register_get_set("fn_actor", Self::rhai_fn_actor, Self::set_fn_actor);
+        eng.register_get_set("fn_emote", Self::rhai_fn_emote, Self::set_fn_emote);
+        eng.register_get_set("fn_talk", Self::rhai_fn_talk, Self::set_fn_emote);
+        eng.register_get_set("fn_word", Self::rhai_fn_word, Self::set_fn_emote);
+        Ok(())
+    }
+}
+
+pub trait PlayBuilderCallback: PlayBuilderCallbackAccess {
+    fn get_rhai_env(&self) -> (&Engine, &Module);
+
+    /// actor 適用
+    fn actor<S: Into<ImmutableString>>(self, text: S) -> Self {
+        let cb = self.playbuilder_callback_item();
+        let (engine, lib) = self.get_rhai_env();
+        if let Err(e) = cb.actor(engine, lib, text) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+    /// emote 適用
+    fn emote<S: Into<ImmutableString>>(self, text: S) -> Self {
+        let cb = self.playbuilder_callback_item();
+        let (engine, lib) = self.get_rhai_env();
+        if let Err(e) = cb.emote(engine, lib, text) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+
+    /// talk 適用
+    fn talk<S: Into<ImmutableString>>(self, text: S) -> Self {
+        let cb = self.playbuilder_callback_item();
+        let (engine, lib) = self.get_rhai_env();
+        if let Err(e) = cb.talk(engine, lib, text) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+
+    /// word 取得後、talk 適用
+    fn word<S: Into<ImmutableString>>(self, text: S) -> Self {
+        let cb = self.playbuilder_callback_item();
+        let (engine, lib) = self.get_rhai_env();
+        if let Err(e) = cb.word(engine, lib, text) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+    /// rhaiへの登録
+    fn register_rhai_callback(eng: &mut Engine) -> Result<(), String> {
+        Self::register_rhai_callback_access(eng)?;
+        eng.register_fn("A", Self::actor::<ImmutableString>);
+        eng.register_fn("E", Self::emote::<ImmutableString>);
+        eng.register_fn("T", Self::talk::<ImmutableString>);
+        eng.register_fn("W", Self::word::<ImmutableString>);
+        Ok(())
     }
 }
 
@@ -210,7 +357,10 @@ pub trait PlayBuilderCallback {
 #[derive(Clone, Default, Debug)]
 pub struct ScreenPlay {
     scene: Vec<Scene>,
+    cb: PlayBuilderCallbackItem,
+    actors: HashMap<ImmutableString, Actor>,
 }
+
 impl ScreenPlay {
     /// コンストラクタ
     pub fn new() -> Self {
@@ -241,11 +391,21 @@ impl ScreenPlay {
     }
 }
 
+impl PlayBuilderCallbackAccess for ScreenPlay {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem {
+        &self.cb
+    }
+    fn playbuilder_callback_item_mut(&mut self) -> &mut PlayBuilderCallbackItem {
+        &mut self.cb
+    }
+}
+
 /// 柱
 #[derive(Clone, Default, Debug)]
 pub struct Hasira {
     title: ImmutableString,
     condition: Vec<Condition>,
+    cb: PlayBuilderCallbackItem,
 }
 
 impl fmt::Display for Hasira {
@@ -259,6 +419,7 @@ condition: {:?}
         )
     }
 }
+
 impl Hasira {
     /// コンストラクタ
     pub fn new() -> Self {
@@ -306,6 +467,15 @@ impl Hasira {
     }
 }
 
+impl PlayBuilderCallbackAccess for Hasira {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem {
+        &self.cb
+    }
+    fn playbuilder_callback_item_mut(&mut self) -> &mut PlayBuilderCallbackItem {
+        &mut self.cb
+    }
+}
+
 /// シーン
 #[derive(Clone, Default, Debug)]
 pub struct Scene {
@@ -327,27 +497,73 @@ impl Scene {
     }
 }
 
+impl PlayBuilderCallbackAccess for Scene {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem {
+        self.hasira.playbuilder_callback_item()
+    }
+    fn playbuilder_callback_item_mut(&mut self) -> &mut PlayBuilderCallbackItem {
+        self.hasira.playbuilder_callback_item_mut()
+    }
+}
+
 /// 脚本ビルダ
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct PlayBuilder {
-    actors: HashMap<ImmutableString, Actor>,
+    engine: Rc<Engine>,
+    lib: Rc<Module>,
+    actors: HashMap<ImmutableString, Rc<Actor>>,
+    cb: PlayBuilderCallbackItem,
+    now_actor: Option<Rc<Actor>>,
     tag: Option<Map>,
 }
+
+impl PlayBuilderCallbackAccess for PlayBuilder {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem {
+        &self.cb
+    }
+    fn playbuilder_callback_item_mut(&mut self) -> &mut PlayBuilderCallbackItem {
+        &mut self.cb
+    }
+}
+impl PlayBuilderCallback for PlayBuilder {
+    fn get_rhai_env(&self) -> (&Engine, &Module) {
+        (&self.engine, &self.lib)
+    }
+}
+
 impl PlayBuilder {
     /// コンストラクタ
-    pub fn new() -> Self {
-        Self::default()
-    }
+    pub fn new(
+        engine: Rc<Engine>,
+        lib: Rc<Module>,
+        screen_play: &ScreenPlay,
+        scene: &Scene,
+        tag: Option<Map>,
+    ) -> Self {
+        let actors: HashMap<_, _> = (screen_play.actors)
+            .values()
+            .map(|a| (ImmutableString::from(a.name()), Rc::new(a.clone())))
+            .collect();
 
-    /// actor取得
-    pub fn get_actor<S: Into<ImmutableString>>(&self, key: S) -> Option<&Actor> {
-        self.actors.get(&key.into())
+        let now_actor = actors.values().next().cloned();
+        let cb = scene.playbuilder_callback_item().clone();
+        PlayBuilder {
+            engine: engine,
+            lib: lib,
+            actors: actors,
+            cb: cb,
+            tag: tag,
+            now_actor: now_actor,
+        }
     }
 
     /// rhaiへの登録
     pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
-        eng.register_type::<Self>();
-        eng.register_fn("actor", Self::get_actor::<ImmutableString>);
+        Self::register_rhai_callback(eng)?;
+        eng.register_custom_operator("A", 2)?;
+        eng.register_custom_operator("E", 2)?;
+        eng.register_custom_operator("T", 2)?;
+        eng.register_custom_operator("W", 2)?;
         Ok(())
     }
 }
@@ -357,7 +573,7 @@ impl PlayBuilder {
 pub struct Actor {
     name: ImmutableString,
     tag: Option<Map>,
-    builder: Weak<PlayBuilder>,
+    cb: PlayBuilderCallbackItem,
 }
 
 impl Actor {
@@ -366,21 +582,13 @@ impl Actor {
         Self {
             name: name.into(),
             tag: tag,
-            builder: Weak::new(),
+            cb: Default::default(),
         }
     }
 
-    pub fn emote<S: Borrow<str>>(&self, text: S) -> &Self {
-        self
-    }
-
-    pub fn talk<S: Borrow<str>>(&self, text: S) -> &Self {
-        self
-    }
-
-    pub fn word<S: Borrow<str>>(&self, text: S) -> &Self {
-        self
-    }
+    pub fn name(&self) -> &str {
+        self.name.borrow()
+    }3
 
     /// rhaiへの登録
     pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
@@ -389,13 +597,16 @@ impl Actor {
         eng.register_fn("actor", |name: ImmutableString, tag: Map| {
             Self::new(name, Some(tag))
         });
-        eng.register_fn("E", Self::emote::<ImmutableString>);
-        eng.register_fn("T", Self::talk::<ImmutableString>);
-        eng.register_fn("W", Self::word::<ImmutableString>);
-        eng.register_custom_operator("E", 2)?;
-        eng.register_custom_operator("T", 2)?;
-        eng.register_custom_operator("W", 2)?;
         Ok(())
+    }
+}
+
+impl PlayBuilderCallbackAccess for Actor {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem {
+        &self.cb
+    }
+    fn playbuilder_callback_item_mut(&mut self) -> &mut PlayBuilderCallbackItem {
+        &mut self.cb
     }
 }
 
