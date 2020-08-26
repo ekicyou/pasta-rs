@@ -4,7 +4,7 @@ use rhai::{Engine, EvalAltResult};
 #[test]
 fn test_cond_expr() -> Result<(), Box<EvalAltResult>> {
     let mut engine = Engine::new();
-    ConditionExpr::register_rhai(&mut engine)?;
+    register_rhai(&mut engine)?;
     let cond = engine.eval::<ConditionExpr>(r#"has("一般会話")"#)?;
     assert_eq!(format!("{:?}", cond), r#"Has("一般会話")"#);
     Ok(())
@@ -13,8 +13,7 @@ fn test_cond_expr() -> Result<(), Box<EvalAltResult>> {
 #[test]
 fn test_cond() -> Result<(), Box<EvalAltResult>> {
     let mut engine = Engine::new();
-    ConditionExpr::register_rhai(&mut engine)?;
-    Condition::register_rhai(&mut engine)?;
+    register_rhai(&mut engine)?;
 
     {
         let cond = engine.eval::<Condition>(r#"cond(has("一般会話"))"#)?;

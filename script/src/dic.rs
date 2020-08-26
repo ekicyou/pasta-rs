@@ -50,76 +50,18 @@
 //!    }
 //!}
 //! ```
-use rhai::{Dynamic, Engine, FnPtr, ImmutableString, Map, RegisterFn};
+use rhai::{
+    Dynamic, Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, Position, RegisterFn,
+};
+use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::convert::AsRef;
+use std::convert::From;
 use std::fmt;
+use std::rc::Weak;
 use std::vec::Vec;
 
-/// 柱
-#[derive(Clone, Default, Debug)]
-pub struct Hasira {
-    title: ImmutableString,
-    condition: Vec<Condition>,
-}
+pub type FuncReturn<T> = Result<T, Box<EvalAltResult>>;
 
-impl fmt::Display for Hasira {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            r#"( title: {},
-condition: {:?}
-)"#,
-            self.title, self.condition
-        )
-    }
-}
-impl Hasira {
-    /// コンストラクタ
-    pub fn new() -> Self {
-        Default::default()
-    }
-}
-
-impl Hasira {
-    pub fn title(&mut self) -> ImmutableString {
-        self.title.clone()
-    }
-    pub fn set_title(&mut self, value: ImmutableString) -> () {
-        self.title = value;
-    }
-    pub fn push_condition(&mut self, value: Condition) -> () {
-        self.condition.push(value);
-    }
-}
-
-impl Hasira {
-    pub fn print(&mut self) -> ImmutableString {
-        format!("{}", self).into()
-    }
-    pub fn debug(&mut self) -> ImmutableString {
-        format!("{:?}", self).into()
-    }
-    pub fn join_str_obj(s1: ImmutableString, s2: Self) -> ImmutableString {
-        format!("{}{}", s1, s2).into()
-    }
-    pub fn join_obj_obj(s1: Self, s2: ImmutableString) -> ImmutableString {
-        format!("{}{}", s1, s2).into()
-    }
-}
-impl Hasira {
-    /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
-        eng.register_type::<Self>();
-        eng.register_fn("print", Self::print);
-        eng.register_fn("debug", Self::debug);
-        eng.register_fn("hasira", Self::new);
-        eng.register_fn("push_condition", Self::push_condition);
-        eng.register_get_set("title", Self::title, Self::set_title);
-        eng.register_set("condition", Self::push_condition);
-        Ok(())
-    }
-}
 /// 条件式
 #[derive(Clone, Debug)]
 pub enum ConditionExpr {
@@ -220,6 +162,50 @@ impl Condition {
     }
 }
 
+/// ビルダーコールバック
+#[derive(Clone, Default, Debug)]
+pub struct PlayBuilderCallbackItem {
+    fn_emote: FnPtr,
+    fn_talk: FnPtr,
+    fn_word: FnPtr,
+}
+pub trait PlayBuilderCallback {
+    fn playbuilder_callback_item(&self) -> &PlayBuilderCallbackItem;
+
+    fn get_rhai_env(&self) -> (&Engine, &Module);
+
+    /// emote 適用
+    fn emote<S: Into<ImmutableString>>(&self, text: S) -> FuncReturn<&Self> {
+        let (engine, lib) = self.get_rhai_env();
+        let cb = &self.playbuilder_callback_item().fn_emote;
+        let a1 = Dynamic::from(text.into());
+        let _ = cb.call_dynamic(engine, lib, None, [a1])?;
+        Ok(self)
+    }
+
+    /// talk 適用
+    fn talk<S: Into<ImmutableString>>(&self, text: S) -> FuncReturn<&Self> {
+        let (engine, lib) = self.get_rhai_env();
+        let cb = &self.playbuilder_callback_item().fn_talk;
+        let a1 = Dynamic::from(text.into());
+        let _ = cb.call_dynamic(engine, lib, None, [a1])?;
+        Ok(self)
+    }
+
+    /// word 適用後、talk 適用
+    fn word<S: Into<ImmutableString>>(&self, text: S) -> FuncReturn<&Self> {
+        let (engine, lib) = self.get_rhai_env();
+        let cb = &self.playbuilder_callback_item().fn_word;
+        let a1 = Dynamic::from(text.into());
+        let word = {
+            let dy = cb.call_dynamic(engine, lib, None, [a1])?;
+            dy.take_string()
+                .map_err(|e| EvalAltResult::ErrorRuntime(e.into(), Position::none()))?
+        };
+        self.talk(word)
+    }
+}
+
 /// 脚本
 #[derive(Clone, Default, Debug)]
 pub struct ScreenPlay {
@@ -255,7 +241,72 @@ impl ScreenPlay {
     }
 }
 
-/// 脚本
+/// 柱
+#[derive(Clone, Default, Debug)]
+pub struct Hasira {
+    title: ImmutableString,
+    condition: Vec<Condition>,
+}
+
+impl fmt::Display for Hasira {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            r#"( title: {},
+condition: {:?}
+)"#,
+            self.title, self.condition
+        )
+    }
+}
+impl Hasira {
+    /// コンストラクタ
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl Hasira {
+    pub fn title(&mut self) -> ImmutableString {
+        self.title.clone()
+    }
+    pub fn set_title(&mut self, value: ImmutableString) -> () {
+        self.title = value;
+    }
+    pub fn push_condition(&mut self, value: Condition) -> () {
+        self.condition.push(value);
+    }
+}
+
+impl Hasira {
+    pub fn print(&mut self) -> ImmutableString {
+        format!("{}", self).into()
+    }
+    pub fn debug(&mut self) -> ImmutableString {
+        format!("{:?}", self).into()
+    }
+    pub fn join_str_obj(s1: ImmutableString, s2: Self) -> ImmutableString {
+        format!("{}{}", s1, s2).into()
+    }
+    pub fn join_obj_obj(s1: Self, s2: ImmutableString) -> ImmutableString {
+        format!("{}{}", s1, s2).into()
+    }
+}
+impl Hasira {
+    /// rhaiへの登録
+    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+        eng.register_type::<Self>();
+        eng.register_fn("print", Self::print);
+        eng.register_fn("debug", Self::debug);
+        eng.register_fn("hasira", Self::new);
+        eng.register_fn("push_condition", Self::push_condition);
+        eng.register_get_set("title", Self::title, Self::set_title);
+        eng.register_set("condition", Self::push_condition);
+        Ok(())
+    }
+}
+
+/// シーン
 #[derive(Clone, Default, Debug)]
 pub struct Scene {
     hasira: Hasira,
@@ -306,6 +357,7 @@ impl PlayBuilder {
 pub struct Actor {
     name: ImmutableString,
     tag: Option<Map>,
+    builder: Weak<PlayBuilder>,
 }
 
 impl Actor {
@@ -314,25 +366,35 @@ impl Actor {
         Self {
             name: name.into(),
             tag: tag,
+            builder: Weak::new(),
         }
     }
 
-    pub fn emote<S: Into<ImmutableString>>(&self, text: S) -> &Self {
+    pub fn emote<S: Borrow<str>>(&self, text: S) -> &Self {
         self
     }
 
-    pub fn talk<S: Into<ImmutableString>>(&self, text: S) -> &Self {
+    pub fn talk<S: Borrow<str>>(&self, text: S) -> &Self {
+        self
+    }
+
+    pub fn word<S: Borrow<str>>(&self, text: S) -> &Self {
         self
     }
 
     /// rhaiへの登録
     pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
         eng.register_type::<Self>();
-        eng.register_fn("actor", Self::new::<ImmutableString>);
+        eng.register_fn("actor", |name: ImmutableString| Self::new(name, None));
+        eng.register_fn("actor", |name: ImmutableString, tag: Map| {
+            Self::new(name, Some(tag))
+        });
         eng.register_fn("E", Self::emote::<ImmutableString>);
         eng.register_fn("T", Self::talk::<ImmutableString>);
+        eng.register_fn("W", Self::word::<ImmutableString>);
         eng.register_custom_operator("E", 2)?;
         eng.register_custom_operator("T", 2)?;
+        eng.register_custom_operator("W", 2)?;
         Ok(())
     }
 }
