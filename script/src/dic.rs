@@ -50,10 +50,11 @@
 //!    }
 //!}
 //! ```
-use rhai::{Dynamic, Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, RegisterFn};
-use std::any::Any;
+use rhai::{
+    Dynamic, Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, Position, RegisterFn,
+};
+use std::any::{type_name, Any};
 use std::borrow::Borrow;
-use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
@@ -160,6 +161,85 @@ impl Condition {
         Ok(())
     }
 }
+pub trait DynamicExt {
+    fn cast_result<T: Any + Clone>(self) -> FuncReturn<T>;
+}
+impl DynamicExt for Dynamic {
+    fn cast_result<T: Any + Clone>(self) -> FuncReturn<T> {
+        let act = self.type_name().to_owned();
+        match self.try_cast::<T>() {
+            Some(a) => Ok(a),
+            None => {
+                let exp = type_name::<T>().to_owned();
+                Err(Box::new(EvalAltResult::ErrorMismatchOutputType(
+                    exp,
+                    act,
+                    Position::none(),
+                )))
+            }
+        }
+    }
+}
+
+pub trait FnPtrExt {
+    fn set_result(&mut self, dy: Dynamic) -> FuncReturn<()>;
+    fn set(&mut self, dy: Dynamic);
+}
+impl FnPtrExt for FnPtr {
+    fn set_result(&mut self, dy: Dynamic) -> FuncReturn<()> {
+        *self = dy.cast_result::<FnPtr>()?;
+        Ok(())
+    }
+    fn set(&mut self, dy: Dynamic) {
+        if let Err(e) = self.set_result(dy) {
+            log::error!("{}", e);
+        }
+    }
+}
+
+pub trait FnPtrCallImmutableString {
+    /// 関数適用
+    fn call_result<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &impl AsRef<Module>,
+        text: S,
+    ) -> FuncReturn<Dynamic>;
+
+    /// action適用（戻り値無し）
+    fn call<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &impl AsRef<Module>,
+        text: S,
+    ) -> FuncReturn<()> {
+        self.call_result(engine, lib, text)?;
+        Ok(())
+    }
+
+    /// str戻り値の関数適用
+    fn call_string<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &impl AsRef<Module>,
+        text: S,
+    ) -> FuncReturn<String> {
+        Ok(self.call_result(engine, lib, text)?.take_string()?)
+    }
+}
+impl FnPtrCallImmutableString for FnPtr {
+    /// emote 適用
+    fn call_result<S: Into<ImmutableString>>(
+        &self,
+        engine: &Engine,
+        lib: &impl AsRef<Module>,
+        text: S,
+    ) -> FuncReturn<Dynamic> {
+        let a1 = Dynamic::from(text.into());
+        let dy = self.call_dynamic(engine, lib, None, [a1])?;
+        Ok(dy)
+    }
+}
 
 /// ビルダーコールバック
 #[derive(Clone, Default, Debug)]
@@ -193,38 +273,30 @@ impl PlayBuilderCallbackItem {
     fn emote<S: Into<ImmutableString>>(
         &self,
         engine: &Engine,
-        lib: &Module,
+        lib: &impl AsRef<Module>,
         text: S,
     ) -> FuncReturn<()> {
-        let a1 = Dynamic::from(text.into());
-        let _ = self.fn_emote.call_dynamic(engine, lib, None, [a1])?;
-        Ok(())
+        self.fn_emote.call(engine, lib, text)
     }
 
     /// talk 適用
     fn talk<S: Into<ImmutableString>>(
         &self,
         engine: &Engine,
-        lib: &Module,
+        lib: &impl AsRef<Module>,
         text: S,
     ) -> FuncReturn<()> {
-        let a1 = Dynamic::from(text.into());
-        let _ = self.fn_talk.call_dynamic(engine, lib, None, [a1])?;
-        Ok(())
+        self.fn_talk.call(engine, lib, text)
     }
 
     /// word 取得後、talk 適用
     fn word<S: Into<ImmutableString>>(
         &self,
         engine: &Engine,
-        lib: &Module,
+        lib: &impl AsRef<Module>,
         text: S,
     ) -> FuncReturn<()> {
-        let a1 = Dynamic::from(text.into());
-        let word = {
-            let dy = self.fn_word.call_dynamic(engine, lib, None, [a1])?;
-            dy.take_string()?
-        };
+        let word = self.fn_word.call_string(engine, lib, text)?;
         self.talk(engine, lib, word)
     }
 }
