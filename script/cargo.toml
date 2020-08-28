@@ -12,10 +12,12 @@ version = "0.3.0"
 [dependencies]
 base32 = "0.4"
 itertools = "0.9"
+lazy_static = "1.4"
 log = "0.4"
 pest = "2.1"
 pest_consume = "1.0"
 pest_derive = "2.1"
+smallvec = "1.4"
 
 [dependencies.rhai]
 features = ["unicode-xid-ident", "internals", "serde"]

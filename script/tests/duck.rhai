@@ -82,22 +82,20 @@ let h = hasira();
             {   // @
                 let h = h;
                 h.title = "ダックが帰ってくる！";
-                h.screenplay = |env| {
-                    let a = play(env)
-                    let むらさき = actor(a,"むらさき")
-                    let えも     = actor(a,"えも")
-                    むらさき                      // キャラクタを指定
-                        E "興奮笑顔"              // E, Tはカスタムオペレータ
+                h.screenplay = |p| {
+                    p.entry(["むらさき","えも"])
+                    let p = A "むらさき"
+                        E "興奮笑顔"              // A, E, T はカスタムオペレータ
                         T "アヒルやアヒル！"
                         T "11年ぶり、大阪にアヒルが"
                         T "帰ってくるねんで！"
                         ;
-                    えも
+                    let p = A "えも"
                         E "冷笑"
                         T "11年ぶりって、"
                         T "君、生まれてたの？"
                         ;
-                    action(a);   // アクション（1回のトーク）rustに制御が返る。
+                    p.action();   // アクション（1回のトーク）rustに制御が返る。
                     }
                 };
             }

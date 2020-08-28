@@ -324,16 +324,12 @@ impl PlayBuilder {
             tag: tag,
             now_actor_name: now_actor_name,
         };
-        let now_actor_name = builder.now_actor_name.clone();
-        if let Some(name) = now_actor_name {
-            return builder.change_actor(name);
-        }
         builder
     }
 
     /// actor 切り替え
-    fn change_actor_result<S: Into<ImmutableString>>(&mut self, text: S) -> Result<(), String> {
-        match self.actors.get(&text.into()) {
+    pub fn change_actor<S: Borrow<ImmutableString>>(&mut self, text: S) -> Result<(), String> {
+        match self.actors.get(text.borrow()) {
             Some(actor) => {
                 self.now_actor_name = Some(actor.name().into());
             }
@@ -343,11 +339,22 @@ impl PlayBuilder {
     }
 
     /// actor 切り替え
-    pub fn change_actor<S: Into<ImmutableString>>(mut self, text: S) -> Self {
-        if let Err(e) = self.change_actor_result(text) {
+    pub fn rhai_change_actor<S: Borrow<ImmutableString>>(mut self, text: S) -> Self {
+        if let Err(e) = self.change_actor(text) {
             log::error!("{:?}", e)
         }
         self
+    }
+
+    /// emote 切り替え
+    pub fn emote<S: Borrow<ImmutableString>>(&mut self, text: S) -> Result<(), String> {
+        match self.actors.get(text.borrow()) {
+            Some(actor) => {
+                self.now_actor_name = Some(actor.name().into());
+            }
+            _ => Err("".to_owned())?,
+        }
+        Ok(())
     }
 
     /// rhaiへの登録
@@ -365,14 +372,20 @@ impl PlayBuilder {
 /// 役者
 #[derive(Clone, Default, Debug)]
 pub struct Actor {
+    id: ImmutableString,
     name: ImmutableString,
-    tag: Option<Map>,
+    tag: Map,
 }
 
 impl Actor {
     /// コンストラクタ
-    pub fn new<S: Into<ImmutableString>>(name: S, tag: Option<Map>) -> Self {
+    pub fn new<S: Into<ImmutableString>>(id: S, name: S, tag: Option<Map>) -> Self {
+        let tag = match tag {
+            Some(t) => t,
+            None => Default::default(),
+        };
         Self {
+            id: id.into(),
             name: name.into(),
             tag: tag,
         }
@@ -385,10 +398,13 @@ impl Actor {
     /// rhaiへの登録
     pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
         eng.register_type::<Self>();
-        eng.register_fn("actor", |name: ImmutableString| Self::new(name, None));
-        eng.register_fn("actor", |name: ImmutableString, tag: Map| {
-            Self::new(name, Some(tag))
+        eng.register_fn("actor", |id: ImmutableString, name: ImmutableString| {
+            Self::new(id, name, None)
         });
+        eng.register_fn(
+            "actor",
+            |id: ImmutableString, name: ImmutableString, tag: Map| Self::new(id, name, Some(tag)),
+        );
         Ok(())
     }
 }
