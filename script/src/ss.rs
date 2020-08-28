@@ -151,6 +151,20 @@ impl SakuraScriptBuilder {
         Ok(())
     }
 
+    /// 改行してトーク。
+    /// ただし、セリフ冒頭の場合は改行しない。
+    pub fn br_t<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
+        let has_br = {
+            let actor = &self.actors[self.now_actor_index];
+            let len = talk.as_ref().len();
+            len > 0 && actor.talk_len != 0
+        };
+        if has_br {
+            self.br()?;
+        }
+        self.talk(talk)
+    }
+
     /// スクリプト出力
     pub fn build(&mut self) -> PastaResult<ImmutableString> {
         Ok(self.reset())
