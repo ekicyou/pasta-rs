@@ -11,6 +11,7 @@ struct ActorState {
     pub name: ImmutableString,
     pub talk_len: usize,
     pub is_first_talk: bool,
+    pub is_talked: bool,
     pub has_new_line: bool,
     pub new_line: usize,
 }
@@ -40,6 +41,7 @@ impl SakuraScriptBuilder {
                     name: name,
                     talk_len: 0,
                     is_first_talk: false,
+                    is_talked: false,
                     has_new_line: false,
                     new_line: *new_line,
                 }
@@ -58,12 +60,12 @@ impl SakuraScriptBuilder {
         let rc = {
             let mut prefix = String::new();
             for actor in self.actors.iter() {
-                if !actor.is_first_talk {
+                if !actor.is_first_talk && actor.is_talked {
                     prefix.write_fmt(format_args!("{}", actor.id));
                     prefix.write_surface(&self.default_emote);
                 }
             }
-            prefix.write_str(&self.buf);
+            prefix.write_fmt(format_args!("{}\\e", &self.buf));
             prefix.into()
         };
         self.buf = Default::default();
@@ -71,6 +73,7 @@ impl SakuraScriptBuilder {
         self.now_actor_index = 0;
         for actor in self.actors.iter_mut() {
             actor.is_first_talk = false;
+            actor.is_talked = false;
             actor.has_new_line = false;
             actor.talk_len = 0;
         }
@@ -78,27 +81,23 @@ impl SakuraScriptBuilder {
     }
 
     /// actorのindexを名前から検索。
-    fn get_actor_index_by_name<S: Borrow<ImmutableString>>(&self, name: S) -> PastaResult<usize> {
+    fn get_actor_index_by_name<S: Into<ImmutableString>>(&self, name: S) -> PastaResult<usize> {
+        let name = name.into();
         self.actors
             .iter()
             .enumerate()
-            .filter(|a| a.1.name == *name.borrow())
+            .filter(|a| a.1.name == name)
             .map(|a| a.0)
             .next()
-            .ok_or_else(|| PastaError::ActorNotFound(name.borrow().clone()))
+            .ok_or_else(|| PastaError::ActorNotFound(name.clone()))
     }
 
     /// actor の変更
-    pub fn change_actor<S: Borrow<ImmutableString> + Clone>(
-        &mut self,
-        actor_name: S,
-    ) -> PastaResult<()> {
+    pub fn change_actor<S: Into<ImmutableString>>(&mut self, actor_name: S) -> PastaResult<()> {
+        let actor_name = actor_name.into();
         let index = self.get_actor_index_by_name(actor_name)?;
         self.now_actor_index = index;
-        let is_first_talk = !self.has_first_talk;
-        self.has_first_talk = true;
         let mut actor = &mut self.actors[self.now_actor_index];
-        actor.is_first_talk = is_first_talk;
         actor.has_new_line = actor.talk_len > 0;
         actor.talk_len = 0;
         actor.has_new_line = true;
@@ -131,6 +130,7 @@ impl SakuraScriptBuilder {
             if len == 0 {
                 new_line = 0;
             } else {
+                actor.is_talked = true;
                 actor.has_new_line = false;
                 if self.has_first_talk {
                     actor.is_first_talk = true;

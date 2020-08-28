@@ -44,25 +44,6 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in example 'repl'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--example=repl",
-                    "--package=pasta_script"
-                ],
-                "filter": {
-                    "name": "repl",
-                    "kind": "example"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
             "name": "Debug integration test 'grammar'",
             "cargo": {
                 "args": [
@@ -82,16 +63,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug integration test 'parser'",
+            "name": "Debug integration test 'ss'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--test=parser",
+                    "--test=ss",
                     "--package=pasta_script"
                 ],
                 "filter": {
-                    "name": "parser",
+                    "name": "ss",
                     "kind": "test"
                 }
             },
