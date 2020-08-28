@@ -1,25 +1,15 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::AsRef;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Error, Formatter, Write};
 
 #[derive(Clone, Default, Debug)]
-pub struct SakuraScriptTalk<'a> {
+struct SakuraScriptTalk<'a> {
     text: &'a str,
 }
 
 impl<'a> SakuraScriptTalk<'a> {
-    pub fn new(text: &'a str) -> SakuraScriptTalk<'a> {
+    fn new(text: &'a str) -> SakuraScriptTalk<'a> {
         SakuraScriptTalk { text: text }
-    }
-    pub fn write(f: &mut Formatter, text: &'a str) -> Result<(), Error> {
-        let a = Self::new(text);
-        write!(f, "{}", a);
-        Ok(())
-    }
-    pub fn format(text: &'a str) -> Result<String, Error> {
-        let a = Self::new(text);
-        Ok(format!("{}", a))
     }
 }
 
@@ -50,11 +40,11 @@ impl<'a> Display for SakuraScriptTalk<'a> {
                 }
             }
 
-            write_wait(f, pre);
-            write!(f, "{}", c);
-            write_wait(f, suf);
+            write_wait(f, pre)?;
+            write!(f, "{}", c)?;
+            write_wait(f, suf)?;
         }
-        write_wait(f, remain);
+        write_wait(f, remain)?;
         Ok(())
     }
 }
@@ -81,27 +71,37 @@ lazy_static! {
     };
 }
 
-pub fn write_talk<S: AsRef<str>>(f: &mut Formatter, text: S) -> Result<(), Error> {
-    SakuraScriptTalk::write(f, text.as_ref())
-}
-
-pub fn format_talk<S: AsRef<str>>(text: S) -> Result<String, Error> {
-    SakuraScriptTalk::format(text.as_ref())
-}
-
-pub fn write_wait(f: &mut Formatter, ms: isize) -> Result<(), Error> {
+fn write_wait(f: &mut Formatter, ms: isize) -> Result<(), Error> {
     if ms > 0 {
-        write!(f, r#"\_w[{}]"#, ms);
+        write!(f, r#"\_w[{}]"#, ms)?;
     }
     Ok(())
 }
 
-pub fn write_surface<S: Display>(f: &mut Formatter, text: S) -> Result<(), Error> {
-    write!(f, r#"\s[{}]"#, text);
-    Ok(())
+pub trait SSFormatter {
+    fn write_talk<S: AsRef<str>>(&mut self, text: S) -> Result<(), Error>;
+    fn write_wait(&mut self, ms: isize) -> Result<(), Error>;
+    fn write_surface<S: Display>(&mut self, text: S) -> Result<(), Error>;
+    fn write_new_line(&mut self, percent: isize) -> Result<(), Error>;
 }
 
-pub fn write_new_line(f: &mut Formatter, percent: isize) -> Result<(), Error> {
-    write!(f, r#"\n[{}]"#, percent);
-    Ok(())
+impl<W: Write> SSFormatter for W {
+    fn write_talk<S: AsRef<str>>(&mut self, text: S) -> Result<(), Error> {
+        let text = text.as_ref();
+        let f = SakuraScriptTalk::new(text);
+        self.write_fmt(format_args!("{}", f))?;
+        Ok(())
+    }
+    fn write_wait(&mut self, ms: isize) -> Result<(), Error> {
+        if ms > 0 {
+            self.write_fmt(format_args!(r#"\_w[{}]"#, ms))?;
+        }
+        Ok(())
+    }
+    fn write_surface<S: Display>(&mut self, text: S) -> Result<(), Error> {
+        self.write_fmt(format_args!(r#"\s[{}]"#, text))
+    }
+    fn write_new_line(&mut self, percent: isize) -> Result<(), Error> {
+        self.write_fmt(format_args!(r#"\n[{}]"#, percent))
+    }
 }
