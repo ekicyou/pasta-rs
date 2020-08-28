@@ -1,8 +1,8 @@
+use crate::ss_fmt::*;
 use rhai::{ImmutableString, StaticVec};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
-
-use crate::ss_fmt as SS;
+use std::fmt::{Display, Write};
 
 #[derive(Clone, Default, Debug)]
 struct ActorState {
@@ -48,6 +48,16 @@ impl SakuraScriptBuilder {
             now_actor_index: 0,
         }
     }
+    #[inline]
+    fn buf(&mut self) -> &mut Write {
+        &mut self.buf
+    }
+
+    fn reset(&mut self) -> ImmutableString {
+        let rc = self.buf.clone().into();
+        self.buf = Default::default();
+        rc
+    }
 
     #[inline]
     fn now_actor_mut(&mut self) -> &mut ActorState {
@@ -84,19 +94,31 @@ impl SakuraScriptBuilder {
         let mut actor = self.now_actor_mut();
         actor.is_first_talk = is_first_talk;
         actor.talk_char_count = 0;
-        let actor = self.now_actor();
-
-        self.buf = format!("{}{}", self.buf, &actor.id);
+        let actor_id = actor.id.clone();
+        self.buf().write_fmt(format_args!("{}", actor_id));
         Ok(())
     }
 
-    pub fn emote<S: AsRef<str>>(&mut self, text: S) -> Result<(), String> {
-        self.buf = format!("{}\\s[{}]", self.buf, text.as_ref());
+    /// 表情の変更
+    pub fn emote<S: Display>(&mut self, text: S) -> Result<(), String> {
+        self.buf().write_surface(text);
         Ok(())
     }
 
-    pub fn new_line(&mut self, percent: i32) -> Result<(), String> {
-        self.buf = format!("{}\\n[{}]", self.buf, percent);
+    /// 改行コード
+    pub fn new_line(&mut self, percent: usize) -> Result<(), String> {
+        self.buf().write_new_line(percent);
         Ok(())
+    }
+
+    /// トーク
+    pub fn talk<S: AsRef<str>>(&mut self, talk: S) -> Result<(), String> {
+        self.buf().write_talk(talk);
+        Ok(())
+    }
+
+    /// スクリプト合成
+    pub fn build(&mut self) -> Result<ImmutableString, String> {
+        Ok(self.reset())
     }
 }

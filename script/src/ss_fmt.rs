@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::AsRef;
+use std::convert::From;
 use std::fmt::{Display, Error, Formatter, Write};
 
 #[derive(Clone, Default, Debug)]
@@ -82,7 +83,7 @@ pub trait SSFormatter {
     fn write_talk<S: AsRef<str>>(&mut self, text: S) -> Result<(), Error>;
     fn write_wait(&mut self, ms: isize) -> Result<(), Error>;
     fn write_surface<S: Display>(&mut self, text: S) -> Result<(), Error>;
-    fn write_new_line(&mut self, percent: isize) -> Result<(), Error>;
+    fn write_new_line(&mut self, percent: usize) -> Result<(), Error>;
 }
 
 impl<W: Write> SSFormatter for W {
@@ -101,7 +102,7 @@ impl<W: Write> SSFormatter for W {
     fn write_surface<S: Display>(&mut self, text: S) -> Result<(), Error> {
         self.write_fmt(format_args!(r#"\s[{}]"#, text))
     }
-    fn write_new_line(&mut self, percent: isize) -> Result<(), Error> {
+    fn write_new_line(&mut self, percent: usize) -> Result<(), Error> {
         self.write_fmt(format_args!(r#"\n[{}]"#, percent))
     }
 }
