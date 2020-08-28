@@ -1,3 +1,4 @@
+use crate::error::*;
 use crate::ss_fmt::*;
 use rhai::{ImmutableString, StaticVec};
 use std::borrow::{Borrow, Cow};
@@ -8,8 +9,9 @@ use std::fmt::{Display, Write};
 struct ActorState {
     pub id: ImmutableString,
     pub name: ImmutableString,
-    pub talk_char_count: usize,
+    pub talk_char_len: usize,
     pub is_first_talk: bool,
+    pub new_line: usize,
 }
 
 #[derive(Clone, Default, Debug)]
@@ -23,20 +25,21 @@ pub struct SakuraScriptBuilder {
 
 impl SakuraScriptBuilder {
     pub fn new<S: Into<ImmutableString>>(
-        actors: StaticVec<(S, S)>,
+        actors: StaticVec<(S, S, usize)>,
         default_emote: S,
     ) -> SakuraScriptBuilder {
         let actors = actors
             .into_iter()
             .map(|a| {
-                let (name, id) = a;
+                let (name, id, new_line) = a;
                 let name = name.into();
                 let id = id.into();
                 ActorState {
                     id: id,
                     name: name,
-                    talk_char_count: 0,
+                    talk_char_len: 0,
                     is_first_talk: false,
+                    new_line: new_line,
                 }
             })
             .collect();
@@ -47,10 +50,6 @@ impl SakuraScriptBuilder {
             has_first_talk: false,
             now_actor_index: 0,
         }
-    }
-    #[inline]
-    fn buf(&mut self) -> &mut Write {
-        &mut self.buf
     }
 
     fn reset(&mut self) -> ImmutableString {
@@ -69,24 +68,21 @@ impl SakuraScriptBuilder {
     }
 
     /// actorのindexを名前から検索。
-    fn get_actor_index_by_name<S: Borrow<ImmutableString>>(
-        &self,
-        name: S,
-    ) -> Result<usize, String> {
+    fn get_actor_index_by_name<S: Borrow<ImmutableString>>(&self, name: S) -> PastaResult<usize> {
         self.actors
             .iter()
             .enumerate()
             .filter(|a| a.1.name == *name.borrow())
             .map(|a| a.0)
             .next()
-            .ok_or_else(|| format!("not found actor_name '{}'", name.borrow()))
+            .ok_or_else(|| PastaError::ActorNotFound(name.borrow().clone()))
     }
 
     /// actor の変更
     pub fn change_actor<S: Borrow<ImmutableString> + Clone>(
         &mut self,
         actor_name: S,
-    ) -> Result<(), String> {
+    ) -> PastaResult<()> {
         let index = self.get_actor_index_by_name(actor_name)?;
         self.now_actor_index = index;
         let is_first_talk = !self.has_first_talk;
@@ -94,33 +90,33 @@ impl SakuraScriptBuilder {
         {
             let mut actor = self.now_actor_mut();
             actor.is_first_talk = is_first_talk;
-            actor.talk_char_count = 0;
+            actor.talk_char_len = 0;
         }
         self.buf
-            .write_fmt(format_args!("{}", self.actors[self.now_actor_index].id));
+            .write_fmt(format_args!("{}", self.actors[self.now_actor_index].id))?;
         Ok(())
     }
 
     /// 表情の変更
-    pub fn emote<S: Display>(&mut self, text: S) -> Result<(), String> {
-        self.buf().write_surface(text);
+    pub fn emote<S: Display>(&mut self, text: S) -> PastaResult<()> {
+        self.buf.write_surface(text)?;
         Ok(())
     }
 
     /// 改行コード
-    pub fn new_line(&mut self, percent: usize) -> Result<(), String> {
-        self.buf().write_new_line(percent);
+    pub fn new_line(&mut self, percent: usize) -> PastaResult<()> {
+        self.buf.write_new_line(percent)?;
         Ok(())
     }
 
     /// トーク
-    pub fn talk<S: AsRef<str>>(&mut self, talk: S) -> Result<(), String> {
-        self.buf().write_talk(talk);
+    pub fn talk<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
+        self.buf.write_talk(talk)?;
         Ok(())
     }
 
     /// スクリプト合成
-    pub fn build(&mut self) -> Result<ImmutableString, String> {
+    pub fn build(&mut self) -> PastaResult<ImmutableString> {
         Ok(self.reset())
     }
 }

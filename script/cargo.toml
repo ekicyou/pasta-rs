@@ -18,6 +18,7 @@ pest = "2.1"
 pest_consume = "1.0"
 pest_derive = "2.1"
 smallvec = "1.4"
+thiserror = "1.0"
 
 [dependencies.rhai]
 features = ["unicode-xid-ident", "internals", "serde"]
