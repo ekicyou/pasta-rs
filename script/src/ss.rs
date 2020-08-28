@@ -111,12 +111,17 @@ impl SakuraScriptBuilder {
         Ok(())
     }
 
-    /// 改行コード
-    pub fn new_line(&mut self, percent: usize) -> PastaResult<()> {
-        self.buf.write_new_line(percent)?;
+    /// 強制改行(100%)
+    pub fn br(&mut self) -> PastaResult<()> {
+        self.buf.write_new_line(100)?;
         Ok(())
     }
-
+    /// 以後の改行幅を変更
+    pub fn change_new_line(&mut self, percent: usize) -> PastaResult<()> {
+        let mut actor = &mut self.actors[self.now_actor_index];
+        actor.new_line = percent;
+        Ok(())
+    }
     /// トーク
     pub fn talk<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
         let new_line = {
@@ -140,7 +145,7 @@ impl SakuraScriptBuilder {
             actor.talk_len += len;
             new_line
         };
-        self.new_line(new_line)?;
+        self.buf.write_new_line(new_line)?;
 
         self.buf.write_talk(talk)?;
         Ok(())

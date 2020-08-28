@@ -58,7 +58,7 @@ lazy_static! {
             }
         }
         let mut t = HashMap::new();
-        ii(&mut t, 800, r#"。．"#);
+        ii(&mut t, 800, r#"。．♪"#);
         ii(&mut t, 600, r#"？！"#);
         ii(&mut t, 400, r#"、，）］｝」』"#);
         ii(&mut t, -200, r#"・‥…"#);
