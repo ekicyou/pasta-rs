@@ -17,12 +17,9 @@ impl<'a> SakuraScriptTalk<'a> {
         write!(f, "{}", a);
         Ok(())
     }
-
-    fn wait(f: &mut Formatter, ms: isize) -> Result<(), Error> {
-        if ms > 0 {
-            write!(f, r#"\_w[{}]"#, ms);
-        }
-        Ok(())
+    pub fn format(text: &'a str) -> Result<String, Error> {
+        let a = Self::new(text);
+        Ok(format!("{}", a))
     }
 }
 
@@ -53,11 +50,11 @@ impl<'a> Display for SakuraScriptTalk<'a> {
                 }
             }
 
-            Self::wait(f, pre);
+            write_wait(f, pre);
             write!(f, "{}", c);
-            Self::wait(f, suf);
+            write_wait(f, suf);
         }
-        Self::wait(f, remain);
+        write_wait(f, remain);
         Ok(())
     }
 }
@@ -82,4 +79,29 @@ lazy_static! {
         ii(&mut t, 0, "\r\n");
         t
     };
+}
+
+pub fn write_talk<S: AsRef<str>>(f: &mut Formatter, text: S) -> Result<(), Error> {
+    SakuraScriptTalk::write(f, text.as_ref())
+}
+
+pub fn format_talk<S: AsRef<str>>(text: S) -> Result<String, Error> {
+    SakuraScriptTalk::format(text.as_ref())
+}
+
+pub fn write_wait(f: &mut Formatter, ms: isize) -> Result<(), Error> {
+    if ms > 0 {
+        write!(f, r#"\_w[{}]"#, ms);
+    }
+    Ok(())
+}
+
+pub fn write_surface<S: Display>(f: &mut Formatter, text: S) -> Result<(), Error> {
+    write!(f, r#"\s[{}]"#, text);
+    Ok(())
+}
+
+pub fn write_new_line(f: &mut Formatter, percent: isize) -> Result<(), Error> {
+    write!(f, r#"\n[{}]"#, percent);
+    Ok(())
 }

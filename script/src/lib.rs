@@ -8,4 +8,4 @@ pub mod di;
 pub mod dic;
 pub mod parser;
 pub mod ss;
-mod ss_format;
+pub mod ss_fmt;
