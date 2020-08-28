@@ -2,7 +2,6 @@
 //  （EMOの辞書）
 //
 
-
 /// env 引数は下記のパラメータを保持するオブジェクトマップ
 /// env #{save, state, actors, scene, actor}
 ///     save: シリアライズ対象 
@@ -36,7 +35,6 @@ fn newline(env, value){
     [env, script];
 }
 
-
 /// 会話文字列の処理を行います。ランタイムの会話処理関数へリダイレクトします。
 /// env -> value -> [env, script]
 /// value: 変換対象の文字列
@@ -62,10 +60,15 @@ let むらさき = actor("むらさき")
 むらさき.fn_newline = Fn("newline");
 むらさき.fn_talk    = Fn("talk");
 むらさき.fn_word    = Fn("word");
-
+play.push_actor(むらさき)
 
 let えも     = play.create_actor("えも")
-
+えも.fn_actor   = Fn("after_change_actor");
+えも.fn_emote   = Fn("emote");
+えも.fn_newline = Fn("newline");
+えも.fn_talk    = Fn("talk");
+えも.fn_word    = Fn("word");
+play.push_actor(えも)
 
 let h = hasira();
 
