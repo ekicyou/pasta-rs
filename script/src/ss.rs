@@ -91,11 +91,13 @@ impl SakuraScriptBuilder {
         self.now_actor_index = index;
         let is_first_talk = !self.has_first_talk;
         self.has_first_talk = true;
-        let mut actor = self.now_actor_mut();
-        actor.is_first_talk = is_first_talk;
-        actor.talk_char_count = 0;
-        let actor_id = actor.id.clone();
-        self.buf().write_fmt(format_args!("{}", actor_id));
+        {
+            let mut actor = self.now_actor_mut();
+            actor.is_first_talk = is_first_talk;
+            actor.talk_char_count = 0;
+        }
+        self.buf
+            .write_fmt(format_args!("{}", self.actors[self.now_actor_index].id));
         Ok(())
     }
 
