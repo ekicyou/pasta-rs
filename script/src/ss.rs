@@ -9,8 +9,9 @@ use std::fmt::{Display, Write};
 struct ActorState {
     pub id: ImmutableString,
     pub name: ImmutableString,
-    pub talk_char_len: usize,
+    pub talk_len: usize,
     pub is_first_talk: bool,
+    pub has_new_line: bool,
     pub new_line: usize,
 }
 
@@ -24,22 +25,23 @@ pub struct SakuraScriptBuilder {
 }
 
 impl SakuraScriptBuilder {
-    pub fn new<S: Into<ImmutableString>>(
-        actors: StaticVec<(S, S, usize)>,
+    pub fn new<S: Into<ImmutableString> + Clone>(
+        actors: &[(S, S, usize)],
         default_emote: S,
     ) -> SakuraScriptBuilder {
         let actors = actors
             .into_iter()
             .map(|a| {
                 let (name, id, new_line) = a;
-                let name = name.into();
-                let id = id.into();
+                let name = (*name).clone().into();
+                let id = (*id).clone().into();
                 ActorState {
                     id: id,
                     name: name,
-                    talk_char_len: 0,
+                    talk_len: 0,
                     is_first_talk: false,
-                    new_line: new_line,
+                    has_new_line: false,
+                    new_line: *new_line,
                 }
             })
             .collect();
@@ -47,24 +49,32 @@ impl SakuraScriptBuilder {
             default_emote: default_emote.into(),
             actors: actors,
             buf: Default::default(),
-            has_first_talk: false,
+            has_first_talk: true,
             now_actor_index: 0,
         }
     }
 
     fn reset(&mut self) -> ImmutableString {
-        let rc = self.buf.clone().into();
+        let rc = {
+            let mut prefix = String::new();
+            for actor in self.actors.iter() {
+                if !actor.is_first_talk {
+                    prefix.write_fmt(format_args!("{}", actor.id));
+                    prefix.write_surface(&self.default_emote);
+                }
+            }
+            prefix.write_str(&self.buf);
+            prefix.into()
+        };
         self.buf = Default::default();
+        self.has_first_talk = true;
+        self.now_actor_index = 0;
+        for actor in self.actors.iter_mut() {
+            actor.is_first_talk = false;
+            actor.has_new_line = false;
+            actor.talk_len = 0;
+        }
         rc
-    }
-
-    #[inline]
-    fn now_actor_mut(&mut self) -> &mut ActorState {
-        &mut self.actors[self.now_actor_index]
-    }
-    #[inline]
-    fn now_actor(&self) -> &ActorState {
-        &self.actors[self.now_actor_index]
     }
 
     /// actorのindexを名前から検索。
@@ -87,13 +97,12 @@ impl SakuraScriptBuilder {
         self.now_actor_index = index;
         let is_first_talk = !self.has_first_talk;
         self.has_first_talk = true;
-        {
-            let mut actor = self.now_actor_mut();
-            actor.is_first_talk = is_first_talk;
-            actor.talk_char_len = 0;
-        }
-        self.buf
-            .write_fmt(format_args!("{}", self.actors[self.now_actor_index].id))?;
+        let mut actor = &mut self.actors[self.now_actor_index];
+        actor.is_first_talk = is_first_talk;
+        actor.has_new_line = actor.talk_len > 0;
+        actor.talk_len = 0;
+        actor.has_new_line = true;
+        self.buf.write_fmt(format_args!("{}", actor.id))?;
         Ok(())
     }
 
@@ -111,11 +120,33 @@ impl SakuraScriptBuilder {
 
     /// トーク
     pub fn talk<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
+        let new_line = {
+            let mut actor = &mut self.actors[self.now_actor_index];
+            let mut new_line = if actor.has_new_line {
+                actor.new_line
+            } else {
+                0
+            };
+            let len = talk.as_ref().len();
+            if len == 0 {
+                new_line = 0;
+            } else {
+                actor.has_new_line = false;
+                if self.has_first_talk {
+                    actor.is_first_talk = true;
+                    self.has_first_talk = false;
+                }
+            }
+            actor.talk_len += len;
+            new_line
+        };
+        self.new_line(new_line)?;
+
         self.buf.write_talk(talk)?;
         Ok(())
     }
 
-    /// スクリプト合成
+    /// スクリプト出力
     pub fn build(&mut self) -> PastaResult<ImmutableString> {
         Ok(self.reset())
     }

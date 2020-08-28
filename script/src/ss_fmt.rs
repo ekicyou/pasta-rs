@@ -93,16 +93,22 @@ impl<W: Write> SSFormatter for W {
         self.write_fmt(format_args!("{}", f))?;
         Ok(())
     }
+
     fn write_wait(&mut self, ms: isize) -> Result<(), Error> {
         if ms > 0 {
             self.write_fmt(format_args!(r#"\_w[{}]"#, ms))?;
         }
         Ok(())
     }
+
     fn write_surface<S: Display>(&mut self, text: S) -> Result<(), Error> {
         self.write_fmt(format_args!(r#"\s[{}]"#, text))
     }
+
     fn write_new_line(&mut self, percent: usize) -> Result<(), Error> {
-        self.write_fmt(format_args!(r#"\n[{}]"#, percent))
+        if percent > 0 {
+            self.write_fmt(format_args!(r#"\n[{}]"#, percent))?;
+        }
+        Ok(())
     }
 }
