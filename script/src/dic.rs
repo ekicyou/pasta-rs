@@ -50,7 +50,9 @@
 //!    }
 //!}
 //! ```
-use rhai::{Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, RegisterFn};
+
+use crate::error::*;
+use rhai::{Engine, EvalAltResult, FnPtr, ImmutableString, Map, Module, RegisterFn, StaticVec};
 
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -59,6 +61,7 @@ use std::rc::Rc;
 use std::vec::Vec;
 
 pub type FuncReturn<T> = Result<T, Box<EvalAltResult>>;
+pub type RhaiResult<T> = Result<T, String>;
 
 /// 条件式
 #[derive(Clone, Debug)]
@@ -123,7 +126,7 @@ impl ConditionExpr {
         Self::And(Box::new(left), Box::new(right))
     }
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         eng.register_fn("has", Self::has::<ImmutableString>);
         eng.register_fn("range_i32", Self::range_i32::<ImmutableString>);
@@ -152,7 +155,7 @@ impl Condition {
         }
     }
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         eng.register_fn("cond", |expr| Self::new(expr, None));
         eng.register_fn("cond", |expr, finally| Self::new(expr, Some(finally)));
@@ -173,6 +176,7 @@ impl ScreenPlay {
         Self::default()
     }
 
+    /// シーン登録数
     pub fn count(&self) -> usize {
         self.scene.len()
     }
@@ -181,26 +185,33 @@ impl ScreenPlay {
     }
 
     /// actor を追加します。
-    pub fn push_actor(&mut self, actor: Actor) -> Result<(), String> {
+    pub fn push_actor(&mut self, actor: Actor) -> PastaResult<()> {
         let key = actor.name().into();
         self.actors.insert(key, actor);
         Ok(())
     }
+    fn rhai_push_actor(&mut self, actor: Actor) -> RhaiResult<()> {
+        self.push_actor(actor)?;
+        Ok(())
+    }
 
     /// シーンを一つ追加する。
-    pub fn push(&mut self, hasira: Hasira, play: FnPtr) -> Result<(), String> {
+    pub fn push(&mut self, hasira: Hasira, play: FnPtr) -> PastaResult<()> {
         let scene = Scene::new(hasira, play);
         self.scene.push(scene);
         Ok(())
     }
-
+    fn rhai_push(&mut self, hasira: Hasira, play: FnPtr) -> RhaiResult<()> {
+        self.push(hasira, play)?;
+        Ok(())
+    }
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         eng.register_fn("screen_play", Self::new);
         eng.register_get("count", Self::rhai_count);
-        eng.register_fn("push_actor", Self::push_actor);
-        eng.register_fn("push", Self::push);
+        eng.register_fn("push_actor", Self::rhai_push_actor);
+        eng.register_fn("push", Self::rhai_push);
         Ok(())
     }
 }
@@ -259,7 +270,7 @@ impl Hasira {
 }
 impl Hasira {
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         eng.register_fn("print", Self::print);
         eng.register_fn("debug", Self::debug);
@@ -286,7 +297,7 @@ impl Scene {
         }
     }
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         Ok(())
     }
@@ -299,6 +310,7 @@ pub struct PlayBuilder {
     lib: Rc<Module>,
     actors: HashMap<ImmutableString, Rc<Actor>>,
     now_actor_name: Option<ImmutableString>,
+    script_builder: crate::ss::SakuraScriptBuilder,
     tag: Option<Map>,
 }
 
@@ -311,11 +323,22 @@ impl PlayBuilder {
         scene: &Scene,
         tag: Option<Map>,
     ) -> Self {
+        let script_builder = {
+            let actors: StaticVec<_> = (screen_play.actors)
+                .values()
+                .map(|a| {
+                    let name = ImmutableString::from(a.name());
+                    let id = ImmutableString::from(a.id());
+                    let new_line = a.new_line();
+                    (name, id, new_line)
+                })
+                .collect();
+            crate::ss::SakuraScriptBuilder::new(actors, "通常")
+        };
         let actors: HashMap<_, _> = (screen_play.actors)
             .values()
             .map(|a| (ImmutableString::from(a.name()), Rc::new(a.clone())))
             .collect();
-
         let now_actor_name = actors.values().next().map(|a| a.name().into()).clone();
         let builder = PlayBuilder {
             engine: engine,
@@ -323,17 +346,19 @@ impl PlayBuilder {
             actors: actors,
             tag: tag,
             now_actor_name: now_actor_name,
+            script_builder: script_builder,
         };
         builder
     }
 
     /// actor 切り替え
-    pub fn change_actor<S: Borrow<ImmutableString>>(&mut self, text: S) -> Result<(), String> {
-        match self.actors.get(text.borrow()) {
+    pub fn change_actor<S: Borrow<ImmutableString>>(&mut self, text: S) -> PastaResult<()> {
+        let text = text.borrow();
+        match self.actors.get(text) {
             Some(actor) => {
                 self.now_actor_name = Some(actor.name().into());
             }
-            _ => Err("".to_owned())?,
+            _ => Err(PastaError::ActorNotFound(text.clone()))?,
         }
         Ok(())
     }
@@ -347,20 +372,21 @@ impl PlayBuilder {
     }
 
     /// emote 切り替え
-    pub fn emote<S: Borrow<ImmutableString>>(&mut self, text: S) -> Result<(), String> {
-        match self.actors.get(text.borrow()) {
+    pub fn emote<S: Borrow<ImmutableString>>(&mut self, text: S) -> PastaResult<()> {
+        let text = text.borrow();
+        match self.actors.get(text) {
             Some(actor) => {
                 self.now_actor_name = Some(actor.name().into());
             }
-            _ => Err("".to_owned())?,
+            _ => Err(PastaError::ActorNotFound(text.clone()))?,
         }
         Ok(())
     }
 
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
-        eng.register_fn("A", Self::change_actor::<ImmutableString>);
+        eng.register_fn("A", Self::rhai_change_actor::<ImmutableString>);
         eng.register_custom_operator("A", 2)?;
         eng.register_custom_operator("E", 2)?;
         eng.register_custom_operator("T", 2)?;
@@ -374,12 +400,18 @@ impl PlayBuilder {
 pub struct Actor {
     id: ImmutableString,
     name: ImmutableString,
+    new_line: usize,
     tag: Map,
 }
 
 impl Actor {
     /// コンストラクタ
-    pub fn new<S: Into<ImmutableString>>(id: S, name: S, tag: Option<Map>) -> Self {
+    pub fn new<S: Into<ImmutableString>>(
+        id: S,
+        name: S,
+        new_line: usize,
+        tag: Option<Map>,
+    ) -> Self {
         let tag = match tag {
             Some(t) => t,
             None => Default::default(),
@@ -387,6 +419,7 @@ impl Actor {
         Self {
             id: id.into(),
             name: name.into(),
+            new_line: new_line,
             tag: tag,
         }
     }
@@ -394,22 +427,32 @@ impl Actor {
     pub fn name(&self) -> &str {
         self.name.borrow()
     }
-
+    pub fn id(&self) -> &str {
+        self.id.borrow()
+    }
+    pub fn new_line(&self) -> usize {
+        self.new_line
+    }
     /// rhaiへの登録
-    pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
-        eng.register_fn("actor", |id: ImmutableString, name: ImmutableString| {
-            Self::new(id, name, None)
-        });
         eng.register_fn(
             "actor",
-            |id: ImmutableString, name: ImmutableString, tag: Map| Self::new(id, name, Some(tag)),
+            |id: ImmutableString, name: ImmutableString, new_line: isize| {
+                Self::new(id, name, new_line as _, None)
+            },
+        );
+        eng.register_fn(
+            "actor",
+            |id: ImmutableString, name: ImmutableString, new_line: isize, tag: Map| {
+                Self::new(id, name, new_line as _, Some(tag))
+            },
         );
         Ok(())
     }
 }
 
-pub fn register_rhai(eng: &mut Engine) -> Result<(), String> {
+pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
     ConditionExpr::register_rhai(eng)?;
     Condition::register_rhai(eng)?;
     Hasira::register_rhai(eng)?;

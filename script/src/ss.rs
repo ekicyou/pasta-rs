@@ -4,7 +4,7 @@ use rhai::{ImmutableString, StaticVec};
 use std::fmt::{Display, Write};
 use std::iter::IntoIterator;
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 struct ActorState {
     pub id: ImmutableString,
     pub name: ImmutableString,
@@ -15,7 +15,7 @@ struct ActorState {
     pub new_line: usize,
 }
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct SakuraScriptBuilder {
     default_emote: ImmutableString,
     actors: StaticVec<ActorState>,
@@ -25,9 +25,9 @@ pub struct SakuraScriptBuilder {
 }
 
 impl SakuraScriptBuilder {
-    pub fn new<S: Into<ImmutableString> + Clone>(
+    pub fn new<S: Into<ImmutableString> + Clone, U: Into<ImmutableString>>(
         actors: StaticVec<(S, S, usize)>,
-        default_emote: S,
+        default_emote: U,
     ) -> SakuraScriptBuilder {
         let actors = actors
             .into_iter()

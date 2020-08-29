@@ -20,12 +20,42 @@ pub enum PastaError {
         #[from]
         source: std::io::Error,
     },
+
+    #[error("EvalAltResult {source}")]
+    RhaiEval {
+        #[from]
+        source: Box<EvalAltResult>,
+    },
+
+    #[error("error: {0}")]
+    String(ImmutableString),
 }
 
-impl From<PastaError> for EvalAltResult {
+impl From<String> for PastaError {
+    fn from(e: String) -> Self {
+        PastaError::String(e.into())
+    }
+}
+impl From<ImmutableString> for PastaError {
+    fn from(e: ImmutableString) -> Self {
+        PastaError::String(e.into())
+    }
+}
+impl From<&str> for PastaError {
+    fn from(e: &str) -> Self {
+        PastaError::String(e.into())
+    }
+}
+
+impl From<PastaError> for Box<EvalAltResult> {
     fn from(e: PastaError) -> Self {
-        let mes = format!("{}", e);
-        EvalAltResult::ErrorRuntime(mes, Position::none())
+        match e {
+            PastaError::RhaiEval { source } => source,
+            _ => {
+                let mes = format!("{}", e);
+                Box::new(EvalAltResult::ErrorRuntime(mes, Position::none()))
+            }
+        }
     }
 }
 
