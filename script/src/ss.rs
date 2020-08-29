@@ -91,10 +91,10 @@ impl SakuraScriptBuilder {
             .ok_or_else(|| PastaError::ActorNotFound(name.clone()))
     }
 
-    /// actor の変更
-    pub fn change_actor<S: Into<ImmutableString>>(&mut self, actor_name: S) -> PastaResult<()> {
-        let actor_name = actor_name.into();
-        let index = self.get_actor_index_by_name(actor_name)?;
+    /// A: actor 切り替え
+    pub fn change_actor<S: Into<ImmutableString>>(&mut self, name: S) -> PastaResult<()> {
+        let name = name.into();
+        let index = self.get_actor_index_by_name(name)?;
         self.now_actor_index = index;
         let mut actor = &mut self.actors[self.now_actor_index];
         actor.has_new_line = actor.talk_len > 0;

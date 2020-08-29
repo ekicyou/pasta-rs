@@ -351,21 +351,22 @@ impl PlayBuilder {
         builder
     }
 
-    /// actor 切り替え
-    pub fn change_actor<S: Borrow<ImmutableString>>(&mut self, text: S) -> PastaResult<()> {
-        let text = text.borrow();
-        match self.actors.get(text) {
+    /// A: actor 切り替え
+    pub fn change_actor<S: Into<ImmutableString>>(&mut self, name: S) -> PastaResult<()> {
+        let name = name.into();
+        match self.actors.get(&name) {
             Some(actor) => {
                 self.now_actor_name = Some(actor.name().into());
             }
-            _ => Err(PastaError::ActorNotFound(text.clone()))?,
+            _ => Err(PastaError::ActorNotFound(name.clone()))?,
         }
+        self.script_builder.change_actor(name)?;
         Ok(())
     }
 
-    /// actor 切り替え
-    pub fn rhai_change_actor<S: Borrow<ImmutableString>>(mut self, text: S) -> Self {
-        if let Err(e) = self.change_actor(text) {
+    /// A: actor 切り替え
+    fn rhai_change_actor<S: Into<ImmutableString>>(mut self, name: S) -> Self {
+        if let Err(e) = self.change_actor(name) {
             log::error!("{:?}", e)
         }
         self
