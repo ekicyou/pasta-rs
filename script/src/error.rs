@@ -27,6 +27,12 @@ pub enum PastaError {
         source: Box<EvalAltResult>,
     },
 
+    #[error("futures error {source}")]
+    FuturesSpawn {
+        #[from]
+        source: futures::task::SpawnError,
+    },
+
     #[error("error: {0}")]
     String(ImmutableString),
 }
