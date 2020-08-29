@@ -1,9 +1,8 @@
 use crate::error::*;
 use crate::ss_fmt::*;
 use rhai::{ImmutableString, StaticVec};
-use std::borrow::{Borrow, Cow};
-use std::collections::HashMap;
 use std::fmt::{Display, Write};
+use std::iter::IntoIterator;
 
 #[derive(Clone, Default, Debug)]
 struct ActorState {
@@ -27,15 +26,15 @@ pub struct SakuraScriptBuilder {
 
 impl SakuraScriptBuilder {
     pub fn new<S: Into<ImmutableString> + Clone>(
-        actors: &[(S, S, usize)],
+        actors: StaticVec<(S, S, usize)>,
         default_emote: S,
     ) -> SakuraScriptBuilder {
         let actors = actors
             .into_iter()
             .map(|a| {
                 let (name, id, new_line) = a;
-                let name = (*name).clone().into();
-                let id = (*id).clone().into();
+                let name = name.into();
+                let id = id.into();
                 ActorState {
                     id: id,
                     name: name,
@@ -43,7 +42,7 @@ impl SakuraScriptBuilder {
                     is_first_talk: false,
                     is_talked: false,
                     has_new_line: false,
-                    new_line: *new_line,
+                    new_line: new_line,
                 }
             })
             .collect();

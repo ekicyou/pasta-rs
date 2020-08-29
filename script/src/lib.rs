@@ -5,6 +5,8 @@ extern crate pest_derive;
 extern crate lazy_static;
 #[macro_use]
 extern crate thiserror;
+#[macro_use]
+extern crate smallvec;
 
 pub mod di;
 pub mod dic;

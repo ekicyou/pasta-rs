@@ -1,9 +1,13 @@
 use pasta_script::error::*;
 use pasta_script::ss::*;
+use rhai::StaticVec;
+#[macro_use]
+extern crate smallvec;
+
 #[test]
 fn test_talk() -> PastaResult<()> {
-    let actors: [(_, _, usize); 2] = [("むらさき", "\\0", 150), ("えも", "\\1", 150)];
-    let mut x = SakuraScriptBuilder::new(&actors, "通常");
+    let actors: StaticVec<_> = smallvec![("むらさき", "\\0", 150), ("えも", "\\1", 150)];
+    let mut x = SakuraScriptBuilder::new(actors, "通常");
     x.change_actor("むらさき")?;
     x.emote("通常")?;
     x.br_t("今日は、")?;
