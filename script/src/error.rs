@@ -36,11 +36,13 @@ impl From<String> for PastaError {
         PastaError::String(e.into())
     }
 }
+
 impl From<ImmutableString> for PastaError {
     fn from(e: ImmutableString) -> Self {
         PastaError::String(e.into())
     }
 }
+
 impl From<&str> for PastaError {
     fn from(e: &str) -> Self {
         PastaError::String(e.into())
