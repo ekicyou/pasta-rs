@@ -63,12 +63,18 @@ impl From<PastaError> for Box<EvalAltResult> {
 
 impl From<PastaError> for String {
     fn from(e: PastaError) -> Self {
-        format!("{}", e)
+        match e {
+            PastaError::String(s) => s.into(),
+            _ => format!("{}", e),
+        }
     }
 }
 
 impl From<PastaError> for ImmutableString {
     fn from(e: PastaError) -> Self {
-        format!("{}", e).into()
+        match e {
+            PastaError::String(s) => s,
+            _ => format!("{}", e).into(),
+        }
     }
 }
