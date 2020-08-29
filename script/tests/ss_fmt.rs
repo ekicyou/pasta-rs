@@ -1,4 +1,4 @@
-use pasta_script::ss_fmt::*;
+use pasta_script::ss::*;
 use std::fmt::Error;
 
 #[test]

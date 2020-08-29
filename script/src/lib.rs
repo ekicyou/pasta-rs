@@ -13,4 +13,3 @@ pub mod dic;
 pub mod error;
 pub mod parser;
 pub mod ss;
-pub mod ss_fmt;
