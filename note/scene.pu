@@ -1,0 +1,27 @@
+@startuml
+title シーン再生の流れ
+autonumber
+
+actor SHIORI3
+boundary Dispatcher
+control OnTalk
+control ScenePlayer
+database SceneDic
+
+activate ScenePlayer
+SHIORI3 -> Dispatcher: リクエスト
+Dispatcher -> OnTalk: 会話イベント
+OnTalk -> ScenePlayer: カットは\n残ってる？
+ScenePlayer --> OnTalk: カット無し
+destroy ScenePlayer
+OnTalk -> SceneDic: シーン要求
+SceneDic --> OnTalk: シーンを\n返す
+
+OnTalk -> ScenePlayer: シーン再生
+activate ScenePlayer
+
+ScenePlayer --> OnTalk: 1カットを\n返す 
+OnTalk --> Dispatcher: レスポンス
+Dispatcher --> SHIORI3: レスポンス
+
+@enduml

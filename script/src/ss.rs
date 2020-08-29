@@ -104,9 +104,9 @@ impl SakuraScriptBuilder {
         Ok(())
     }
 
-    /// 表情の変更
-    pub fn emote<S: Display>(&mut self, text: S) -> PastaResult<()> {
-        self.buf.write_surface(text)?;
+    /// E: 表情の変更
+    pub fn emote<S: Display>(&mut self, value: S) -> PastaResult<()> {
+        self.buf.write_surface(value)?;
         Ok(())
     }
 
@@ -150,7 +150,7 @@ impl SakuraScriptBuilder {
         Ok(())
     }
 
-    /// 改行してトーク。
+    /// B: 改行してトーク。
     /// ただし、セリフ冒頭の場合は改行しない。
     pub fn br_t<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
         let has_br = {

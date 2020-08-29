@@ -365,33 +365,82 @@ impl PlayBuilder {
     }
 
     /// A: actor 切り替え
-    fn rhai_change_actor<S: Into<ImmutableString>>(mut self, name: S) -> Self {
+    fn rhai_change_actor(mut self, name: ImmutableString) -> Self {
         if let Err(e) = self.change_actor(name) {
             log::error!("{:?}", e)
         }
         self
     }
 
-    /// emote 切り替え
-    pub fn emote<S: Borrow<ImmutableString>>(&mut self, text: S) -> PastaResult<()> {
-        let text = text.borrow();
-        match self.actors.get(text) {
-            Some(actor) => {
-                self.now_actor_name = Some(actor.name().into());
-            }
-            _ => Err(PastaError::ActorNotFound(text.clone()))?,
+    /// E: 表情の変更
+    pub fn emote<S: fmt::Display>(&mut self, value: S) -> PastaResult<()> {
+        self.script_builder.emote(value)
+    }
+    /// E: 表情の変更
+    fn rhai_emote(mut self, value: ImmutableString) -> Self {
+        if let Err(e) = self.emote(value) {
+            log::error!("{:?}", e)
         }
+        self
+    }
+
+    /// L: 以降の改行幅を value % に変更。
+    pub fn change_new_line(&mut self, value: usize) -> PastaResult<()> {
+        self.script_builder.change_new_line(value)
+    }
+    /// L: 以降の改行幅を value % に変更。
+    fn rhai_change_new_line(mut self, value: usize) -> Self {
+        if let Err(e) = self.change_new_line(value) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+
+    /// T: トーク
+    pub fn talk<S: AsRef<str>>(&mut self, value: S) -> PastaResult<()> {
+        self.script_builder.talk(value)
+    }
+    /// T: トーク
+    fn rhai_talk(mut self, value: ImmutableString) -> Self {
+        if let Err(e) = self.talk(value.as_str()) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+
+    /// B: 改行してトーク。
+    /// ただし、セリフ冒頭の場合は改行しない。
+    pub fn br_t<S: AsRef<str>>(&mut self, value: S) -> PastaResult<()> {
+        self.script_builder.br_t(value)
+    }
+    /// B: 改行してトーク。
+    /// ただし、セリフ冒頭の場合は改行しない。
+    fn rhai_br_t(mut self, value: ImmutableString) -> Self {
+        if let Err(e) = self.br_t(value.as_str()) {
+            log::error!("{:?}", e)
+        }
+        self
+    }
+
+    /// ここまでの指定でシーンを実行。
+    pub fn action<S: AsRef<str>>(&mut self) -> PastaResult<()> {
+        let build = self.script_builder.build()?;
         Ok(())
     }
 
     /// rhaiへの登録
     pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
-        eng.register_fn("A", Self::rhai_change_actor::<ImmutableString>);
+        eng.register_fn("A", Self::rhai_change_actor);
+        eng.register_fn("E", Self::rhai_emote);
+        eng.register_fn("L", Self::rhai_change_new_line);
+        eng.register_fn("T", Self::rhai_talk);
+        eng.register_fn("B", Self::rhai_br_t);
         eng.register_custom_operator("A", 2)?;
         eng.register_custom_operator("E", 2)?;
+        eng.register_custom_operator("L", 2)?;
         eng.register_custom_operator("T", 2)?;
-        eng.register_custom_operator("W", 2)?;
+        eng.register_custom_operator("B", 2)?;
         Ok(())
     }
 }
