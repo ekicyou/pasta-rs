@@ -1,0 +1,50 @@
+@startuml
+title シーン再生の流れ
+autonumber
+
+actor    OnTalk
+boundary player     as "ScenePlayer\n[p]"
+control  action     as "async\naction()"
+control  cut        as "cut()"
+database shene      as "Shene\n(rhai)"
+control  builder
+
+
+== １回目のシーン再生要求 ==
+
+OnTalk -> player: next()
+activate player
+player->player: ch作成
+player ->action: 起動
+activate action
+player [#blue]->action: Next
+activate player
+action -> shene: 起動
+activate shene
+shene --> builder: 合成
+shene ->  cut: cut()
+activate cut
+builder --> cut: script
+
+cut  [#blue]-> player: Ok\n(script)
+deactivate player
+player --> OnTalk: Ok(Script)
+
+
+
+== ２回目のシーン再生要求 ==
+
+OnTalk -> player: next()
+player [#blue]-> cut :Next
+activate player
+cut --> shene: return
+deactivate cut
+shene --> action: return
+deactivate shene
+action [#blue]-> player: None
+deactivate action
+deactivate player
+player --> OnTalk: None
+deactivate player
+
+@enduml

@@ -1,5 +1,5 @@
 @startuml
-title シーン再生の流れ
+title 会話イベント
 autonumber
 
 actor SHIORI3

@@ -33,6 +33,12 @@ pub enum PastaError {
         source: futures::task::SpawnError,
     },
 
+    #[error("futures error {source}")]
+    FuturesSend {
+        #[from]
+        source: futures::channel::mpsc::SendError,
+    },
+
     #[error("error: {0}")]
     String(ImmutableString),
 }

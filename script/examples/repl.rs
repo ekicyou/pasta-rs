@@ -231,12 +231,6 @@ impl Hasira {
     fn debug(&mut self) -> ImmutableString {
         format!("{:?}", self).into()
     }
-    fn join_str_obj(s1: ImmutableString, s2: Self) -> ImmutableString {
-        format!("{}{}", s1, s2).into()
-    }
-    fn join_obj_obj(s1: Self, s2: ImmutableString) -> ImmutableString {
-        format!("{}{}", s1, s2).into()
-    }
 }
 
 fn init_pasta(eng: &mut Engine) -> Result<(), String> {
