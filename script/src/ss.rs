@@ -1,6 +1,7 @@
 mod builder;
+mod env;
 mod fmt;
-mod scene;
+pub mod scene;
 mod yield_redume;
 
 pub use builder::*;

@@ -1,4 +1,3 @@
-use crate::error::*;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
@@ -73,28 +72,28 @@ impl<T> Resume<T> {
 mod tests {
     use super::*;
     use crate::error::*;
-    use futures::executor::{LocalPool, ThreadPool};
-    use futures::task::{LocalSpawn, LocalSpawnExt, Spawn, SpawnExt};
 
     #[test]
     fn local_pool() -> PastaResult<()> {
+        use futures::executor::LocalPool;
+        use futures::task::LocalSpawnExt;
         let (mut yy, mut rr) = yield_redume::<isize>();
 
         let write_task = async move {
             if let Some(mut yy) = yy.start().await {
-                if (!yy.yield_async(1).await) {
+                if !yy.yield_async(1).await {
                     return;
                 };
-                if (!yy.yield_async(2).await) {
+                if !yy.yield_async(2).await {
                     return;
                 };
-                if (!yy.yield_async(3).await) {
+                if !yy.yield_async(3).await {
                     return;
                 };
-                if (!yy.yield_async(4).await) {
+                if !yy.yield_async(4).await {
                     return;
                 };
-                if (!yy.yield_async(5).await) {
+                if !yy.yield_async(5).await {
                     return;
                 };
             }
@@ -117,23 +116,26 @@ mod tests {
 
     #[test]
     fn thread_pool() -> PastaResult<()> {
+        use futures::executor::block_on;
+        use futures::executor::ThreadPool;
+        use futures::task::SpawnExt;
         let (mut yy, mut rr) = yield_redume::<isize>();
 
         let write_task = async move {
             if let Some(mut yy) = yy.start().await {
-                if (!yy.yield_async(1).await) {
+                if !yy.yield_async(1).await {
                     return;
                 };
-                if (!yy.yield_async(2).await) {
+                if !yy.yield_async(2).await {
                     return;
                 };
-                if (!yy.yield_async(3).await) {
+                if !yy.yield_async(3).await {
                     return;
                 };
-                if (!yy.yield_async(4).await) {
+                if !yy.yield_async(4).await {
                     return;
                 };
-                if (!yy.yield_async(5).await) {
+                if !yy.yield_async(5).await {
                     return;
                 };
             }
@@ -146,10 +148,9 @@ mod tests {
             all
         };
 
-        let mut exec = ThreadPool::new()?;
-        let spawn = exec.spawner();
-        spawn.spawn(write_task)?;
-        let rc = exec.run_until(read_task);
+        let exec = ThreadPool::new()?;
+        exec.spawn_ok(write_task);
+        let rc = block_on(read_task);
         assert_eq!(rc, 15);
         Ok(())
     }
