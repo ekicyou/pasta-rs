@@ -1,34 +1,12 @@
 use crate::error::*;
-use futures::channel::mpsc::{channel, Receiver, Sender};
-use futures::sink::SinkExt;
-use futures::stream::StreamExt;
+use crate::ss::yield_redume;
 use futures::task::{LocalSpawn, LocalSpawnExt};
 use rhai::ImmutableString;
 use std::iter::Iterator;
 
 #[derive(Debug)]
-enum Command {
-    Next,
-    Cancel,
-}
-
-#[derive(Debug)]
-pub struct SceneIter {
-    tc: Sender<Command>,
-    rr: Receiver<Option<ImmutableString>>,
-}
-
-impl SceneIter {
-    pub async fn next(&mut self) -> PastaResult<Option<ImmutableString>> {
-        self.tc.send(Command::Next).await?;
-        Ok(self.rr.next().await.flatten())
-    }
-}
-
-#[derive(Debug)]
 pub struct ScenePlayer {
-    rc: Receiver<Command>,
-    tr: Sender<Option<ImmutableString>>,
+    yy: yield_redume::Yield<ImmutableString>,
     scene: Scene,
 }
 
@@ -36,31 +14,43 @@ pub struct ScenePlayer {
 pub struct Scene {}
 
 impl ScenePlayer {
-    pub fn start<S: LocalSpawn>(spawner: &S, scene: Scene) -> PastaResult<SceneIter> {
-        let (tc, rc) = channel::<Command>(0);
-        let (tr, rr) = channel::<Option<ImmutableString>>(0);
-        let player = ScenePlayer {
-            rc: rc,
-            tr: tr,
-            scene: scene,
+    pub fn start<S: LocalSpawn>(
+        spawner: &S,
+        scene: Scene,
+    ) -> PastaResult<yield_redume::Resume<ImmutableString>> {
+        let (yy, rr) = yield_redume::yield_redume::<ImmutableString>();
+        let future = async move {
+            match yy.start().await {
+                Some(yy) => {
+                    let player = ScenePlayer {
+                        yy: yy,
+                        scene: scene,
+                    };
+                    player.schedule().await;
+                }
+                _ => (),
+            }
         };
-        spawner.spawn_local(player.schedule())?;
-        Ok(SceneIter { tc: tc, rr: rr })
+        spawner.spawn_local(future)?;
+
+        Ok(rr)
+    }
+
+    async fn yy<S: Into<ImmutableString>>(&mut self, s: S) -> bool {
+        self.yy.yield_async(s.into()).await
     }
 
     async fn schedule(mut self) {
         loop {
-            // 何も返さないループ
-            match self.rc.next().await {
-                Some(Command::Next) => {
-                    self.action_scene().await;
-                    self.tr.send(None).await;
-                    break;
-                }
-                _ => {
-                    break;
-                }
+            // 何かする
+
+            // yieldして待機
+            if (!self.yy("test").await) {
+                return;
             }
+
+            // 試験実装なのでそのまま終了
+            return;
         }
     }
 

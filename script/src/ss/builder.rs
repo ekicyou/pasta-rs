@@ -60,11 +60,11 @@ impl SakuraScriptBuilder {
             let mut prefix = String::new();
             for actor in self.actors.iter() {
                 if !actor.is_first_talk && actor.is_talked {
-                    prefix.write_fmt(format_args!("{}", actor.id));
-                    prefix.write_surface(&self.default_emote);
+                    let _ = prefix.write_fmt(format_args!("{}", actor.id));
+                    let _ = prefix.write_surface(&self.default_emote);
                 }
             }
-            prefix.write_fmt(format_args!("{}\\e", &self.buf));
+            let _ = prefix.write_fmt(format_args!("{}\\e", &self.buf));
             prefix.into()
         };
         self.buf = Default::default();
