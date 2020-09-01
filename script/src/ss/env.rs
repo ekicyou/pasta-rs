@@ -1,5 +1,5 @@
 use crate::error::*;
-use rhai::{Dynamic, Engine, EvalAltResult, ImmutableString, Map, RegisterFn};
+use rhai::{Dynamic, Engine, EvalAltResult, ImmutableString, Map, RegisterFn, AST};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -59,7 +59,7 @@ impl EnvDic {
         self.remove(key)
     }
 
-    pub fn reg_rhai(eng: &mut Engine) -> PastaResult<()> {
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         eng.register_indexer_get_set(Self::rhai_get, Self::rhai_set);
         eng.register_fn("remove", Self::rhai_remove);
@@ -70,28 +70,64 @@ impl EnvDic {
 /// 再生環境
 #[derive(Debug, Clone, Default)]
 pub struct PlayEnv {
-    pub(crate) actor: EnvDic,
     pub(crate) req: EnvDic,
+    pub(crate) actor: EnvDic,
     pub(crate) app: EnvDic,
     pub(crate) save: EnvDic,
+    pub(crate) eng: Rc<RefCell<Engine>>,
+    pub(crate) ast: Rc<RefCell<AST>>,
 }
 
 impl PlayEnv {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(eng: Rc<RefCell<Engine>>, ast: Rc<RefCell<AST>>) -> Self {
+        Self {
+            req: Default::default(),
+            actor: Default::default(),
+            app: Default::default(),
+            save: Default::default(),
+            eng: eng,
+            ast: ast,
+        }
     }
-    fn actor(&self) -> EnvDic {
+
+    pub fn actor(&self) -> EnvDic {
         self.actor.clone()
     }
-    fn req(&self) -> EnvDic {
+    pub fn req(&self) -> EnvDic {
         self.req.clone()
     }
-    fn app(&self) -> EnvDic {
+    pub fn app(&self) -> EnvDic {
         self.app.clone()
     }
-    fn save(&self) -> EnvDic {
+    pub fn save(&self) -> EnvDic {
         self.save.clone()
     }
+
+    pub fn rhai_actor(&mut self) -> EnvDic {
+        self.actor()
+    }
+    pub fn rhai_req(&mut self) -> EnvDic {
+        self.req()
+    }
+    pub fn rhai_app(&mut self) -> EnvDic {
+        self.app()
+    }
+    pub fn rhai_save(&mut self) -> EnvDic {
+        self.save()
+    }
+    pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
+        eng.register_type::<Self>();
+        eng.register_get("actor", Self::rhai_actor);
+        eng.register_get("req", Self::rhai_req);
+        eng.register_get("app", Self::rhai_app);
+        eng.register_get("save", Self::rhai_save);
+        Ok(())
+    }
+}
+pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
+    EnvDic::register_rhai(eng)?;
+    PlayEnv::register_rhai(eng)?;
+    Ok(())
 }
 
 #[cfg(test)]

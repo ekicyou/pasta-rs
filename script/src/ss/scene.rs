@@ -2,13 +2,15 @@ use crate::error::*;
 use crate::ss::yield_redume;
 use futures::executor::block_on;
 use futures::task::{LocalSpawn, LocalSpawnExt};
-use rhai::ImmutableString;
+use rhai::{FnPtr, ImmutableString}
 
 pub use super::env::*;
 
 /// シーン情報
 #[derive(Debug, Default, Clone)]
-pub struct Scene {}
+pub struct Scene {
+    fn_ptr:FnPtr,
+}
 
 #[derive(Debug)]
 pub struct ScenePlayer {
@@ -46,24 +48,7 @@ impl ScenePlayer {
         self.yy.yield_async(s.into()).await
     }
 
-    async fn schedule(mut self) {
-        loop {
-            // 何かする
-
-            // yieldして待機
-            if (!self.yy("test").await) {
-                return;
-            }
-
-            // 試験実装なのでそのまま終了
-            return;
-        }
-    }
-
-    /// シーンを再生します。
-    async fn action_scene(&mut self) {
-        return;
-    }
+    async fn schedule(mut self) {}
 
     /// シーンをカットし、１シーン確定します。
     fn cut(&mut self) -> bool {
