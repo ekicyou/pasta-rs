@@ -2,14 +2,14 @@ use crate::error::*;
 use crate::ss::yield_redume;
 use futures::executor::block_on;
 use futures::task::{LocalSpawn, LocalSpawnExt};
-use rhai::{FnPtr, ImmutableString}
+use rhai::{FnPtr, ImmutableString};
 
-pub use super::env::*;
+pub use crate::ss::env::*;
 
 /// シーン情報
 #[derive(Debug, Default, Clone)]
 pub struct Scene {
-    fn_ptr:FnPtr,
+    fn_ptr: FnPtr,
 }
 
 #[derive(Debug)]

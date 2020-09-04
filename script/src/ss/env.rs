@@ -1,4 +1,5 @@
 use crate::error::*;
+use crate::ss::builder::SakuraScriptBuilder;
 use rhai::{Dynamic, Engine, EvalAltResult, ImmutableString, Map, RegisterFn, AST};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -68,7 +69,7 @@ impl EnvDic {
 }
 
 /// 再生環境
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct PlayEnv {
     pub(crate) req: EnvDic,
     pub(crate) actor: EnvDic,
@@ -76,10 +77,15 @@ pub struct PlayEnv {
     pub(crate) save: EnvDic,
     pub(crate) eng: Rc<RefCell<Engine>>,
     pub(crate) ast: Rc<RefCell<AST>>,
+    pub(crate) builder: SakuraScriptBuilder,
 }
 
 impl PlayEnv {
-    pub fn new(eng: Rc<RefCell<Engine>>, ast: Rc<RefCell<AST>>) -> Self {
+    pub fn new(
+        eng: Rc<RefCell<Engine>>,
+        ast: Rc<RefCell<AST>>,
+        builder: SakuraScriptBuilder,
+    ) -> Self {
         Self {
             req: Default::default(),
             actor: Default::default(),
@@ -87,6 +93,7 @@ impl PlayEnv {
             save: Default::default(),
             eng: eng,
             ast: ast,
+            builder: builder,
         }
     }
 
