@@ -2,6 +2,7 @@ use crate::error::*;
 use crate::ss::builder::SakuraScriptBuilder;
 use rhai::{Dynamic, Engine, EvalAltResult, ImmutableString, Map, RegisterFn, AST};
 use std::cell::RefCell;
+use std::fmt::Display;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -122,12 +123,93 @@ impl PlayEnv {
     pub fn rhai_save(&mut self) -> EnvDic {
         self.save()
     }
+
+    /// A: actor 切り替え
+    pub fn change_actor<S: Into<ImmutableString>>(&mut self, name: S) -> PastaResult<()> {
+        self.builder.change_actor(name)
+    }
+
+    /// E: 表情の変更
+    pub fn emote<S: Display>(&mut self, value: S) -> PastaResult<()> {
+        self.builder.emote(value)
+    }
+
+    /// 強制改行(100%)
+    pub fn br(&mut self) -> PastaResult<()> {
+        self.builder.br()
+    }
+    /// 以後の改行幅を変更
+    pub fn change_new_line(&mut self, percent: usize) -> PastaResult<()> {
+        self.builder.change_new_line(percent)
+    }
+    /// トーク
+    pub fn talk<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
+        self.builder.talk(talk)
+    }
+
+    /// B: 改行してトーク。
+    /// ただし、セリフ冒頭の場合は改行しない。
+    pub fn br_t<S: AsRef<str>>(&mut self, talk: S) -> PastaResult<()> {
+        self.builder.br_t(talk)
+    }
+
+    /// A: actor 切り替え
+    fn rhai_change_actor(mut self, name: ImmutableString) -> Self {
+        if let Err(e) = self.change_actor(name) {
+            log::error!("{}", e)
+        }
+        self
+    }
+
+    /// E: 表情の変更
+    fn rhai_emote(mut self, value: ImmutableString) -> Self {
+        if let Err(e) = self.emote(value) {
+            log::error!("{}", e)
+        }
+        self
+    }
+
+    /// 以後の改行幅を変更
+    fn rhai_change_new_line(mut self, percent: usize) -> Self {
+        if let Err(e) = self.change_new_line(percent) {
+            log::error!("{}", e)
+        }
+        self
+    }
+    /// トーク
+    fn rhai_talk(mut self, talk: ImmutableString) -> Self {
+        if let Err(e) = self.talk(talk.as_str()) {
+            log::error!("{}", e)
+        }
+        self
+    }
+
+    /// B: 改行してトーク。
+    /// ただし、セリフ冒頭の場合は改行しない。
+    fn rhai_br_t(mut self, talk: ImmutableString) -> Self {
+        if let Err(e) = self.br_t(talk.as_str()) {
+            log::error!("{}", e)
+        }
+        self
+    }
+
     pub fn register_rhai(eng: &mut Engine) -> PastaResult<()> {
         eng.register_type::<Self>();
         eng.register_get("actor", Self::rhai_actor);
         eng.register_get("req", Self::rhai_req);
         eng.register_get("app", Self::rhai_app);
         eng.register_get("save", Self::rhai_save);
+
+        eng.register_fn("A", Self::rhai_change_actor);
+        eng.register_fn("E", Self::rhai_emote);
+        eng.register_fn("L", Self::rhai_change_new_line);
+        eng.register_fn("T", Self::rhai_talk);
+        eng.register_fn("B", Self::rhai_br_t);
+        eng.register_custom_operator("A", 2)?;
+        eng.register_custom_operator("E", 2)?;
+        eng.register_custom_operator("L", 2)?;
+        eng.register_custom_operator("T", 2)?;
+        eng.register_custom_operator("B", 2)?;
         Ok(())
     }
 }

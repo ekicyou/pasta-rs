@@ -59,29 +59,3 @@ fn test_hasira() -> Result<(), Box<EvalAltResult>> {
     }
     Ok(())
 }
-
-#[test]
-fn test_screenplay() -> Result<(), Box<EvalAltResult>> {
-    let mut engine = Engine::new();
-    register_rhai(&mut engine)?;
-    {
-        let script = r#"
-        let play = screen_play();
-        {
-            let h = hasira();
-            h.title = "明日の天気";
-            play.push(h, |p| {
-                p A "むらさき"
-                        E "興奮笑顔"
-                        T "アヒルやアヒル！"
-                        ;
-                p.action();
-            });
-        }
-        play;
-        "#;
-        let play = engine.eval::<ScreenPlay>(script)?;
-        assert_eq!(play.count(), 1);
-    }
-    Ok(())
-}
