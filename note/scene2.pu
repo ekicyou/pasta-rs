@@ -1,0 +1,54 @@
+@startuml
+title OnTalkの流れ
+autonumber
+
+actor    SHIORI
+boundary OnTalk
+database dic        as "シーン辞書"
+boundary yield      as "yield"
+entity   builder
+control  play       as "Player"
+entity   rhai       as "rhai"
+
+== １回目：シーン作成 ==
+
+SHIORI -> OnTalk: REQ
+OnTalk -> OnTalk: yield無し
+OnTalk <- dic: シーン取得
+
+create play
+OnTalk -> play: シーン起動,yield取得
+
+create yield
+play -> yield: 起動
+yield --> OnTalk: yield戻り
+
+== １回目：非同期処理 ==
+
+play -> play: async move
+activate play
+play -> yield: start().await
+deactivate play
+
+OnTalk -> yield: next()
+
+yield --> play: 再開
+activate play
+create builder
+play -> builder: builder作成
+create rhai
+play -> rhai: スクリプト\n実行
+deactivate play
+activate rhai
+rhai <-> builder: アクション組立
+rhai -> play: cut()
+deactivate rhai
+activate play
+play <- builder: アクション取得
+play -> yield: yield().await
+deactivate play
+
+yield --> OnTalk: next()戻り
+OnTalk --> SHIORI: RES
+
+@enduml
