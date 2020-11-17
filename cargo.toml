@@ -1,7 +1,7 @@
 [workspace]
 license = "MIT"
 members = [
-  "script",
+  "crates/*",
 ]
 
 [replace]
