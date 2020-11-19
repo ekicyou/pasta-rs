@@ -11,7 +11,7 @@ pub struct PastaShiori(Option<Ghost>);
 
 impl ShioriAPI for PastaShiori {
     fn load(&mut self, hinst: usize, load_dir: GPath) -> ApiResult<()> {
-        self.0 = Some(Ghost::new(hinst, load_dir.try_into()?));
+        self.0 = Some(Ghost::new(hinst, load_dir.try_into()?)?);
         Ok(())
     }
     fn unload(&mut self) -> ApiResult<()> {

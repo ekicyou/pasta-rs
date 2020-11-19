@@ -19,6 +19,7 @@ thiserror = "1.0"
 once_cell = "1.5"
 itertools = "0.9"
 shiori3 = { git = "https://github.com/ekicyou/shiori3-rs", branch = "feature/new_api" }
+sled = "0.34"
 
 [target."cfg(windows)".dependencies]
 winapi = {version = "0.3", features = [ "impl-default", "winbase", "stringapiset", ] }
