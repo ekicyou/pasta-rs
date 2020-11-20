@@ -1,0 +1,9 @@
+[package]
+name = "pasta_macro"
+version = "0.1.0"
+authors = ["ekicyou <dot.station@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

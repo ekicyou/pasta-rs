@@ -32,16 +32,16 @@ impl Ghost {
     }
 
     pub fn shiori_request(&mut self, req: GCowStr) -> ApiResult<String> {
-        let method = ShioriRequestHeader::parse(&req)?.method;
-        let rc = match method {
+        let args = ShioriRequestArgs::new(req)?;
+        let rc = match args.req().header.method {
             ShioriRequestRule::get => {
                 let (tx, rx) = mpsc::sync_channel(0);
-                let ev = GhostEvent::ShioriRequest(req, tx);
+                let ev = GhostEvent::ShioriRequest(args, tx);
                 self.tx.send(ev)?;
                 rx.recv()?
             }
             ShioriRequestRule::notify => {
-                let ev = GhostEvent::ShioriNotify(req);
+                let ev = GhostEvent::ShioriNotify(args);
                 self.tx.send(ev)?;
                 Err(ApiError::NoContent)?
             }
@@ -68,11 +68,11 @@ impl GhostChannel {
                 GhostEvent::Load(hinst, load_dir) => {
                     self.load(hinst, load_dir)?;
                 }
-                GhostEvent::ShioriRequest(req, tx) => {
-                    self.shiori_request(req, tx)?;
+                GhostEvent::ShioriRequest(args, tx) => {
+                    self.shiori_request(args, tx)?;
                 }
-                GhostEvent::ShioriNotify(req) => {
-                    self.shiori_notify(req)?;
+                GhostEvent::ShioriNotify(args) => {
+                    self.shiori_notify(args)?;
                 }
             }
         }
@@ -88,14 +88,14 @@ impl GhostChannel {
     }
     fn shiori_request(
         &mut self,
-        req: GCowStr,
+        args: ShioriRequestArgs,
         tx: mpsc::SyncSender<ApiResult<String>>,
     ) -> ApiResult<()> {
-        tx.send(self.shiori_request_impl(req))?;
+        tx.send(self.shiori_request_impl(args))?;
         Ok(())
     }
-    fn shiori_notify(&mut self, req: GCowStr) -> ApiResult<()> {
-        match self.shiori_notify_impl(req) {
+    fn shiori_notify(&mut self, args: ShioriRequestArgs) -> ApiResult<()> {
+        match self.shiori_notify_impl(args) {
             Err(e) => error!("{}", e),
             _ => {}
         };
@@ -110,10 +110,10 @@ impl GhostChannel {
     fn unload_impl(&mut self) -> ApiResult<()> {
         Ok(())
     }
-    fn shiori_request_impl(&mut self, req: GCowStr) -> ApiResult<String> {
+    fn shiori_request_impl(&mut self, args: ShioriRequestArgs) -> ApiResult<String> {
         Err(ApiError::NoContent)
     }
-    fn shiori_notify_impl(&mut self, req: GCowStr) -> ApiResult<()> {
+    fn shiori_notify_impl(&mut self, args: ShioriRequestArgs) -> ApiResult<()> {
         Err(ApiError::NoContent)
     }
 }
