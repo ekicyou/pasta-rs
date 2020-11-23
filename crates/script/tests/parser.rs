@@ -1,6 +1,6 @@
 use pasta_script::Rule;
 use pasta_script::AST;
-use pasta_script::{parse, parse_one, PastaParser};
+use pasta_script::{parse_one, PastaParser};
 
 #[test]
 fn escape() {

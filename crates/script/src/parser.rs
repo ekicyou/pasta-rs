@@ -1,3 +1,4 @@
+use crate::ast;
 use crate::ast::*;
 use pest::error::{Error, ErrorVariant};
 use pest::iterators::{Pair, Pairs};
@@ -35,7 +36,7 @@ pub fn parse_nth(rule: Rule, n: usize, input: &str) -> GrammarResult<Pair<Rule>>
 
 use pest_consume::match_nodes;
 pub type ParserError = pest_consume::Error<Rule>;
-pub type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
+pub type ParserResult<T> = std::result::Result<T, ParserError>;
 pub type Node<'i> = pest_consume::Node<'i, Rule, ()>;
 pub type Nodes<'i> = pest_consume::Nodes<'i, Rule, ()>;
 
@@ -45,15 +46,17 @@ static BUG: &str = "実装バグがあります。";
 // This is the other half of the parser, using pest_consume.
 #[pest_consume::parser]
 impl PastaParser {
-    pub fn EOI(_input: Node) -> Result<()> {
+    pub fn EOI(_input: Node) -> ParserResult<()> {
         Ok(())
     }
 
-    pub fn doc_comment(n: Node) -> Result<AST> {
-        Ok(AST::DocComment(n.as_str().to_owned()))
+    pub fn doc_comment(n: Node) -> ParserResult<AST> {
+        Ok(AST::DocComment(DocComment {
+            comment: n.as_str().to_owned(),
+        }))
     }
 
-    pub fn error(n: Node) -> Result<AST> {
+    pub fn error(n: Node) -> ParserResult<AST> {
         let span = n.as_span();
         let start = span.start();
         let end = span.end();
@@ -61,64 +64,71 @@ impl PastaParser {
         let mut items = n.children();
         let m = items.next().ok_or(n.error(BUG))?;
         let error_token = m.as_str().chars().next().ok_or(n.error(BUG))?;
-        Ok(AST::Error(start, end, error_token, error_str))
+        Ok(AST::Error(ast::Error {
+            start,
+            end,
+            error_token,
+            error_str,
+        }))
     }
 
-    pub fn comment(n: Node) -> Result<AST> {
-        Ok(AST::Comment(n.as_str().to_owned()))
+    pub fn comment(n: Node) -> ParserResult<AST> {
+        Ok(AST::Comment(Comment {
+            comment: n.as_str().to_owned(),
+        }))
     }
 
-    pub fn err_or_comment(n: Node) -> Result<AST> {
+    pub fn err_or_comment(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [comment(a)]=> a,
             [error(a)]=> a,
         ))
     }
 
-    pub fn expr(n: Node) -> Result<AST> {
+    pub fn expr(n: Node) -> ParserResult<AST> {
         let mut items = n.children();
         let m = items.next().ok_or(n.error(BUG))?;
         let keyword = m.as_str().to_owned();
-        Ok(AST::Expr(keyword))
+        Ok(AST::Expr(Expr { expr: keyword }))
     }
 
-    pub fn action(n: Node) -> Result<AST> {
+    pub fn action(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Action(Box::new(a)),
+            [expr(a)]=> AST::Action(Action{ast: Box::new(a)}),
         ))
     }
 
-    pub fn require(n: Node) -> Result<AST> {
+    pub fn require(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Require(Box::new(a)),
+            [expr(a)]=> AST::Require(Require{ast: Box::new(a)}),
         ))
     }
 
-    pub fn either(n: Node) -> Result<AST> {
+    pub fn either(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Either(Box::new(a)),
+            [expr(a)]=> AST::Either(Either{ast: Box::new(a)}),
         ))
     }
 
-    pub fn forget(n: Node) -> Result<AST> {
+    pub fn forget(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Forget(Box::new(a)),
+            [expr(a)]=> AST::Forget(Forget{ast: Box::new(a)}),
         ))
     }
 
-    pub fn memory(n: Node) -> Result<AST> {
+    pub fn memory(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Memory(Box::new(a)),
+            [expr(a)]=> AST::Memory(Memory{ast: Box::new(a)}),
         ))
     }
 
-    pub fn h_attrs(n: Node) -> Result<AST> {
+    pub fn h_attrs(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [h_attr(a)..]=>AST::Attrs(a.collect()),
+            [h_attr(a)..]=>AST::Attrs(Attrs{items: a.collect()}),
         ))
     }
 
-    pub fn h_attr(n: Node) -> Result<AST> {
+    pub fn h_attr(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [require(a)]=> a,
             [either(a)]=> a,
@@ -128,32 +138,32 @@ impl PastaParser {
         ))
     }
 
-    pub fn hasira_level(n: Node) -> Result<usize> {
+    pub fn hasira_level(n: Node) -> ParserResult<usize> {
         let count = n.as_str().chars().count();
         Ok(count)
     }
 
-    pub fn hasira_title(n: Node) -> Result<&str> {
+    pub fn hasira_title(n: Node) -> ParserResult<&str> {
         Ok(n.as_str())
     }
 
-    pub fn hasira_header(n: Node) -> Result<(usize, &str)> {
+    pub fn hasira_header(n: Node) -> ParserResult<(usize, &str)> {
         Ok(match_nodes!(n.into_children();
             [hasira_level(l),hasira_title(s)] => (l,s),
             [hasira_level(l)] => (l,""),
         ))
     }
-    pub fn actor(n: Node) -> Result<&str> {
+    pub fn actor(n: Node) -> ParserResult<&str> {
         Ok(n.as_str())
     }
 
-    pub fn actor_header(n: Node) -> Result<&str> {
+    pub fn actor_header(n: Node) -> ParserResult<&str> {
         Ok(match_nodes!(n.children();
             [actor(a)] => a,
         ))
     }
 
-    pub fn hasira(n: Node) -> Result<AST> {
+    pub fn hasira(n: Node) -> ParserResult<AST> {
         let (level, title, attrs) = match_nodes!(n.children();
             [hasira_header(a),h_attrs(attrs)] => {
                 let (l,s)=a;
@@ -167,27 +177,31 @@ impl PastaParser {
             [actor_header(a)] => (0,a,None),
         );
 
-        Ok(AST::Hasira(level, title.to_owned(), attrs))
+        Ok(AST::Hasira(Hasira {
+            level,
+            title: title.to_owned(),
+            attrs,
+        }))
     }
 
-    pub fn s_normal(n: Node) -> Result<&str> {
+    pub fn s_normal(n: Node) -> ParserResult<&str> {
         Ok(n.as_str())
     }
 
-    pub fn escape(n: Node) -> Result<char> {
+    pub fn escape(n: Node) -> ParserResult<char> {
         let m = n.children().next().ok_or(n.error(BUG))?;
         let c = m.as_str().chars().next().ok_or(n.error(BUG))?;
         Ok(c)
     }
 
-    pub fn s_token(n: Node) -> Result<(Option<&str>, Option<char>)> {
+    pub fn s_token(n: Node) -> ParserResult<(Option<&str>, Option<char>)> {
         Ok(match_nodes!(n.into_children();
             [s_normal(s)] => (Some(s), None),
             [escape(c)] => (None, Some(c)),
         ))
     }
 
-    pub fn serif(n: Node) -> Result<AST> {
+    pub fn serif(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [s_token(tokens)..] => {
                 let mut buf = String::new();
@@ -199,12 +213,12 @@ impl PastaParser {
                         buf.push(c);
                     }
                 }
-                AST::Serif(buf)
+                AST::Serif(Serif{serif: buf})
             },
         ))
     }
 
-    pub fn t_attr(n: Node) -> Result<AST> {
+    pub fn t_attr(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [require(a)]=> a,
             [either(a)]=> a,
@@ -214,20 +228,22 @@ impl PastaParser {
         ))
     }
 
-    pub fn t_item(n: Node) -> Result<AST> {
+    pub fn t_item(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [t_attr(a)]=> a,
             [serif(a)]=> a,
         ))
     }
 
-    pub fn togaki(n: Node) -> Result<AST> {
-        Ok(AST::Togaki(match_nodes!(n.into_children();
-            [t_item(a)..]=> a.collect(),
-        )))
+    pub fn togaki(n: Node) -> ParserResult<AST> {
+        Ok(AST::Togaki(Togaki {
+            items: match_nodes!(n.into_children();
+                [t_item(a)..]=> a.collect(),
+            ),
+        }))
     }
 
-    pub fn line(n: Node) -> Result<AST> {
+    pub fn line(n: Node) -> ParserResult<AST> {
         let mut code = None;
         let mut err = None;
         let mut comment = None;
@@ -249,10 +265,10 @@ impl PastaParser {
         let code = code.map(|x| Box::new(x));
         let err = err.map(|x| Box::new(x));
         let comment = comment.map(|x| Box::new(x));
-        Ok(AST::Line(code, err, comment))
+        Ok(AST::Line(Line { code, err, comment }))
     }
 
-    pub fn script(n: Node) -> Result<AST> {
+    pub fn script(n: Node) -> ParserResult<AST> {
         let mut vv = Vec::new();
         for n in n.children() {
             let ast = match n.as_rule() {
@@ -264,15 +280,15 @@ impl PastaParser {
             };
             vv.push(ast);
         }
-        Ok(AST::Script(vv))
+        Ok(AST::Script(Script { items: vv }))
     }
 }
 
-pub fn parse_node<'i>(rule: Rule, input_str: &'i str) -> Result<Nodes<'i>> {
+pub fn parse_node<'i>(rule: Rule, input_str: &'i str) -> ParserResult<Nodes<'i>> {
     use pest_consume::Parser;
     PastaParser::parse(rule, input_str)
 }
 
-pub fn parse_one<'i>(rule: Rule, input_str: &'i str) -> Result<Node<'i>> {
+pub fn parse_one<'i>(rule: Rule, input_str: &'i str) -> ParserResult<Node<'i>> {
     parse_node(rule, input_str)?.single()
 }

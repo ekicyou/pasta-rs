@@ -1,26 +1,107 @@
-#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AST {
     Unimplemented,
 
-    DocComment(String),
-    Error(usize, usize, char, String),
-    Comment(String),
+    DocComment(DocComment),
+    Comment(Comment),
+    Error(Error),
 
-    Expr(String),
+    Expr(Expr),
 
-    Action(Box<AST>),
-    Require(Box<AST>),
-    Either(Box<AST>),
-    Forget(Box<AST>),
-    Memory(Box<AST>),
-    Attrs(Vec<AST>),
+    Action(Action),
+    Require(Require),
+    Either(Either),
+    Forget(Forget),
+    Memory(Memory),
+    Attrs(Attrs),
 
-    Hasira(usize, String, Option<Box<AST>>),
+    Hasira(Hasira),
 
-    Serif(String),
-    Togaki(Vec<AST>),
+    Serif(Serif),
+    Togaki(Togaki),
 
-    Line(Option<Box<AST>>, Option<Box<AST>>, Option<Box<AST>>),
-    Script(Vec<AST>),
+    Line(Line),
+    Script(Script),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Line {
+    pub code: Option<Box<AST>>,
+    pub err: Option<Box<AST>>,
+    pub comment: Option<Box<AST>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Hasira {
+    pub level: usize,
+    pub title: String,
+    pub attrs: Option<Box<AST>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Error {
+    pub start: usize,
+    pub end: usize,
+    pub error_token: char,
+    pub error_str: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DocComment {
+    pub comment: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Comment {
+    pub comment: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Expr {
+    pub expr: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Serif {
+    pub serif: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Action {
+    pub ast: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Require {
+    pub ast: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Either {
+    pub ast: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Forget {
+    pub ast: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Memory {
+    pub ast: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Attrs {
+    pub items: Vec<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Togaki {
+    pub items: Vec<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Script {
+    pub items: Vec<AST>,
 }
