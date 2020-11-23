@@ -1,4 +1,6 @@
-use pasta_script::parser::{parse_one, PastaParser, Rule, AST};
+use pasta_script::PastaAST as AST;
+use pasta_script::PastaParserRule as Rule;
+use pasta_script::{parse, parse_one, PastaParser};
 
 #[test]
 fn escape() {
@@ -328,7 +330,7 @@ fn script() {
         if let AST::script(lines) = ast {
             assert_eq!(lines.len(), 18);
             match &lines[0] {
-                AST::doc_comment(..) => {}
+                AST::DocComment(..) => {}
                 x => {
                     assert!(false, "doc_comment {:?}", x);
                 }

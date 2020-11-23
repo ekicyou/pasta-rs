@@ -5,4 +5,5 @@ mod parser;
 pub use ast::AST as PastaAST;
 pub use parser::GrammarError as PastaGrammarError;
 pub use parser::GrammarResult as PastaGrammarResult;
-pub use parser::PastaParser;
+pub use parser::Rule as PastaParserRule;
+pub use parser::{parse, parse_nth, parse_one, PastaParser};

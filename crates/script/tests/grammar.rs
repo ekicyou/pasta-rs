@@ -1,4 +1,5 @@
-use pasta_script::parser::{parse, parse_nth, Rule};
+use pasta_script::PastaParserRule as Rule;
+use pasta_script::{parse, parse_nth};
 use pest::error::Error;
 use pest::iterators::{Pair, Pairs};
 

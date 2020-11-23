@@ -3,7 +3,7 @@
 pub enum AST {
     Unimplemented,
 
-    doc_comment(String),
+    DocComment(String),
     error(usize, usize, char, String),
     comment(String),
 

@@ -50,7 +50,7 @@ impl PastaParser {
     }
 
     pub fn doc_comment(n: Node) -> Result<AST> {
-        Ok(AST::doc_comment(n.as_str().to_owned()))
+        Ok(AST::DocComment(n.as_str().to_owned()))
     }
 
     pub fn error(n: Node) -> Result<AST> {
