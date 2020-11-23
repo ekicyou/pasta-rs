@@ -1,5 +1,5 @@
+use pasta_script::ast::*;
 use pasta_script::Rule;
-use pasta_script::AST;
 use pasta_script::{parse_one, PastaParser};
 
 #[test]
@@ -18,11 +18,16 @@ fn error() {
     let node = parse_one(rule, text).unwrap();
     let ast = PastaParser::error(node).unwrap();
     match ast {
-        AST::Error(start, end, token, text) => {
+        AST::Error(Error {
+            start,
+            end,
+            error_token,
+            error_str,
+        }) => {
             assert_eq!(start, 0);
             assert_eq!(end, 6 * 3);
-            assert_eq!(token, '＠');
-            assert_eq!(text, "＠エラーです");
+            assert_eq!(error_token, '＠');
+            assert_eq!(error_str, "＠エラーです");
         }
         _ => assert!(false, "{:?}", ast),
     }
@@ -34,7 +39,12 @@ fn comment() {
     let text = "#コメントです。";
     let node = parse_one(rule, text).unwrap();
     let ast = PastaParser::comment(node).unwrap();
-    assert_eq!(ast, AST::Comment(text.to_owned()));
+    assert_eq!(
+        ast,
+        AST::Comment(Comment {
+            comment: text.to_owned()
+        })
+    );
 }
 
 #[test]
@@ -44,17 +54,28 @@ fn err_or_comment() {
         let text = "#コメントです。";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::err_or_comment(node).unwrap();
-        assert_eq!(ast, AST::Comment(text.to_owned()));
+        assert_eq!(
+            ast,
+            AST::Comment(Comment {
+                comment: text.to_owned()
+            })
+        );
     }
     {
         let text = "エラーなんです。";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::err_or_comment(node).unwrap();
-        if let AST::Error(s, e, c, t) = ast {
-            assert_eq!(s, 0);
-            assert_eq!(e, 24);
-            assert_eq!(c, 'エ');
-            assert_eq!(t, "エラーなんです。");
+        if let AST::Error(Error {
+            start,
+            end,
+            error_token,
+            error_str,
+        }) = ast
+        {
+            assert_eq!(start, 0);
+            assert_eq!(end, 24);
+            assert_eq!(error_token, 'エ');
+            assert_eq!(error_str, "エラーなんです。");
         } else {
             assert!(false);
         }
@@ -68,8 +89,19 @@ fn expr() {
         let text = "属性名";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::expr(node).unwrap();
-        assert_eq!(ast, AST::Expr(text.to_owned()));
+        assert_eq!(
+            ast,
+            AST::Expr(Expr {
+                expr: text.to_owned()
+            })
+        );
     }
+}
+
+#[allow(non_snake_case)]
+fn EXPR<S: Into<String>>(text: S) -> Box<AST> {
+    let text = text.into();
+    Box::new(AST::Expr(Expr { expr: text }))
 }
 
 #[test]
@@ -79,7 +111,7 @@ fn action() {
         let text = "＠式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::action(node).unwrap();
-        assert_eq!(ast, AST::Action(Box::new(AST::Expr("式".to_owned()))));
+        assert_eq!(ast, AST::Action(Action { ast: EXPR("式") }));
     }
 }
 
@@ -90,7 +122,7 @@ fn require() {
         let text = "!式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::require(node).unwrap();
-        assert_eq!(ast, AST::Require(Box::new(AST::Expr("式".to_owned()))));
+        assert_eq!(ast, AST::Require(Require { ast: EXPR("式") }));
     }
 }
 
@@ -101,7 +133,7 @@ fn either() {
         let text = "?式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::either(node).unwrap();
-        assert_eq!(ast, AST::Either(Box::new(AST::Expr("式".to_owned()))));
+        assert_eq!(ast, AST::Either(Either { ast: EXPR("式") }));
     }
 }
 
@@ -112,7 +144,7 @@ fn forget() {
         let text = "-式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::forget(node).unwrap();
-        assert_eq!(ast, AST::Forget(Box::new(AST::Expr("式".to_owned()))));
+        assert_eq!(ast, AST::Forget(Forget { ast: EXPR("式") }));
     }
 }
 
@@ -123,17 +155,13 @@ fn memory() {
         let text = "＋式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::memory(node).unwrap();
-        assert_eq!(ast, AST::Memory(Box::new(AST::Expr("式".to_owned()))));
+        assert_eq!(ast, AST::Memory(Memory { ast: EXPR("式") }));
     }
 }
 
 #[test]
 fn h_attrs() {
     let rule = Rule::h_attrs;
-    fn x<S: Into<String>>(s: S) -> Box<AST> {
-        let keyword = s.into();
-        Box::new(AST::Expr(keyword))
-    }
     {
         let text = "！必須？どれか＋追加＠関数";
         let node = parse_one(rule, text).unwrap();
@@ -141,11 +169,19 @@ fn h_attrs() {
         let ast = ast.unwrap();
 
         let mut vv = Vec::new();
-        vv.push(AST::Require(x("必須")));
-        vv.push(AST::Either(x("どれか")));
-        vv.push(AST::Memory(x("追加")));
-        vv.push(AST::Action(x("関数")));
-        let right = AST::Attrs(vv);
+        vv.push(AST::Require(Require {
+            ast: EXPR("必須")
+        }));
+        vv.push(AST::Either(Either {
+            ast: EXPR("どれか"),
+        }));
+        vv.push(AST::Memory(Memory {
+            ast: EXPR("追加")
+        }));
+        vv.push(AST::Action(Action {
+            ast: EXPR("関数")
+        }));
+        let right = AST::Attrs(Attrs { items: vv });
         assert_eq!(ast, right);
     }
 }
@@ -202,7 +238,11 @@ fn hasira() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira(node).unwrap();
         match ast {
-            AST::Hasira(level, title, attrs) => {
+            AST::Hasira(Hasira {
+                level,
+                title,
+                attrs,
+            }) => {
                 assert_eq!(level, 3);
                 assert_eq!(title, "柱");
                 assert!(attrs.is_some());
@@ -215,7 +255,11 @@ fn hasira() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira(node).unwrap();
         match ast {
-            AST::Hasira(level, title, attrs) => {
+            AST::Hasira(Hasira {
+                level,
+                title,
+                attrs,
+            }) => {
                 assert_eq!(level, 0);
                 assert_eq!(title, "アクター");
                 assert!(attrs.is_none());
@@ -232,28 +276,39 @@ fn serif() {
         let text = "セリフ＠＠セリフ";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::serif(node).unwrap();
-        assert_eq!(ast, AST::Serif("セリフ＠セリフ".to_owned()));
+        assert_eq!(
+            ast,
+            AST::Serif(Serif {
+                serif: "セリフ＠セリフ".to_owned()
+            })
+        );
     }
 }
 
 #[test]
 fn t_attr() {
     let rule = Rule::t_attr;
-    fn x<S: Into<String>>(s: S) -> Box<AST> {
-        let keyword = s.into();
-        Box::new(AST::Expr(keyword))
-    }
     {
         let text = "＠アクション";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::t_attr(node).unwrap();
-        assert_eq!(ast, AST::Action(x("アクション")));
+        assert_eq!(
+            ast,
+            AST::Action(Action {
+                ast: EXPR("アクション")
+            })
+        );
     }
     {
         let text = "＠!アクション";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::t_attr(node).unwrap();
-        assert_eq!(ast, AST::Require(x("アクション")));
+        assert_eq!(
+            ast,
+            AST::Require(Require {
+                ast: EXPR("アクション")
+            })
+        );
     }
 }
 
@@ -262,11 +317,11 @@ fn togaki() {
     let rule = Rule::togaki;
     fn action<S: Into<String>>(s: S) -> AST {
         let keyword = s.into();
-        let expr = Box::new(AST::Expr(keyword));
-        AST::Action(expr)
+        let expr = EXPR(keyword);
+        AST::Action(Action { ast: expr })
     }
     fn serif<S: Into<String>>(s: S) -> AST {
-        AST::Serif(s.into())
+        AST::Serif(Serif { serif: s.into() })
     }
     {
         let text = "　セリフ＠＠だね。＠アクション";
@@ -274,7 +329,7 @@ fn togaki() {
         let ast = PastaParser::togaki(node).unwrap();
 
         let vv = vec![serif("セリフ＠だね。"), action("アクション")];
-        assert_eq!(ast, AST::Togaki(vv));
+        assert_eq!(ast, AST::Togaki(Togaki { items: vv }));
     }
 }
 
@@ -290,13 +345,22 @@ fn line() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::line(node).unwrap();
 
-        let a = Some(AST::Hasira(1, "柱".to_owned(), None));
-        let e = Some(AST::Error(12, 27, '不', "不思議だね".to_owned()));
+        let a = Some(AST::Hasira(Hasira {
+            level: 1,
+            title: "柱".to_owned(),
+            attrs: None,
+        }));
+        let e = Some(AST::Error(Error {
+            start: 12,
+            end: 27,
+            error_token: '不',
+            error_str: "不思議だね".to_owned(),
+        }));
         let c = None;
-        let a = y(a);
-        let e = y(e);
-        let c = y(c);
-        let left = AST::Line(a, e, c);
+        let code = y(a);
+        let err = y(e);
+        let comment = y(c);
+        let left = AST::Line(Line { code, err, comment });
 
         assert_eq!(ast, left);
     }
@@ -305,14 +369,18 @@ fn line() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::line(node).unwrap();
 
-        let t_items = vec![AST::Serif("トークです。".to_owned())];
-        let a = Some(AST::Togaki(t_items));
+        let t_items = vec![AST::Serif(Serif {
+            serif: "トークです。".to_owned(),
+        })];
+        let a = Some(AST::Togaki(Togaki { items: t_items }));
         let e = None;
-        let c = Some(AST::Comment("＃コメント".to_owned()));
-        let a = y(a);
-        let e = y(e);
-        let c = y(c);
-        let left = AST::Line(a, e, c);
+        let c = Some(AST::Comment(Comment {
+            comment: "＃コメント".to_owned(),
+        }));
+        let code = y(a);
+        let err = y(e);
+        let comment = y(c);
+        let left = AST::Line(Line { code, err, comment });
 
         assert_eq!(ast, left);
     }
@@ -327,7 +395,7 @@ fn script() {
         println!("{:?}\n", node);
         let ast = PastaParser::script(node).unwrap();
         println!("{:?}", ast);
-        if let AST::Script(lines) = ast {
+        if let AST::Script(Script { items: lines }) = ast {
             assert_eq!(lines.len(), 18);
             match &lines[0] {
                 AST::DocComment(..) => {}
