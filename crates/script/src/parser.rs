@@ -94,31 +94,31 @@ impl PastaParser {
 
     pub fn action(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Action(Action{ast: Box::new(a)}),
+            [expr(a)]=> AST::Action(Action{expr: Box::new(a)}),
         ))
     }
 
     pub fn require(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Require(Require{ast: Box::new(a)}),
+            [expr(a)]=> AST::Require(Require{expr: Box::new(a)}),
         ))
     }
 
     pub fn either(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Either(Either{ast: Box::new(a)}),
+            [expr(a)]=> AST::Either(Either{expr: Box::new(a)}),
         ))
     }
 
     pub fn forget(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Forget(Forget{ast: Box::new(a)}),
+            [expr(a)]=> AST::Forget(Forget{expr: Box::new(a)}),
         ))
     }
 
     pub fn memory(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Memory(Memory{ast: Box::new(a)}),
+            [expr(a)]=> AST::Memory(Memory{expr: Box::new(a)}),
         ))
     }
 

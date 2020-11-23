@@ -68,27 +68,27 @@ pub struct Serif {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Action {
-    pub ast: Box<AST>,
+    pub expr: Box<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Require {
-    pub ast: Box<AST>,
+    pub expr: Box<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Either {
-    pub ast: Box<AST>,
+    pub expr: Box<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Forget {
-    pub ast: Box<AST>,
+    pub expr: Box<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Memory {
-    pub ast: Box<AST>,
+    pub expr: Box<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

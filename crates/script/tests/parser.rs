@@ -111,7 +111,7 @@ fn action() {
         let text = "＠式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::action(node).unwrap();
-        assert_eq!(ast, AST::Action(Action { ast: EXPR("式") }));
+        assert_eq!(ast, AST::Action(Action { expr: EXPR("式") }));
     }
 }
 
@@ -122,7 +122,7 @@ fn require() {
         let text = "!式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::require(node).unwrap();
-        assert_eq!(ast, AST::Require(Require { ast: EXPR("式") }));
+        assert_eq!(ast, AST::Require(Require { expr: EXPR("式") }));
     }
 }
 
@@ -133,7 +133,7 @@ fn either() {
         let text = "?式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::either(node).unwrap();
-        assert_eq!(ast, AST::Either(Either { ast: EXPR("式") }));
+        assert_eq!(ast, AST::Either(Either { expr: EXPR("式") }));
     }
 }
 
@@ -144,7 +144,7 @@ fn forget() {
         let text = "-式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::forget(node).unwrap();
-        assert_eq!(ast, AST::Forget(Forget { ast: EXPR("式") }));
+        assert_eq!(ast, AST::Forget(Forget { expr: EXPR("式") }));
     }
 }
 
@@ -155,7 +155,7 @@ fn memory() {
         let text = "＋式";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::memory(node).unwrap();
-        assert_eq!(ast, AST::Memory(Memory { ast: EXPR("式") }));
+        assert_eq!(ast, AST::Memory(Memory { expr: EXPR("式") }));
     }
 }
 
@@ -170,16 +170,16 @@ fn h_attrs() {
 
         let mut vv = Vec::new();
         vv.push(AST::Require(Require {
-            ast: EXPR("必須")
+            expr: EXPR("必須")
         }));
         vv.push(AST::Either(Either {
-            ast: EXPR("どれか"),
+            expr: EXPR("どれか"),
         }));
         vv.push(AST::Memory(Memory {
-            ast: EXPR("追加")
+            expr: EXPR("追加")
         }));
         vv.push(AST::Action(Action {
-            ast: EXPR("関数")
+            expr: EXPR("関数")
         }));
         let right = AST::Attrs(Attrs { items: vv });
         assert_eq!(ast, right);
@@ -295,7 +295,7 @@ fn t_attr() {
         assert_eq!(
             ast,
             AST::Action(Action {
-                ast: EXPR("アクション")
+                expr: EXPR("アクション")
             })
         );
     }
@@ -306,7 +306,7 @@ fn t_attr() {
         assert_eq!(
             ast,
             AST::Require(Require {
-                ast: EXPR("アクション")
+                expr: EXPR("アクション")
             })
         );
     }
@@ -318,7 +318,7 @@ fn togaki() {
     fn action<S: Into<String>>(s: S) -> AST {
         let keyword = s.into();
         let expr = EXPR(keyword);
-        AST::Action(Action { ast: expr })
+        AST::Action(Action { expr })
     }
     fn serif<S: Into<String>>(s: S) -> AST {
         AST::Serif(Serif { serif: s.into() })
