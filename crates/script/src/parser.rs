@@ -1,13 +1,15 @@
+use crate::ast::*;
 use pest::error::{Error, ErrorVariant};
 use pest::iterators::{Pair, Pairs};
 use pest::Position;
+use pest_derive::*;
 
 #[derive(Parser)]
 #[grammar = "pasta.pest"]
 pub struct PastaParser;
 
-type GrammarError = pest::error::Error<Rule>;
-type GrammarResult<T> = std::result::Result<T, GrammarError>;
+pub type GrammarError = pest::error::Error<Rule>;
+pub type GrammarResult<T> = std::result::Result<T, GrammarError>;
 
 /// Parses a `&str` starting from `rule`.
 pub fn parse(rule: Rule, input: &str) -> GrammarResult<Pairs<Rule>> {
@@ -36,33 +38,6 @@ pub type ParserError = pest_consume::Error<Rule>;
 pub type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
 pub type Node<'i> = pest_consume::Node<'i, Rule, ()>;
 pub type Nodes<'i> = pest_consume::Nodes<'i, Rule, ()>;
-
-#[allow(non_camel_case_types)]
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AST {
-    not_implement,
-
-    doc_comment(String),
-    error(usize, usize, char, String),
-    comment(String),
-
-    expr(String),
-
-    action(Box<AST>),
-    require(Box<AST>),
-    either(Box<AST>),
-    forget(Box<AST>),
-    memory(Box<AST>),
-    attrs(Vec<AST>),
-
-    hasira(usize, String, Option<Box<AST>>),
-
-    serif(String),
-    togaki(Vec<AST>),
-
-    line(Option<Box<AST>>, Option<Box<AST>>, Option<Box<AST>>),
-    script(Vec<AST>),
-}
 
 #[allow(dead_code)]
 static BUG: &str = "実装バグがあります。";

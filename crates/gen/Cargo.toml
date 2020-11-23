@@ -1,10 +1,11 @@
 [package]
-name = "shiori_gen"
-version = "0.1.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
 edition = "2018"
+name = "shiori_gen"
+version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
 
 [dependencies]
 log = "0.4"

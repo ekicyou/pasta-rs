@@ -7,26 +7,16 @@ license = "MIT"
 name = "pasta_script"
 readme = "README.md"
 repository = "https://github.com/ekicyou/pasta-rs"
-version = "0.3.0"
+version = "0.5.0"
 
 [dependencies]
-base32 = "0.4"
 itertools = "0.9"
-lazy_static = "1.4"
 log = "0.4"
 pest = "2.1"
 pest_consume = "1.0"
 pest_derive = "2.1"
 smallvec = "1.4"
 thiserror = "1.0"
-
-[dependencies.futures]
-features = ["thread-pool"]
-version = "0.3"
-
-[dependencies.rhai]
-features = ["unicode-xid-ident", "internals", "serde"]
-version = "0.19"
 
 [dev-dependencies]
 env_logger = "0.8"
