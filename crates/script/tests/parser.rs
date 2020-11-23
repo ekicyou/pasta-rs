@@ -1,5 +1,5 @@
-use pasta_script::PastaAST as AST;
-use pasta_script::PastaParserRule as Rule;
+use pasta_script::Rule;
+use pasta_script::AST;
 use pasta_script::{parse, parse_one, PastaParser};
 
 #[test]
