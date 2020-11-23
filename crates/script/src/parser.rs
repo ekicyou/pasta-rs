@@ -61,11 +61,11 @@ impl PastaParser {
         let mut items = n.children();
         let m = items.next().ok_or(n.error(BUG))?;
         let error_token = m.as_str().chars().next().ok_or(n.error(BUG))?;
-        Ok(AST::error(start, end, error_token, error_str))
+        Ok(AST::Error(start, end, error_token, error_str))
     }
 
     pub fn comment(n: Node) -> Result<AST> {
-        Ok(AST::comment(n.as_str().to_owned()))
+        Ok(AST::Comment(n.as_str().to_owned()))
     }
 
     pub fn err_or_comment(n: Node) -> Result<AST> {
@@ -79,42 +79,42 @@ impl PastaParser {
         let mut items = n.children();
         let m = items.next().ok_or(n.error(BUG))?;
         let keyword = m.as_str().to_owned();
-        Ok(AST::expr(keyword))
+        Ok(AST::Expr(keyword))
     }
 
     pub fn action(n: Node) -> Result<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::action(Box::new(a)),
+            [expr(a)]=> AST::Action(Box::new(a)),
         ))
     }
 
     pub fn require(n: Node) -> Result<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::require(Box::new(a)),
+            [expr(a)]=> AST::Require(Box::new(a)),
         ))
     }
 
     pub fn either(n: Node) -> Result<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::either(Box::new(a)),
+            [expr(a)]=> AST::Either(Box::new(a)),
         ))
     }
 
     pub fn forget(n: Node) -> Result<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::forget(Box::new(a)),
+            [expr(a)]=> AST::Forget(Box::new(a)),
         ))
     }
 
     pub fn memory(n: Node) -> Result<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::memory(Box::new(a)),
+            [expr(a)]=> AST::Memory(Box::new(a)),
         ))
     }
 
     pub fn h_attrs(n: Node) -> Result<AST> {
         Ok(match_nodes!(n.into_children();
-            [h_attr(a)..]=>AST::attrs(a.collect()),
+            [h_attr(a)..]=>AST::Attrs(a.collect()),
         ))
     }
 
@@ -167,7 +167,7 @@ impl PastaParser {
             [actor_header(a)] => (0,a,None),
         );
 
-        Ok(AST::hasira(level, title.to_owned(), attrs))
+        Ok(AST::Hasira(level, title.to_owned(), attrs))
     }
 
     pub fn s_normal(n: Node) -> Result<&str> {
@@ -199,7 +199,7 @@ impl PastaParser {
                         buf.push(c);
                     }
                 }
-                AST::serif(buf)
+                AST::Serif(buf)
             },
         ))
     }
@@ -222,7 +222,7 @@ impl PastaParser {
     }
 
     pub fn togaki(n: Node) -> Result<AST> {
-        Ok(AST::togaki(match_nodes!(n.into_children();
+        Ok(AST::Togaki(match_nodes!(n.into_children();
             [t_item(a)..]=> a.collect(),
         )))
     }
@@ -238,8 +238,8 @@ impl PastaParser {
                 Rule::err_or_comment => {
                     let ast = Self::err_or_comment(n)?;
                     match ast {
-                        AST::error(..) => err = Some(ast),
-                        AST::comment(..) => comment = Some(ast),
+                        AST::Error(..) => err = Some(ast),
+                        AST::Comment(..) => comment = Some(ast),
                         _ => {}
                     }
                 }
@@ -249,7 +249,7 @@ impl PastaParser {
         let code = code.map(|x| Box::new(x));
         let err = err.map(|x| Box::new(x));
         let comment = comment.map(|x| Box::new(x));
-        Ok(AST::line(code, err, comment))
+        Ok(AST::Line(code, err, comment))
     }
 
     pub fn script(n: Node) -> Result<AST> {
@@ -264,7 +264,7 @@ impl PastaParser {
             };
             vv.push(ast);
         }
-        Ok(AST::script(vv))
+        Ok(AST::Script(vv))
     }
 }
 

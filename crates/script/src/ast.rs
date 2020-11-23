@@ -4,23 +4,23 @@ pub enum AST {
     Unimplemented,
 
     DocComment(String),
-    error(usize, usize, char, String),
-    comment(String),
+    Error(usize, usize, char, String),
+    Comment(String),
 
-    expr(String),
+    Expr(String),
 
-    action(Box<AST>),
-    require(Box<AST>),
-    either(Box<AST>),
-    forget(Box<AST>),
-    memory(Box<AST>),
-    attrs(Vec<AST>),
+    Action(Box<AST>),
+    Require(Box<AST>),
+    Either(Box<AST>),
+    Forget(Box<AST>),
+    Memory(Box<AST>),
+    Attrs(Vec<AST>),
 
-    hasira(usize, String, Option<Box<AST>>),
+    Hasira(usize, String, Option<Box<AST>>),
 
-    serif(String),
-    togaki(Vec<AST>),
+    Serif(String),
+    Togaki(Vec<AST>),
 
-    line(Option<Box<AST>>, Option<Box<AST>>, Option<Box<AST>>),
-    script(Vec<AST>),
+    Line(Option<Box<AST>>, Option<Box<AST>>, Option<Box<AST>>),
+    Script(Vec<AST>),
 }
