@@ -1,7 +1,7 @@
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AST {
-    not_implement,
+    Unimplemented,
 
     doc_comment(String),
     error(usize, usize, char, String),
