@@ -1,13 +1,15 @@
-mod actor;
 mod attr;
 mod hasira;
 mod togaki;
 
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream, TokenTree};
 use quote::quote;
+use syn::parse2;
 
 #[proc_macro]
 pub fn build(stream: TokenStream) -> TokenStream {
+    let path: syn::ExprLit = syn::parse(stream).unwrap();
+    println!("{:?}", path);
     let tokens = sample::script();
     let tokens = quote! {
         use ::std::io::Write;
