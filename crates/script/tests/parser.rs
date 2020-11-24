@@ -238,13 +238,9 @@ fn hasira() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira(node).unwrap();
         match ast {
-            AST::Hasira(Hasira {
-                level,
-                title,
-                attrs,
-            }) => {
+            AST::Hasira(Hasira { level, name, attrs }) => {
                 assert_eq!(level, 3);
-                assert_eq!(title, "柱");
+                assert_eq!(name, "柱");
                 assert!(attrs.is_some());
             }
             _ => assert!(false),
@@ -255,13 +251,9 @@ fn hasira() {
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::hasira(node).unwrap();
         match ast {
-            AST::Hasira(Hasira {
-                level,
-                title,
-                attrs,
-            }) => {
+            AST::Hasira(Hasira { level, name, attrs }) => {
                 assert_eq!(level, 0);
-                assert_eq!(title, "アクター");
+                assert_eq!(name, "アクター");
                 assert!(attrs.is_none());
             }
             _ => assert!(false),
@@ -347,7 +339,7 @@ fn line() {
 
         let a = Some(AST::Hasira(Hasira {
             level: 1,
-            title: "柱".to_owned(),
+            name: "柱".to_owned(),
             attrs: None,
         }));
         let e = Some(AST::Error(Error {
@@ -418,9 +410,9 @@ fn script() {
             }
             match &lines[5] {
                 AST::Line(Line { code: Some(a), .. }) => match &**a {
-                    AST::Hasira(Hasira { level, title, .. }) => {
+                    AST::Hasira(Hasira { level, name, .. }) => {
                         assert_eq!(*level, 1);
-                        assert_eq!(*title, "お天気はどうですか？");
+                        assert_eq!(*name, "お天気はどうですか？");
                     }
                     x => {
                         assert!(false, "hasira {:?}", x);
@@ -432,9 +424,9 @@ fn script() {
             }
             match &lines[7] {
                 AST::Line(Line { code: Some(a), .. }) => match &**a {
-                    AST::Hasira(Hasira { level, title, .. }) => {
+                    AST::Hasira(Hasira { level, name, .. }) => {
                         assert_eq!(*level, 0);
-                        assert_eq!(*title, "パスタ");
+                        assert_eq!(*name, "パスタ");
                     }
                     x => {
                         assert!(false, "hasira {:?}", x);

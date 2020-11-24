@@ -49,13 +49,13 @@ pub struct Error {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Hasira {
     pub level: usize,
-    pub title: String,
+    pub name: String,
     pub attrs: Option<Box<AST>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Anchor {
-    pub title: String,
+    pub name: String,
     pub attrs: Option<Box<AST>>,
 }
 

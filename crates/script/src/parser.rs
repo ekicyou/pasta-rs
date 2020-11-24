@@ -164,7 +164,7 @@ impl PastaParser {
     }
 
     pub fn hasira(n: Node) -> ParserResult<AST> {
-        let (level, title, attrs) = match_nodes!(n.children();
+        let (level, name, attrs) = match_nodes!(n.children();
             [hasira_header(a),h_attrs(attrs)] => {
                 let (l,s)=a;
                 (l,s,Some(Box::new(attrs)))
@@ -179,7 +179,7 @@ impl PastaParser {
 
         Ok(AST::Hasira(Hasira {
             level,
-            title: title.to_owned(),
+            name: name.to_owned(),
             attrs,
         }))
     }
