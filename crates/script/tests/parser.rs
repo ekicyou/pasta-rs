@@ -404,13 +404,42 @@ fn script() {
                 }
             }
             match &lines[1] {
-                AST::Line(..) => {}
+                AST::Line(Line { code: Some(a), .. }) => match &**a {
+                    AST::Hasira(Hasira { level, .. }) => {
+                        assert_eq!(*level, 3);
+                    }
+                    x => {
+                        assert!(false, "hasira {:?}", x);
+                    }
+                },
                 x => {
                     assert!(false, "hasira {:?}", x);
                 }
             }
-            match &lines[2] {
-                AST::Line(..) => {}
+            match &lines[5] {
+                AST::Line(Line { code: Some(a), .. }) => match &**a {
+                    AST::Hasira(Hasira { level, title, .. }) => {
+                        assert_eq!(*level, 1);
+                        assert_eq!(*title, "お天気はどうですか？");
+                    }
+                    x => {
+                        assert!(false, "hasira {:?}", x);
+                    }
+                },
+                x => {
+                    assert!(false, "hasira {:?}", x);
+                }
+            }
+            match &lines[7] {
+                AST::Line(Line { code: Some(a), .. }) => match &**a {
+                    AST::Hasira(Hasira { level, title, .. }) => {
+                        assert_eq!(*level, 0);
+                        assert_eq!(*title, "パスタ");
+                    }
+                    x => {
+                        assert!(false, "hasira {:?}", x);
+                    }
+                },
                 x => {
                     assert!(false, "hasira {:?}", x);
                 }

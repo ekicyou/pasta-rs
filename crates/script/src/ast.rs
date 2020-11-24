@@ -16,12 +16,19 @@ pub enum AST {
     Attrs(Attrs),
 
     Hasira(Hasira),
-
     Serif(Serif),
     Togaki(Togaki),
+    ShortJump(ShortJump),
+    LongJump(LongJump),
+    Anchor(Anchor),
 
     Line(Line),
     Script(Script),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Script {
+    pub items: Vec<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -32,6 +39,14 @@ pub struct Line {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Error {
+    pub start: usize,
+    pub end: usize,
+    pub error_token: char,
+    pub error_str: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Hasira {
     pub level: usize,
     pub title: String,
@@ -39,11 +54,9 @@ pub struct Hasira {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Error {
-    pub start: usize,
-    pub end: usize,
-    pub error_token: char,
-    pub error_str: String,
+pub struct Anchor {
+    pub title: String,
+    pub attrs: Option<Box<AST>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -92,16 +105,21 @@ pub struct Memory {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ShortJump {
+    pub expr: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LongJump {
+    pub expr: Box<AST>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Attrs {
     pub items: Vec<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Togaki {
-    pub items: Vec<AST>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Script {
     pub items: Vec<AST>,
 }
