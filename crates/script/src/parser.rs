@@ -122,6 +122,24 @@ impl PastaParser {
         ))
     }
 
+    pub fn long_jump(n: Node) -> ParserResult<AST> {
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::LongJump(LongJump{expr: Box::new(a)}),
+        ))
+    }
+
+    pub fn short_jump(n: Node) -> ParserResult<AST> {
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::ShortJump(ShortJump{expr: Box::new(a)}),
+        ))
+    }
+
+    pub fn anchor(n: Node) -> ParserResult<AST> {
+        Ok(match_nodes!(n.into_children();
+            [expr(a)]=> AST::Anchor(Anchor{expr: Box::new(a)}),
+        ))
+    }
+
     pub fn h_attrs(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [h_attr(a)..]=>AST::Attrs(Attrs{items: a.collect()}),
@@ -153,6 +171,7 @@ impl PastaParser {
             [hasira_level(l)] => (l,""),
         ))
     }
+
     pub fn actor(n: Node) -> ParserResult<&str> {
         Ok(n.as_str())
     }
@@ -228,6 +247,13 @@ impl PastaParser {
         ))
     }
 
+    pub fn t_jump(n: Node) -> ParserResult<AST> {
+        Ok(match_nodes!(n.children();
+            [long_jump(a)] => a,
+            [short_jump(a)] => a,
+            [anchor(a)] => a,
+        ))
+    }
     pub fn t_item(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [t_attr(a)]=> a,
@@ -238,6 +264,7 @@ impl PastaParser {
     pub fn togaki(n: Node) -> ParserResult<AST> {
         Ok(AST::Togaki(Togaki {
             items: match_nodes!(n.into_children();
+                [t_jump(a)]=> vec!{a},
                 [t_item(a)..]=> a.collect(),
             ),
         }))

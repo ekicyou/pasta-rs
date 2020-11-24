@@ -315,12 +315,29 @@ fn togaki() {
     fn serif<S: Into<String>>(s: S) -> AST {
         AST::Serif(Serif { serif: s.into() })
     }
+    fn jump<S: Into<String>>(s: S) -> AST {
+        let keyword = s.into();
+        let expr = EXPR(keyword);
+        AST::ShortJump(ShortJump { expr })
+    }
     {
-        let text = "　セリフ＠＠だね。＠アクション";
+        let text = "　セリフ＠＠だね。＠アクション　＠アクション２";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::togaki(node).unwrap();
 
-        let vv = vec![serif("セリフ＠だね。"), action("アクション")];
+        let vv = vec![
+            serif("セリフ＠だね。"),
+            action("アクション"),
+            action("アクション２"),
+        ];
+        assert_eq!(ast, AST::Togaki(Togaki { items: vv }));
+    }
+    {
+        let text = "　＞ショートジャンプ";
+        let node = parse_one(rule, text).unwrap();
+        let ast = PastaParser::togaki(node).unwrap();
+
+        let vv = vec![jump("ショートジャンプ")];
         assert_eq!(ast, AST::Togaki(Togaki { items: vv }));
     }
 }
@@ -388,7 +405,7 @@ fn script() {
         let ast = PastaParser::script(node).unwrap();
         println!("{:?}", ast);
         if let AST::Script(Script { items: lines }) = ast {
-            assert_eq!(lines.len(), 18);
+            assert_eq!(lines.len(), 24);
             match &lines[0] {
                 AST::DocComment(..) => {}
                 x => {

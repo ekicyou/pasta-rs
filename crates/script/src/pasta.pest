@@ -47,7 +47,19 @@ require     = ${ EXC    ~ expr }    /// ！必須キーワード
 either      = ${ QUE    ~ expr }    /// ？いずれかに一致
 forget      = ${ MINUS  ~ expr }    /// ー忘れる
 memory      = ${ PLUS   ~ expr }    /// ＋覚える
-all_attr    = ${( action | require | either | forget | memory ) ~ skip_sp }
+long_jump   = ${ GT ~GT ~ expr }    /// ＞＞ロングジャンプ
+short_jump  = ${ GT     ~ expr }    /// ＞ショートジャンプ
+anchor      = ${ COLON  ~ expr }    /// ：アンカー
+all_attr    = ${
+    ( action
+    | require
+    | either
+    | forget
+    | memory
+    | long_jump
+    | short_jump
+    | anchor
+    ) ~ skip_sp }
 
 
 
@@ -85,10 +97,12 @@ s_token     = ${ s_normal | escape }
 s_normal    = @{ ( !( AT | SHARP | EOL ) ~ ANY )+ }
 
 /// ### 5.3
-/// ト書き/セリフ行はスペースで始まり、１つ以上のセリフまたは属性を列挙する。。
-togaki  = ${ SP+ ~ t_item+ }
+/// ト書き/セリフ行はスペースで始まり、１つのジャンプ、または１つ以上のセリフまたは属性を列挙する。。
+togaki  = ${ SP+ ~ ( t_jump | t_item+ ) }
+t_jump  = ${ long_jump | short_jump | anchor }
 t_item  = ${ t_attr | serif }
 t_attr  = ${ ( action | ( AT ~ ( require | either | forget | memory ) ) ) ~ skip_sp }
+
 
 
 /// ## 6 行と文書
@@ -128,6 +142,9 @@ MINUS   = _{ "－" | "-" }
 COLON   = _{ "：" | ":" }
 CONMA   = _{ "、" |"，" |"､" |"," }
 SHARP   = _{ "＃" | "♯" | "#" }
+
+LT      = _{ "＜" | "<" }
+GT      = _{ "＞" | ">" }
 
 EOL     = _{ "\r\n" | "\n" | "\r" }
 NOT_EOL = _{ !EOL ~ ANY }

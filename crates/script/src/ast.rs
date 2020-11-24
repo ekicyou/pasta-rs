@@ -13,14 +13,14 @@ pub enum AST {
     Either(Either),
     Forget(Forget),
     Memory(Memory),
+    LongJump(LongJump),
+    ShortJump(ShortJump),
+    Anchor(Anchor),
     Attrs(Attrs),
 
     Hasira(Hasira),
     Serif(Serif),
     Togaki(Togaki),
-    ShortJump(ShortJump),
-    LongJump(LongJump),
-    Anchor(Anchor),
 
     Line(Line),
     Script(Script),
@@ -55,8 +55,7 @@ pub struct Hasira {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Anchor {
-    pub name: String,
-    pub attrs: Option<Box<AST>>,
+    pub expr: Box<AST>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
