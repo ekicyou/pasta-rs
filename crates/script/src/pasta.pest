@@ -47,7 +47,7 @@ require     = ${ EXC    ~ expr }    /// ！必須キーワード
 either      = ${ QUE    ~ expr }    /// ？いずれかに一致
 forget      = ${ MINUS  ~ expr }    /// ー忘れる
 memory      = ${ PLUS   ~ expr }    /// ＋覚える
-long_jump   = ${ GT ~GT ~ expr }    /// ＞＞ロングジャンプ
+long_jump   = ${ MGT    ~ expr }    /// ＞＞ロングジャンプ
 short_jump  = ${ GT     ~ expr }    /// ＞ショートジャンプ
 anchor      = ${ COLON  ~ expr }    /// ：アンカー
 all_attr    = ${
@@ -145,6 +145,7 @@ SHARP   = _{ "＃" | "♯" | "#" }
 
 LT      = _{ "＜" | "<" }
 GT      = _{ "＞" | ">" }
+MGT     = _{ "＞＞" | ">>" | "≫" }
 
 EOL     = _{ "\r\n" | "\n" | "\r" }
 NOT_EOL = _{ !EOL ~ ANY }
