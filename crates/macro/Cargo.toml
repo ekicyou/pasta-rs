@@ -1,9 +1,18 @@
 [package]
 name = "pasta_macro"
-version = "0.1.0"
+version = "0.5.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+proc-macro = true
+
 [dependencies]
+log = "0.4"
+proc-macro2 = "1.0"
+quote = "1.0"
+squote = "0.1"
+syn = {version="1.0", features=["extra-traits",]}
+pasta_script = {path="../script"}
