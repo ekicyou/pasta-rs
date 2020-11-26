@@ -1,12 +1,22 @@
+use std::iter::{IntoIterator, Iterator};
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AST {
     Unimplemented,
+
+    Script(Script),
+    Line(Line),
 
     DocComment(DocComment),
     Comment(Comment),
     Error(Error),
 
-    Expr(Expr),
+    Hasira(Hasira),
+    Togaki(Togaki),
+
+    Serif(Serif),
+
+    Attrs(Attrs),
 
     Action(Action),
     Require(Require),
@@ -16,14 +26,8 @@ pub enum AST {
     LongJump(LongJump),
     ShortJump(ShortJump),
     Anchor(Anchor),
-    Attrs(Attrs),
 
-    Hasira(Hasira),
-    Serif(Serif),
-    Togaki(Togaki),
-
-    Line(Line),
-    Script(Script),
+    Expr(Expr),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -121,4 +125,28 @@ pub struct Attrs {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Togaki {
     pub items: Vec<AST>,
+}
+
+impl<'a> IntoIterator for &'a Script {
+    type Item = &'a AST;
+    type IntoIter = ScriptIntoIter<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        ScriptIntoIter::new(self)
+    }
+}
+
+pub struct ScriptIntoIter<'a> {
+    script: std::slice::Iter<'a, AST>,
+}
+impl<'a> ScriptIntoIter<'a> {
+    fn new(script: &'a Script) -> Self {
+        let script = (&script.items).into_iter();
+        ScriptIntoIter { script }
+    }
+}
+impl<'a> Iterator for ScriptIntoIter<'a> {
+    type Item = &'a AST;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.script.next()
+    }
 }
