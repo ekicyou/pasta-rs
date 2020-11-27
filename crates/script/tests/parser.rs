@@ -474,8 +474,10 @@ fn script_iter() {
         match PastaParser::script(node).unwrap() {
             AST::Script(ref script) => {
                 let items: Vec<_> = script.into_iter().collect();
-                assert_eq!(items.len(), 17);
-                println!("{:?}", items);
+                assert_eq!(items.len(), 18);
+                for item in &items {
+                    println!("{:?}", item);
+                }
                 if let AST::DocComment(_) = items[0] {
                 } else {
                     panic!("not doc_comment")
