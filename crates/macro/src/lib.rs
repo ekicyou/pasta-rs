@@ -1,13 +1,18 @@
-mod gen;
-
 use proc_macro::{TokenStream, TokenTree};
 use quote::quote;
+use std::env;
+use std::path::PathBuf;
 use syn::parse2;
 
 #[proc_macro]
 pub fn build(stream: TokenStream) -> TokenStream {
-    let path: syn::ExprLit = syn::parse(stream).unwrap();
-    println!("{:?}", path);
+    let build: syn::LitStr = syn::parse(stream).unwrap();
+    let build = build.value();
+    println!("{:?}", build);
+    let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    build_path.push(build);
+    println!("{:?}", build_path);
+
     let tokens = sample::script();
     let tokens = quote! {
         use ::std::io::Write;

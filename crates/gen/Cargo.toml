@@ -1,7 +1,7 @@
 [package]
 authors = ["ekicyou <dot.station@gmail.com>"]
 edition = "2018"
-name = "shiori_gen"
+name = "pasta_gen"
 version = "0.1.0"
 
 [lib]
