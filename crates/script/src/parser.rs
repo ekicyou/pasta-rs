@@ -92,6 +92,13 @@ impl PastaParser {
         Ok(AST::Expr(Expr { expr: keyword }))
     }
 
+    pub fn expr_or_num(n: Node) -> ParserResult<AST> {
+        let mut items = n.children();
+        let m = items.next().ok_or(n.error(BUG))?;
+        let keyword = m.as_str().to_owned();
+        Ok(AST::ExprOrNum(ExprOrNum { expr: keyword }))
+    }
+
     pub fn action(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
             [expr(a)]=> AST::Action(Action{expr: Box::new(a)}),
@@ -124,19 +131,19 @@ impl PastaParser {
 
     pub fn long_jump(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::LongJump(LongJump{expr: Box::new(a)}),
+            [expr_or_num(a)]=> AST::LongJump(LongJump{expr: Box::new(a)}),
         ))
     }
 
     pub fn short_jump(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::ShortJump(ShortJump{expr: Box::new(a)}),
+            [expr_or_num(a)]=> AST::ShortJump(ShortJump{expr: Box::new(a)}),
         ))
     }
 
     pub fn anchor(n: Node) -> ParserResult<AST> {
         Ok(match_nodes!(n.into_children();
-            [expr(a)]=> AST::Anchor(Anchor{expr: Box::new(a)}),
+            [expr_or_num(a)]=> AST::Anchor(Anchor{expr: Box::new(a)}),
         ))
     }
 

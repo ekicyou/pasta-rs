@@ -29,6 +29,7 @@ pub enum AST {
     Anchor(Anchor),
 
     Expr(Expr),
+    ExprOrNum(ExprOrNum),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -70,6 +71,11 @@ pub struct Comment {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Expr {
+    pub expr: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ExprOrNum {
     pub expr: String,
 }
 

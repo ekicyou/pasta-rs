@@ -104,6 +104,12 @@ fn EXPR<S: Into<String>>(text: S) -> Box<AST> {
     Box::new(AST::Expr(Expr { expr: text }))
 }
 
+#[allow(non_snake_case)]
+fn EXPR_OR_NUM<S: Into<String>>(text: S) -> Box<AST> {
+    let text = text.into();
+    Box::new(AST::ExprOrNum(ExprOrNum { expr: text }))
+}
+
 #[test]
 fn action() {
     let rule = Rule::action;
@@ -317,7 +323,7 @@ fn togaki() {
     }
     fn jump<S: Into<String>>(s: S) -> AST {
         let keyword = s.into();
-        let expr = EXPR(keyword);
+        let expr = EXPR_OR_NUM(keyword);
         AST::ShortJump(ShortJump { expr })
     }
     {
@@ -333,11 +339,11 @@ fn togaki() {
         assert_eq!(ast, AST::Togaki(Togaki { items: vv }));
     }
     {
-        let text = "　＞ショートジャンプ";
+        let text = "　＞１";
         let node = parse_one(rule, text).unwrap();
         let ast = PastaParser::togaki(node).unwrap();
 
-        let vv = vec![jump("ショートジャンプ")];
+        let vv = vec![jump("１")];
         assert_eq!(ast, AST::Togaki(Togaki { items: vv }));
     }
 }
@@ -456,5 +462,26 @@ fn script() {
         } else {
             assert!(false);
         }
+    }
+}
+
+#[test]
+fn script_iter() {
+    let rule = Rule::script;
+    {
+        let text = include_str!("parse62.pasta");
+        let node = parse_one(rule, text).unwrap();
+        match PastaParser::script(node).unwrap() {
+            AST::Script(ref script) => {
+                let items: Vec<_> = script.into_iter().collect();
+                assert_eq!(items.len(), 17);
+                println!("{:?}", items);
+                if let AST::DocComment(_) = items[0] {
+                } else {
+                    panic!("not doc_comment")
+                }
+            }
+            _ => panic!("not script"),
+        };
     }
 }

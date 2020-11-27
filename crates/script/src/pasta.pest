@@ -40,6 +40,8 @@ error_remain    = @{ skip_eol }
 expr            = ${ expr_keyword ~ skip_sp }
 expr_keyword    = @{ id }
 
+expr_or_num         = ${ expr_or_num_keyword ~ skip_sp }
+expr_or_num_keyword = @{ id_or_num }
 /// ### 3.2
 /// 属性種別は以下の5種類
 action      = ${ AT     ~ expr }    /// ＠アクション
@@ -47,9 +49,9 @@ require     = ${ EXC    ~ expr }    /// ！必須キーワード
 either      = ${ QUE    ~ expr }    /// ？いずれかに一致
 forget      = ${ MINUS  ~ expr }    /// ー忘れる
 memory      = ${ PLUS   ~ expr }    /// ＋覚える
-long_jump   = ${ MGT    ~ expr }    /// ＞＞ロングジャンプ
-short_jump  = ${ GT     ~ expr }    /// ＞ショートジャンプ
-anchor      = ${ COLON  ~ expr }    /// ：アンカー
+long_jump   = ${ MGT    ~ expr_or_num }    /// ＞＞ロングジャンプ
+short_jump  = ${ GT     ~ expr_or_num }    /// ＞ショートジャンプ
+anchor      = ${ COLON  ~ expr_or_num }    /// ：アンカー
 all_attr    = ${
     ( action
     | require
@@ -120,6 +122,7 @@ script  = ${ doc_comment? ~ (line ~ EOL)* ~ (line ~ EOI)? }
 // token
 
 id          = @{ XID_START ~ XID_CONTINUE* }
+id_or_num   = @{ XID_CONTINUE+ }
 
 spaces      = @{ SP+ }
 skip_sp     = _{ SP* }
