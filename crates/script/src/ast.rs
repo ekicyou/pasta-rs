@@ -270,7 +270,22 @@ impl<'a> Iterator for LineIntoIter<'a> {
                     return None;
                 }
                 Some(Some(a)) => {
-                    return Some(a);
+                    return match a {
+                        AST::Togaki(t) => {
+                            if t.items.len() != 1 {
+                                Some(a)
+                            } else {
+                                let item = &t.items[0];
+                                match item {
+                                    AST::Anchor(_) => Some(item),
+                                    AST::ShortJump(_) => Some(item),
+                                    AST::LongJump(_) => Some(item),
+                                    _ => Some(a),
+                                }
+                            }
+                        }
+                        _ => Some(a),
+                    }
                 }
                 _ => {
                     continue;

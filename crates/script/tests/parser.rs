@@ -474,7 +474,7 @@ fn script_iter() {
         match PastaParser::script(node).unwrap() {
             AST::Script(ref script) => {
                 let items: Vec<_> = script.into_iter().collect();
-                assert_eq!(items.len(), 18);
+                assert_eq!(items.len(), 19);
                 for item in &items {
                     println!("{:?}", item);
                 }

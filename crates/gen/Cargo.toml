@@ -4,12 +4,10 @@ edition = "2018"
 name = "pasta_gen"
 version = "0.1.0"
 
-[lib]
-proc-macro = true
-
 [dependencies]
 log = "0.4"
 proc-macro2 = "1.0"
 quote = "1.0"
 squote = "0.1"
 syn = {version="1.0", features=["extra-traits",]}
+pasta_script = {path = "../script"}
