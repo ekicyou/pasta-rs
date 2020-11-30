@@ -13,9 +13,9 @@ pub fn gen_script(script: &Script) -> TokenStream {
             AST::Error(a) => error(&mut ts, a),
             AST::Hasira(h) => {}
             AST::Anchor(a) => {}
-            AST::Togaki(t) => {}
             AST::ShortJump(j) => {}
             AST::LongJump(j) => {}
+            AST::Togaki(t) => {}
             _ => (),
         }
     }
