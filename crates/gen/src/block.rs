@@ -1,5 +1,6 @@
 use pasta_script::ast::*;
 use std::collections::HashMap;
+use std::mem;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RootBlock {
@@ -34,17 +35,12 @@ impl Attribute {
         }
     }
 }
-
-pub trait AttributeBlock {
-    fn attr(&self) -> &Attribute;
-    fn attr_mut(&mut self) -> &mut Attribute;
+impl Attribute {
     fn id_prefix(&mut self, text: &str) {
-        let mut attr = self.attr_mut();
-        attr.id = format!("{}_{}", text, &attr.id);
+        self.id = format!("{}_{}", text, &self.id);
     }
     fn id_suffix(&mut self, text: &str) {
-        let mut attr = self.attr_mut();
-        attr.id = format!("{}_{}", &attr.id, text);
+        self.id = format!("{}_{}", &self.id, text);
     }
     fn id_num(&mut self, prefix: &str, i: u32) {
         self.id_prefix(prefix);
@@ -56,6 +52,12 @@ pub trait AttributeBlock {
         };
         self.id_suffix(&suffix);
     }
+}
+
+pub trait AttributeBlock {
+    fn attr(&self) -> &Attribute;
+    fn attr_mut(&mut self) -> &mut Attribute;
+
     fn fix_id<A: AttributeBlock>(prefix: &str, items: Vec<A>) {
         let mut map: HashMap<String, Vec<&Attribute>> = HashMap::new();
         for item in &items {
@@ -63,11 +65,18 @@ pub trait AttributeBlock {
             let v = map.entry(k).or_insert(Vec::new());
             v.push(item.attr());
         }
-        for (k, v) in &map {
+        for (_k, v) in &map {
             if v.len() == 0 {
                 continue;
             }
-            for _item in *v {}
+            let mut index = 0;
+            for attr in v {
+                let attr = *attr;
+                let mut attr = unsafe { mem::transmute::<&_, &mut _>(attr) };
+                //attr.id_num(prefix, index);
+
+                index += 1;
+            }
         }
     }
 }

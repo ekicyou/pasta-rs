@@ -30,6 +30,6 @@ fn gen_script_test() {
     let node = parse_one(Rule::script, text).unwrap();
     if let AST::Script(ref script) = PastaParser::script(node).unwrap() {
         let ts = gen_script(script);
-        println!("ts={}", ts);
+        println!("###src###\nts={}", ts);
     }
 }
