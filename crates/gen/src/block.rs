@@ -54,6 +54,12 @@ impl Attribute {
     }
 }
 
+unsafe fn to_mut_ref<T>(src: &T) -> &mut T {
+    let src = (src) as *const T as *mut T;
+    let src = &mut *src;
+    src
+}
+
 pub trait AttributeBlock {
     fn attr(&self) -> &Attribute;
     fn attr_mut(&mut self) -> &mut Attribute;
@@ -71,9 +77,8 @@ pub trait AttributeBlock {
             }
             let mut index = 0;
             for attr in v {
-                let attr = *attr;
-                let mut attr = unsafe { mem::transmute::<&_, &mut _>(attr) };
-                //attr.id_num(prefix, index);
+                let mut attr = unsafe { to_mut_ref(*attr) };
+                attr.id_num(prefix, index);
 
                 index += 1;
             }
