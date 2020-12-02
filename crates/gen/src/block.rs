@@ -342,6 +342,19 @@ impl Builder {
         self
     }
 
+    /// アンカーが存在しない場合にブランクアンカーを追加する
+    fn push_no_anchor(mut self) -> Self {
+        if self.l3.is_none() {
+            let name = "";
+            let l3 = AnchorBlock {
+                attr: Attribute::new(name.to_owned(), format!("L{}", name)),
+                items: Vec::new(),
+            };
+            self.l3 = Some(l3);
+        }
+        self
+    }
+
     /// l4 push
     fn push_actor(mut self, ast: &AST) -> Self {
         self = self.commit4();
