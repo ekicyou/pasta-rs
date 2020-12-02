@@ -37,10 +37,14 @@ impl Attribute {
 }
 impl Attribute {
     fn id_prefix(&mut self, text: &str) {
-        self.id = format!("{}_{}", text, &self.id);
+        if text.len() > 0 {
+            self.id = format!("{}_{}", text, &self.id);
+        }
     }
     fn id_suffix(&mut self, text: &str) {
-        self.id = format!("{}_{}", &self.id, text);
+        if text.len() > 0 {
+            self.id = format!("{}_{}", &self.id, text);
+        }
     }
     fn id_num(&mut self, prefix: &str, i: u32) {
         self.id_prefix(prefix);
@@ -54,6 +58,27 @@ impl Attribute {
     }
 }
 
+pub fn fix_id<A: AttributeBlock>(prefix: &str, items: &Vec<A>) {
+    let mut map: HashMap<String, Vec<&Attribute>> = HashMap::new();
+    for item in items {
+        let k = item.attr().id.to_owned();
+        let v = map.entry(k).or_insert(Vec::new());
+        v.push(item.attr());
+    }
+    for (_k, v) in &map {
+        if v.len() == 0 {
+            continue;
+        }
+        let mut index = 0;
+        for attr in v {
+            let attr = unsafe { to_mut_ref(*attr) };
+            attr.id_num(prefix, index);
+
+            index += 1;
+        }
+    }
+}
+
 unsafe fn to_mut_ref<T>(src: &T) -> &mut T {
     let src = (src) as *const T as *mut T;
     let src = &mut *src;
@@ -63,27 +88,6 @@ unsafe fn to_mut_ref<T>(src: &T) -> &mut T {
 pub trait AttributeBlock {
     fn attr(&self) -> &Attribute;
     fn attr_mut(&mut self) -> &mut Attribute;
-
-    fn fix_id<A: AttributeBlock>(prefix: &str, items: Vec<A>) {
-        let mut map: HashMap<String, Vec<&Attribute>> = HashMap::new();
-        for item in &items {
-            let k = item.attr().id.to_owned();
-            let v = map.entry(k).or_insert(Vec::new());
-            v.push(item.attr());
-        }
-        for (_k, v) in &map {
-            if v.len() == 0 {
-                continue;
-            }
-            let mut index = 0;
-            for attr in v {
-                let mut attr = unsafe { to_mut_ref(*attr) };
-                attr.id_num(prefix, index);
-
-                index += 1;
-            }
-        }
-    }
 }
 impl AttributeBlock for HasiraBlock {
     fn attr(&self) -> &Attribute {
@@ -173,7 +177,8 @@ impl Builder {
             hv: [None, None, None, None],
         }
     }
-    fn root(self) -> RootBlock {
+    fn root(mut self) -> RootBlock {
+        self = self.commit2();
         self.l1
     }
 
@@ -235,7 +240,7 @@ impl Builder {
                     target.attr.error = Some(a);
                 }
             }
-            _ => panic!(),
+            _ => panic!("push_error: ast={:?}", ast),
         };
         self
     }
@@ -253,7 +258,7 @@ impl Builder {
                     target.attr.comment = Some(a);
                 }
             }
-            _ => panic!(),
+            _ => panic!("push_comment: ast={:?}", ast),
         };
         self
     }
@@ -262,7 +267,7 @@ impl Builder {
     fn push_doc_comment(mut self, ast: &AST) -> Self {
         match ast.clone() {
             AST::DocComment(a) => self.l1.doc_comment = Some(a),
-            _ => panic!(),
+            _ => panic!("push_doc_comment: ast={:?}", ast),
         };
         self
     }
@@ -291,24 +296,27 @@ impl Builder {
                     attr: Attribute::new(name, id),
                     items: Vec::new(),
                 };
-                for hv in &self.hv {
-                    if let Some(hv) = hv.as_ref() {
-                        for ast in &hv.attrs {
-                            let ast = (**ast).clone();
-                            match ast {
-                                AST::Require(a) => l2.attr.require.push(a),
-                                AST::Either(a) => l2.attr.either.push(a),
-                                AST::Action(a) => l2.attr.action.push(a),
-                                AST::Memory(a) => l2.attr.memory.push(a),
-                                AST::Forget(a) => l2.attr.forget.push(a),
-                                _ => panic!(),
+                for h in &self.hv {
+                    if let Some(h) = h.as_ref() {
+                        if let Some(attrs) = &h.attrs {
+                            if let AST::Attrs(attrs) = &**attrs {
+                                for ast in &attrs.items {
+                                    match ast.clone() {
+                                        AST::Require(a) => l2.attr.require.push(a),
+                                        AST::Either(a) => l2.attr.either.push(a),
+                                        AST::Action(a) => l2.attr.action.push(a),
+                                        AST::Memory(a) => l2.attr.memory.push(a),
+                                        AST::Forget(a) => l2.attr.forget.push(a),
+                                        _ => panic!("push_hasira: ast={:?}", ast),
+                                    }
+                                }
                             }
                         }
                     }
                 }
                 self.l2 = Some(l2);
             }
-            _ => panic!(),
+            _ => panic!("push_hasira: ast={:?}", ast),
         };
         self
     }
@@ -321,14 +329,14 @@ impl Builder {
                 let name = match &*a.expr {
                     AST::Expr(expr) => &expr.expr,
                     AST::ExprOrNum(expr) => &expr.expr,
-                    _ => panic!(),
+                    _ => panic!("push_anchor: ast={:?}", ast),
                 };
                 AnchorBlock {
                     attr: Attribute::new(name.to_owned(), format!("L{}", name)),
                     items: Vec::new(),
                 }
             }
-            _ => panic!(),
+            _ => panic!("push_anchor: ast={:?}", ast),
         };
         self.l3 = Some(l3);
         self
@@ -342,7 +350,7 @@ impl Builder {
                 attr: Attribute::new(h.name.to_owned(), format!("A{}", h.name)),
                 items: Vec::new(),
             },
-            _ => panic!(),
+            _ => panic!("push_actor: ast={:?}", ast),
         };
         self.l4 = Some(l4);
         self
@@ -354,7 +362,7 @@ impl Builder {
         let item = match ast.clone() {
             AST::LongJump(a) => SerifItem::LongJump(a),
             AST::ShortJump(a) => SerifItem::ShortJump(a),
-            _ => panic!(),
+            _ => panic!("push_jump: ast={:?}", ast),
         };
         l5.items.push(item);
         self.l5 = Some(l5);
@@ -374,7 +382,7 @@ impl Builder {
                 AST::Serif(a) => SerifItem::Serif(a),
                 AST::Comment(a) => SerifItem::Comment(a),
                 AST::Error(a) => SerifItem::Error(a),
-                _ => panic!(),
+                _ => panic!("push_serif: ast={:?}", ast),
             };
             l5.items.push(item)
         }
