@@ -105,14 +105,6 @@ impl AttributeBlock for AnchorBlock {
         &mut self.attr
     }
 }
-impl AttributeBlock for ActorBlock {
-    fn attr(&self) -> &Attribute {
-        &self.attr
-    }
-    fn attr_mut(&mut self) -> &mut Attribute {
-        &mut self.attr
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct HasiraBlock {
@@ -122,12 +114,6 @@ pub struct HasiraBlock {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AnchorBlock {
-    pub attr: Attribute,
-    pub items: Vec<ActorBlock>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ActorBlock {
     pub attr: Attribute,
     pub items: Vec<SerifBlock>,
 }
@@ -139,6 +125,8 @@ pub struct SerifBlock {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SerifItem {
+    Actor(Actor),
+    Serif(Serif),
     Action(Action),
     Require(Require),
     Either(Either),
@@ -146,7 +134,6 @@ pub enum SerifItem {
     Memory(Memory),
     LongJump(LongJump),
     ShortJump(ShortJump),
-    Serif(Serif),
     Comment(Comment),
     Error(Error),
 }
@@ -157,8 +144,7 @@ struct Builder {
     l1: RootBlock,
     l2: Option<HasiraBlock>,
     l3: Option<AnchorBlock>,
-    l4: Option<ActorBlock>,
-    l5: Option<SerifBlock>,
+    l4: Option<SerifBlock>,
     hv: [Option<Hasira>; 4],
 }
 
@@ -173,7 +159,6 @@ impl Builder {
             l2: None,
             l3: None,
             l4: None,
-            l5: None,
             hv: [None, None, None, None],
         }
     }
@@ -205,7 +190,7 @@ impl Builder {
     }
     /// l4 -> commit
     fn commit4(mut self) -> Self {
-        self = self.commit5();
+        self = self.push_no_anchor();
         let item = self.l4.take();
         let own = &mut self.l3;
         if let Some(item) = item {
@@ -215,14 +200,16 @@ impl Builder {
         }
         self
     }
-    /// l5 -> commit
-    fn commit5(mut self) -> Self {
-        let item = self.l5.take();
-        let own = &mut self.l4;
-        if let Some(item) = item {
-            if let Some(own) = own.as_mut() {
-                own.items.push(item);
-            }
+
+    /// アンカーが存在しない場合にブランクアンカーを追加する
+    fn push_no_anchor(mut self) -> Self {
+        if self.l3.is_none() {
+            let name = "";
+            let l3 = AnchorBlock {
+                attr: Attribute::new(name.to_owned(), format!("L{}", name)),
+                items: Vec::new(),
+            };
+            self.l3 = Some(l3);
         }
         self
     }
@@ -230,10 +217,8 @@ impl Builder {
     fn push_error(mut self, ast: &AST) -> Self {
         match ast.clone() {
             AST::Error(a) => {
-                if let Some(target) = self.l5.as_mut() {
+                if let Some(target) = self.l4.as_mut() {
                     target.items.push(SerifItem::Error(a));
-                } else if let Some(target) = self.l4.as_mut() {
-                    target.attr.error = Some(a);
                 } else if let Some(target) = self.l3.as_mut() {
                     target.attr.error = Some(a);
                 } else if let Some(target) = self.l2.as_mut() {
@@ -248,10 +233,8 @@ impl Builder {
     fn push_comment(mut self, ast: &AST) -> Self {
         match ast.clone() {
             AST::Comment(a) => {
-                if let Some(target) = self.l5.as_mut() {
+                if let Some(target) = self.l4.as_mut() {
                     target.items.push(SerifItem::Comment(a));
-                } else if let Some(target) = self.l4.as_mut() {
-                    target.attr.comment = Some(a);
                 } else if let Some(target) = self.l3.as_mut() {
                     target.attr.comment = Some(a);
                 } else if let Some(target) = self.l2.as_mut() {
@@ -342,49 +325,53 @@ impl Builder {
         self
     }
 
-    /// アンカーが存在しない場合にブランクアンカーを追加する
-    fn push_no_anchor(mut self) -> Self {
-        if self.l3.is_none() {
-            let name = "";
-            let l3 = AnchorBlock {
-                attr: Attribute::new(name.to_owned(), format!("L{}", name)),
-                items: Vec::new(),
-            };
-            self.l3 = Some(l3);
-        }
-        self
-    }
-
     /// l4 push
-    fn push_actor(mut self, ast: &AST) -> Self {
+    fn push_actor(mut self, hasira: &Hasira) -> Self {
         self = self.commit4();
-        let l4 = match ast.clone() {
-            AST::Hasira(h) if h.level == 0 => ActorBlock {
-                attr: Attribute::new(h.name.to_owned(), format!("A{}", h.name)),
-                items: Vec::new(),
-            },
-            _ => panic!("push_actor: ast={:?}", ast),
+        let mut l4 = SerifBlock { items: Vec::new() };
+        let actor = Actor {
+            name: hasira.name.to_owned(),
         };
+        let actor = SerifItem::Actor(actor);
+        l4.items.push(actor);
+        if let Some(attrs) = &hasira.attrs {
+            if let AST::Attrs(attrs) = &**attrs {
+                for ast in &attrs.items {
+                    let item = match ast.clone() {
+                        AST::Action(a) => SerifItem::Action(a),
+                        AST::Require(a) => SerifItem::Require(a),
+                        AST::Either(a) => SerifItem::Either(a),
+                        AST::Forget(a) => SerifItem::Forget(a),
+                        AST::Memory(a) => SerifItem::Memory(a),
+                        AST::Serif(a) => SerifItem::Serif(a),
+                        AST::Comment(a) => SerifItem::Comment(a),
+                        AST::Error(a) => SerifItem::Error(a),
+                        _ => panic!("push_serif: ast={:?}", ast),
+                    };
+                    l4.items.push(item);
+                }
+            }
+        }
         self.l4 = Some(l4);
         self
     }
-    /// l5 push
+    /// l4 push
     fn push_jump(mut self, ast: &AST) -> Self {
-        self = self.commit5();
-        let mut l5 = SerifBlock { items: Vec::new() };
+        self = self.commit4();
+        let mut l4 = SerifBlock { items: Vec::new() };
         let item = match ast.clone() {
             AST::LongJump(a) => SerifItem::LongJump(a),
             AST::ShortJump(a) => SerifItem::ShortJump(a),
             _ => panic!("push_jump: ast={:?}", ast),
         };
-        l5.items.push(item);
-        self.l5 = Some(l5);
+        l4.items.push(item);
+        self.l4 = Some(l4);
         self
     }
-    /// l5 push
+    /// l4 push
     fn push_serif(mut self, togaki: &Togaki) -> Self {
-        self = self.commit5();
-        let mut l5 = SerifBlock { items: Vec::new() };
+        self = self.commit4();
+        let mut l4 = SerifBlock { items: Vec::new() };
         for ast in &togaki.items {
             let item = match ast.clone() {
                 AST::Action(a) => SerifItem::Action(a),
@@ -397,9 +384,9 @@ impl Builder {
                 AST::Error(a) => SerifItem::Error(a),
                 _ => panic!("push_serif: ast={:?}", ast),
             };
-            l5.items.push(item)
+            l4.items.push(item)
         }
-        self.l5 = Some(l5);
+        self.l4 = Some(l4);
         self
     }
 }
@@ -414,7 +401,7 @@ pub fn scan(script: &Script) -> RootBlock {
             AST::Error(_) => builder.push_error(ast),
             AST::Hasira(h) => {
                 if h.level == 0 {
-                    builder.push_actor(ast)
+                    builder.push_actor(&h)
                 } else {
                     builder.push_hasira(ast)
                 }

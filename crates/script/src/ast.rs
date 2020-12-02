@@ -13,6 +13,7 @@ pub enum AST {
     Error(Error),
 
     Hasira(Hasira),
+    Actor(Actor),
     Togaki(Togaki),
 
     Serif(Serif),
@@ -52,6 +53,11 @@ pub struct Hasira {
     pub level: usize,
     pub name: String,
     pub attrs: Option<Box<AST>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Actor {
+    pub name: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

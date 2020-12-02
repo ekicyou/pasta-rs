@@ -34,15 +34,39 @@ pub fn gen_script(script: &Script) -> TokenStream {
 fn gen_script_test() {
     use pasta_script::*;
     let text = r##"
-どきゅめんと
-＠＠＠＠柱LV4　！会話
-＠＠＠柱LV3
-＠＠柱LV2
-＠柱LV1
-＠柱LV1
-＠柱
-わたし  ＠動作１　＠動作２
-        言葉１、言葉２＠動作３　言葉３
+パスタスクリプトテスト構文
+
+最初の柱まではドキュメントコメントとします。
+
+＠＠＠  ！起動トーク        # レベル３の柱
+
+＠＠    ！午前中
+
+＠お天気はどうですか？
+
+パスタ
+    おはようございます。
+    明日の天気を当ててみてましょう。
+        ＞１
+
+        ：１
+        ＠笑顔
+　　サンダルは晴れと出ました！
+    お出かけ出来たら楽しいですよ。
+
+        ：１
+        ＠曇り顔
+　　サンダルは雨と出ました。
+    引きこもりでも、雨はじっとりなのです。
+        ＞＞明後日の方向
+
+
+＠
+パスタ
+    トーク区切り。
+
+＠同名柱
+＠同名柱
 "##;
     let node = parse_one(Rule::script, text).unwrap();
     if let AST::Script(ref script) = PastaParser::script(node).unwrap() {
