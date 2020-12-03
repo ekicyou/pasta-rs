@@ -46,6 +46,9 @@ impl Attribute {
             self.id = format!("{}_{}", &self.id, text);
         }
     }
+    fn set_id<S: Into<String>>(&mut self, id: S) {
+        self.id = id.into();
+    }
     fn id_num(&mut self, prefix: &str, i: u32) {
         self.id_prefix(prefix);
         let suffix = match i {
@@ -58,24 +61,13 @@ impl Attribute {
     }
 }
 
-pub fn fix_id<A: AttributeBlock>(prefix: &str, items: &Vec<A>) {
-    let mut map: HashMap<String, Vec<&Attribute>> = HashMap::new();
+pub fn fix_id<A: AttributeBlock>(prefix: &str, items: &mut Vec<A>) {
+    let mut i = 0;
     for item in items {
-        let k = item.attr().id.to_owned();
-        let v = map.entry(k).or_insert(Vec::new());
-        v.push(item.attr());
-    }
-    for (_k, v) in &map {
-        if v.len() == 0 {
-            continue;
-        }
-        let mut index = 0;
-        for attr in v {
-            let attr = unsafe { to_mut_ref(*attr) };
-            attr.id_num(prefix, index);
-
-            index += 1;
-        }
+        let attr = item.attr_mut();
+        i += 1;
+        let id = format!("{}{}", prefix, i);
+        attr.set_id(id);
     }
 }
 

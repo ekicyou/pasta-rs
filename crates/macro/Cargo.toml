@@ -16,3 +16,4 @@ quote = "1.0"
 squote = "0.1"
 syn = {version="1.0", features=["extra-traits",]}
 pasta_script = {path="../script"}
+pasta_gen = {path="../gen"}

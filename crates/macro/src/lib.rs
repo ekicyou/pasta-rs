@@ -8,12 +8,11 @@ use syn::parse2;
 pub fn build(stream: TokenStream) -> TokenStream {
     let build: syn::LitStr = syn::parse(stream).unwrap();
     let build = build.value();
-    println!("{:?}", build);
     let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     build_path.push(build);
-    println!("{:?}", build_path);
+    let code = std::fs::read_to_string(&build_path).unwrap();
 
-    let tokens = sample::script();
+    let tokens = pasta_gen::gen_code(&code).into_string();
     let tokens = quote! {
         use ::std::io::Write;
         let mut path = ::std::path::PathBuf::from(
