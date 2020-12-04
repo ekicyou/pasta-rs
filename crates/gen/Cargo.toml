@@ -1,16 +1,17 @@
 [package]
-name = "pasta_gen"
-version = "0.1.0"
 authors = ["ekicyou <dot.station@gmail.com>"]
 edition = "2018"
+name = "pasta_gen"
+version = "0.1.0"
 
 [dependencies]
+async-trait = "0.1"
 log = "0.4"
+once_cell = "1.5"
+pasta_core = {path = "../core"}
+pasta_script = {path = "../script"}
 proc-macro2 = "1.0"
 quote = "1.0"
+rand = "0.7"
 squote = "0.1"
-syn = {version="1.0", features=["extra-traits",]}
-pasta_script = {path = "../script"}
-pasta_core = {path = "../core"}
-async-trait = "0.1"
-once_cell = "1.5"
+syn = {version = "1.0", features = ["extra-traits"]}

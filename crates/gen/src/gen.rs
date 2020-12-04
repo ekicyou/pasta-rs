@@ -162,6 +162,7 @@ pub fn gen_script(script: &Script) -> TokenStream {
     };
 
     let enum_jump = quote! {
+        #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
         pub enum JT{
             #item_jump
         }
