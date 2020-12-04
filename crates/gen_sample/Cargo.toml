@@ -1,16 +1,13 @@
 [package]
 authors = ["ekicyou <dot.station@gmail.com>"]
 edition = "2018"
-name = "masta_macro_test"
+name = "gen_sample"
 version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-[build-dependencies]
 async-trait = "0.1"
 log = "0.4"
 pasta_core = {path = "../core"}
-pasta_macro = {path = "../macro"}
 rand = "0.7"

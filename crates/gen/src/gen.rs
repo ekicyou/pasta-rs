@@ -1,10 +1,7 @@
 use crate::block::*;
 use crate::format_ident::*;
 use pasta_script::ast::*;
-use squote::{quote, Ident, Literal, TokenStream};
-
-use std::iter::{FromIterator, Iterator};
-use syn;
+use squote::{quote, Ident, TokenStream};
 
 pub fn gen_code(code: &str) -> TokenStream {
     use pasta_script::*;
@@ -203,11 +200,11 @@ fn gen_script_test() {
 
 最初の柱まではドキュメントコメントとします。
 
-＠＠＠  ！起動トーク        # レベル３の柱
+＠＠＠  ！一般トーク        # レベル３の柱
 
 ＠＠    ！午前中
 
-＠お天気はどうですか
+＠お天気はどうですか　－天気－明日
 
 パスタ
     おはようございます。
@@ -216,12 +213,13 @@ fn gen_script_test() {
 
         ：１
         ＠笑顔
-　　サンダルは晴れと出ました！
+　　サンダルは晴れと出ました！＠＋サンダル＠＋晴れ
     お出かけ出来たら楽しいですよ。
+
 
         ：１
         ＠曇り顔
-　　サンダルは雨と出ました。
+　　サンダルは雨と出ました。＠＋サンダル＠＋雨
     引きこもりでも、雨はじっとりなのです。
         ＞＞明後日の方向
 
