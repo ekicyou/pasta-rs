@@ -1,4 +1,5 @@
 use async_trait::*;
+use rand::rngs::ThreadRng;
 
 #[async_trait]
 pub trait Scriptor {
@@ -18,4 +19,7 @@ pub trait Scriptor {
     fn forget(&mut self, tag: &str);
     /// タグ要素の記憶・忘却の確定
     fn commit_tags(&mut self);
+
+    /// 乱数ジェネレータを返す。
+    fn thread_rng(&self) -> ThreadRng;
 }

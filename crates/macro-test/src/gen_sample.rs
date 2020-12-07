@@ -1,3 +1,4 @@
+use pasta_core::Scriptor;
 use rand::Rng;
 use std::collections::{HashMap, HashSet};
 
@@ -23,7 +24,9 @@ pub async fn walk() {
     };
     let mut used_hasira: HashSet<JT> = HashSet::new();
 
-    let rand_jump = |tags: &[String], default_target: JT| {
+    let rand_jump = |s: &mut Scriptor, default_target: JT| {
+        let tags = s.tags();
+        let mut r = s.thread_rng();
         // 要素数が一番少ないキーを探す
         let mut target: Option<_> = None;
         let mut target_len = usize::MAX;
@@ -69,7 +72,6 @@ pub async fn walk() {
         };
 
         // １つを選択
-        let mut r = rand::thread_rng();
         let sel = r.gen_range(0, nouse.len());
         let sel = nouse[sel];
 

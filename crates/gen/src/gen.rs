@@ -153,6 +153,9 @@ pub fn gen_script(script: &Script) -> TokenStream {
         });
     }
 
+    // 柱のタグチェックコード
+    let h_checks = crate::h_checks::h_checks(&root.hasira[..]);
+
     // コード合成
     let prefix_code = quote! {
         use pasta_core::Scriptor;
@@ -190,6 +193,10 @@ pub fn gen_script(script: &Script) -> TokenStream {
         #doc_comment
         #fn_run
     }
+    /*
+
+        #h_checks
+    */
 }
 
 #[test]

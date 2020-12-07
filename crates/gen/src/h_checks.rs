@@ -26,8 +26,8 @@ pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
         let fn_name = format_ident(&h.attr.id);
         if h.attr.require.len() == 0 && h.attr.either.len() == 0 {
             funcs.combine(&quote! {
-            pub fn $fn_name(tags: &[String]) -> Option<JT> {
-                Some(JT::$fn_name)
+            pub fn #fn_name(tags: &[String]) -> Option<JT> {
+                Some(JT::#fn_name)
             }});
             continue;
         };
@@ -67,12 +67,12 @@ pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
             quote! { #ok_either }
         };
         funcs.combine(&quote! {
-        pub fn $fn_name(tags: &[String]) -> Option<JT> {
+        pub fn #fn_name(tags: &[String]) -> Option<JT> {
             #init
             for tag in tags{
                 #expr
                 if #if_ok {
-                    return Some(JT::$fn_name);
+                    return Some(JT::#fn_name);
                 }
             }
             None
