@@ -132,7 +132,7 @@ pub fn gen_script(script: &Script) -> TokenStream {
         };
         let rand_jump = if rand_jump {
             quote! {
-                jump = rand_jump();
+                jump = rand_jump(s, JT::#next_id);
             }
         } else {
             TokenStream::new()
@@ -156,9 +156,12 @@ pub fn gen_script(script: &Script) -> TokenStream {
     // 柱のタグチェックコード
     let h_checks = crate::h_checks::h_checks(&root.hasira[..]);
 
+    // ========================================================
     // コード合成
+    let fn_rand_jump = crate::rand_jump::gen();
     let prefix_code = quote! {
         use pasta_core::Scriptor;
+        #fn_rand_jump
     };
 
     let enum_jump = quote! {
@@ -177,12 +180,13 @@ pub fn gen_script(script: &Script) -> TokenStream {
     }
 
     let fn_run = quote! {
-        pub async fn walk<T: Scriptor>(s: &Scriptor, jump: JT){
+        pub async fn walk<S: Scriptor>(s: &mut S, jump: JT){
             let mut jump = jump;
             loop{
                 match jump{
                     #code_run
                 }
+                s.commit_tags();
             }
         }
     };
@@ -192,6 +196,7 @@ pub fn gen_script(script: &Script) -> TokenStream {
         #enum_jump
         #doc_comment
         #fn_run
+        #h_checks
     }
     /*
 

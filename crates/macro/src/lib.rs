@@ -24,7 +24,8 @@ pub fn build(stream: TokenStream) -> TokenStream {
         file.write_all(#tokens.as_bytes()).expect("Could not write generated code to output file");
 
         let mut cmd = ::std::process::Command::new("rustfmt");
-        cmd.arg(&path);
+        cmd .arg("--edition 2018")
+            .arg(&path);
         let _ = cmd.output();
     };
     tokens.into()
