@@ -21,9 +21,11 @@ pub fn build(stream: TokenStream) -> TokenStream {
         path.push("pasta.rs");
         let mut file = ::std::fs::File::create(&path).expect("Failed to create noodle.rs");
         file.write_all(#tokens.as_bytes()).expect("Could not write generated code to output file");
+        println!("save");
 
         let mut cmd = ::std::process::Command::new("rustfmt");
-        cmd .arg("--edition 2018 ")
+        cmd .arg("--edition")
+            .arg("2018 ")
             .arg(&path);
         println!("cmd: {:?}",cmd);
         let _ = cmd.output();
