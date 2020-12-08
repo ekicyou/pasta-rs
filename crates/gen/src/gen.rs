@@ -199,9 +199,7 @@ pub fn gen_script(script: &Script) -> TokenStream {
         #h_checks
     }
     /*
-
-        #h_checks
-    */
+     */
 }
 
 #[test]

@@ -411,7 +411,7 @@ fn script() {
         let ast = PastaParser::script(node).unwrap();
         println!("{:?}", ast);
         if let AST::Script(Script { items: lines }) = ast {
-            assert_eq!(lines.len(), 24);
+            assert_eq!(lines.len(), 25);
             match &lines[0] {
                 AST::DocComment(..) => {}
                 x => {

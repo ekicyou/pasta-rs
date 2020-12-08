@@ -1,8 +1,7 @@
-use proc_macro::{TokenStream, TokenTree};
+use proc_macro::TokenStream;
 use quote::quote;
 use std::env;
 use std::path::PathBuf;
-use syn::parse2;
 
 #[proc_macro]
 pub fn build(stream: TokenStream) -> TokenStream {
@@ -19,13 +18,14 @@ pub fn build(stream: TokenStream) -> TokenStream {
             ::std::env::var("OUT_DIR").expect("No `OUT_DIR` env variable set"),
         );
 
-        path.push("noodle.rs");
+        path.push("pasta.rs");
         let mut file = ::std::fs::File::create(&path).expect("Failed to create noodle.rs");
         file.write_all(#tokens.as_bytes()).expect("Could not write generated code to output file");
 
         let mut cmd = ::std::process::Command::new("rustfmt");
-        cmd .arg("--edition 2018")
+        cmd .arg("--edition 2018 ")
             .arg(&path);
+        println!("cmd: {:?}",cmd);
         let _ = cmd.output();
     };
     tokens.into()

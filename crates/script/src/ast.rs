@@ -150,15 +150,6 @@ pub struct ItemsASTIntoIter<'a, T: ItemsAST> {
     items: std::slice::Iter<'a, AST>,
     phantom: PhantomData<fn() -> T>,
 }
-impl<'a, T: ItemsAST> ItemsASTIntoIter<'a, T> {
-    fn new(items: &'a T) -> Self {
-        let items = items.items().into_iter();
-        Self {
-            items,
-            phantom: PhantomData,
-        }
-    }
-}
 impl<'a, T: ItemsAST> Iterator for ItemsASTIntoIter<'a, T> {
     type Item = &'a AST;
     fn next(&mut self) -> Option<Self::Item> {
@@ -191,11 +182,6 @@ pub trait ExprAST {
 pub struct ExprASTIntoIter<'a, T: ExprAST> {
     expr: &'a T,
     none: bool,
-}
-impl<'a, T: ExprAST> ExprASTIntoIter<'a, T> {
-    fn new(expr: &'a T) -> Self {
-        Self { expr, none: false }
-    }
 }
 impl<'a, T: ExprAST> Iterator for ExprASTIntoIter<'a, T> {
     type Item = &'a AST;
