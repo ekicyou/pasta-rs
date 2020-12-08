@@ -1,5 +1,4 @@
-use crate::format_ident::*;
-use squote::{quote, Ident, TokenStream};
+use squote::{quote, TokenStream};
 
 pub fn gen() -> TokenStream {
     quote! {

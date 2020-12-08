@@ -30,26 +30,3 @@ pub fn build(stream: TokenStream) -> TokenStream {
     };
     tokens.into()
 }
-
-mod sample {
-    use squote::{quote, TokenStream};
-    pub fn script() -> String {
-        let ts = quote! {
-            pub struct ScenarioMaker {}
-        };
-        ts.into_string()
-    }
-}
-
-mod tests {
-    use squote::{format_ident, quote, Literal, TokenStream};
-    use std::iter::FromIterator;
-
-    #[test]
-    fn main() {
-        let tokens = quote! {
-            println!("Hello, world!");
-        };
-        println!("{}", tokens.into_string());
-    }
-}

@@ -1,11 +1,8 @@
 use crate::block::*;
 use crate::format_ident::*;
 use pasta_script::ast::*;
-use squote::{quote, Ident, TokenStream};
+use squote::{quote, TokenStream};
 
-fn expr_key(expr: &Expr) -> &str {
-    &expr.expr
-}
 fn require_value(node: &Require) -> &str {
     if let AST::Expr(expr) = &**node.expr() {
         &expr.expr

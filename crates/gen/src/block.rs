@@ -1,6 +1,4 @@
 use pasta_script::ast::*;
-use std::collections::HashMap;
-use std::mem;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RootBlock {
@@ -36,28 +34,8 @@ impl Attribute {
     }
 }
 impl Attribute {
-    fn id_prefix(&mut self, text: &str) {
-        if text.len() > 0 {
-            self.id = format!("{}_{}", text, &self.id);
-        }
-    }
-    fn id_suffix(&mut self, text: &str) {
-        if text.len() > 0 {
-            self.id = format!("{}_{}", &self.id, text);
-        }
-    }
     fn set_id<S: Into<String>>(&mut self, id: S) {
         self.id = id.into();
-    }
-    fn id_num(&mut self, prefix: &str, i: u32) {
-        self.id_prefix(prefix);
-        let suffix = match i {
-            0 => {
-                return;
-            }
-            _ => format!("{}", i),
-        };
-        self.id_suffix(&suffix);
     }
 }
 
@@ -69,12 +47,6 @@ pub fn fix_id<A: AttributeBlock>(prefix: &str, items: &mut Vec<A>) {
         let id = format!("{}{}", prefix, i);
         attr.set_id(id);
     }
-}
-
-unsafe fn to_mut_ref<T>(src: &T) -> &mut T {
-    let src = (src) as *const T as *mut T;
-    let src = &mut *src;
-    src
 }
 
 pub trait AttributeBlock {

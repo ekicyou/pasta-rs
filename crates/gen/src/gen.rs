@@ -108,7 +108,6 @@ pub fn gen_script(script: &Script) -> TokenStream {
     let len = match_items.len();
     for y in 0..len {
         let x = if y != 0 { y - 1 } else { len - 1 };
-        let now_id = match_items[x].0.clone();
         let next_id = match_items[y].0.clone();
         let now_type = match_items[x].1;
         let next_type = match_items[y].1;
