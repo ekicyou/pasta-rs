@@ -1,3 +1,5 @@
+mod word;
+
 use async_trait::*;
 use rand::rngs::ThreadRng;
 
