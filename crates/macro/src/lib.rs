@@ -5,11 +5,15 @@ use std::path::PathBuf;
 
 #[proc_macro]
 pub fn build(stream: TokenStream) -> TokenStream {
-    let build: syn::LitStr = syn::parse(stream).unwrap();
-    let build = build.value();
-    let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    build_path.push(build);
-    let code = std::fs::read_to_string(&build_path).unwrap();
+    let mut codes: Vec<String> = Vec::new();
+    for t in stream {
+        println!("{:?}", &t);
+        let build: syn::LitStr = syn::parse(t).unwrap();
+        let build = build.value();
+        let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+        build_path.push(build);
+        let code = std::fs::read_to_string(&build_path).unwrap();
+    }
 
     let tokens = pasta_gen::gen_pasta_code(&code).into_string();
     let tokens = quote! {
