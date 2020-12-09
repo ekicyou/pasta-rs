@@ -1,3 +1,5 @@
+use pasta_script::ast::*;
+
 pub fn format_ident(name: &str) -> squote::Ident {
     if name == "Self" {
         squote::format_ident!("{}_", name)
@@ -13,5 +15,21 @@ pub fn format_ident(name: &str) -> squote::Ident {
             | "dyn" => squote::format_ident!("r#{}", name),
             _ => squote::format_ident!("{}", name),
         }
+    }
+}
+
+pub fn require_value(node: &Require) -> &str {
+    if let AST::Expr(expr) = &**node.expr() {
+        &expr.expr
+    } else {
+        ""
+    }
+}
+
+pub fn either_value(node: &Either) -> &str {
+    if let AST::Expr(expr) = &**node.expr() {
+        &expr.expr
+    } else {
+        ""
     }
 }

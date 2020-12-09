@@ -1,5 +1,5 @@
 use crate::block::*;
-use crate::format_ident::*;
+use crate::utils::*;
 use pasta_script::ast::*;
 use squote::{quote, Ident, TokenStream};
 
@@ -157,9 +157,12 @@ pub fn gen_script(script: &Script) -> TokenStream {
 
     // ========================================================
     // コード合成
-    let fn_rand_jump = crate::rand_jump::gen();
+    let fn_rand_jump = crate::rand_jump::gen(&root.hasira);
     let prefix_code = quote! {
+        use once_cell::sync::Lazy;
         use pasta_core::Scriptor;
+        use std::collections::{HashMap, HashSet};
+        use std::sync::Mutex;
         #fn_rand_jump
     };
 

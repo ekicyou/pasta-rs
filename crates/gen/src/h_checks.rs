@@ -1,22 +1,8 @@
 use crate::block::*;
-use crate::format_ident::*;
+use crate::utils::*;
 use pasta_script::ast::*;
 use squote::{quote, TokenStream};
 
-fn require_value(node: &Require) -> &str {
-    if let AST::Expr(expr) = &**node.expr() {
-        &expr.expr
-    } else {
-        ""
-    }
-}
-fn either_value(node: &Either) -> &str {
-    if let AST::Expr(expr) = &**node.expr() {
-        &expr.expr
-    } else {
-        ""
-    }
-}
 pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
     let mut funcs = TokenStream::new();
     for h in hasira {
