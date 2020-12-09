@@ -161,6 +161,7 @@ pub fn gen_script(script: &Script) -> TokenStream {
     let prefix_code = quote! {
         use once_cell::sync::Lazy;
         use pasta_core::Scriptor;
+        use rand::Rng;
         use std::collections::{HashMap, HashSet};
         use std::sync::Mutex;
         #fn_rand_jump

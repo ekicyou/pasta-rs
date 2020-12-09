@@ -1,6 +1,5 @@
 use crate::block::*;
 use crate::utils::*;
-use pasta_script::ast::*;
 use squote::{quote, TokenStream};
 
 pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {

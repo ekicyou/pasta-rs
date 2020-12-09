@@ -1,7 +1,7 @@
 use crate::block::*;
 use crate::utils::*;
 use squote::{quote, TokenStream};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub fn gen(items: &[HasiraBlock]) -> TokenStream {
     let mut m: HashMap<String, Vec<&str>> = HashMap::new();
@@ -9,13 +9,38 @@ pub fn gen(items: &[HasiraBlock]) -> TokenStream {
         let id = &h.attr.id;
         for key in &h.attr.require {
             let key = require_value(key).to_owned();
-            let mut entry = m.entry(key).or_insert(Vec::new());
+            let entry = m.entry(key).or_insert(Vec::new());
+            entry.push(id);
+        }
+        for key in &h.attr.either {
+            let key = either_value(key).to_owned();
+            let entry = m.entry(key).or_insert(Vec::new());
             entry.push(id);
         }
     }
+    let mut map_entry = TokenStream::new();
+    for (key, entry) in m {
+        let mut funcs = TokenStream::new();
+        for id in entry {
+            let id = format_ident(id);
+            funcs.combine(&quote! { h_checks::#id, });
+        }
+        map_entry.combine(&quote! {
+            m   .entry(#key.to_owned())
+                .or_insert(vec![#funcs]);
+        });
+    }
+    let fn_map = quote! {
+        static FN_MAP: Lazy<HashMap<String, Vec<fn(&[String]) -> Option<JT>>>> = Lazy::new(|| {
+            let mut m: HashMap<String, Vec<fn(&[String]) -> Option<JT>>> = HashMap::new();
+            #map_entry
+            m
+        });
+    };
 
     let rand_jump = gen_func();
     quote! {
+        #fn_map
         #rand_jump
     }
 }
