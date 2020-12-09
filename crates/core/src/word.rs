@@ -46,3 +46,10 @@
 ///         /ひなた
 /// ```
 pub struct WordDic {}
+
+impl WordDic{
+    push(&[&str])
+
+
+
+}
