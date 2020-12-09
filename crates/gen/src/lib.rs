@@ -1,7 +1,7 @@
 mod block;
-mod gen;
 mod h_checks;
 mod rand_jump;
+mod script;
 mod utils;
 
-pub use crate::gen::gen_code;
+pub use crate::script::gen_code as gen_pasta_code;

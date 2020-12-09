@@ -11,7 +11,7 @@ pub fn build(stream: TokenStream) -> TokenStream {
     build_path.push(build);
     let code = std::fs::read_to_string(&build_path).unwrap();
 
-    let tokens = pasta_gen::gen_code(&code).into_string();
+    let tokens = pasta_gen::gen_pasta_code(&code).into_string();
     let tokens = quote! {
         use ::std::io::Write;
         let mut path = ::std::path::PathBuf::from(
