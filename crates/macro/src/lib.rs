@@ -24,11 +24,10 @@ pub fn build(stream: TokenStream) -> TokenStream {
         println!("save");
 
         let mut cmd = ::std::process::Command::new("rustfmt");
-        cmd .arg("--edition")
-            .arg("2018 ")
-            .arg(&path);
+        cmd.arg(&path);
         println!("cmd: {:?}",cmd);
-        let _ = cmd.output();
+        let rc = cmd.output();
+        println!("output={:?}",rc);
     };
     tokens.into()
 }
