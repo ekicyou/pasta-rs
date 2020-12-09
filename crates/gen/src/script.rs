@@ -7,10 +7,23 @@ pub fn gen_code(code: &str) -> TokenStream {
     use pasta_script::*;
     let node = parse_one(Rule::script, code).unwrap();
     if let AST::Script(ref script) = PastaParser::script(node).unwrap() {
-        gen_script(script)
+        let script = script.clone();
+        gen_script(&[script][..])
     } else {
         TokenStream::new()
     }
+}
+
+pub fn gen_codes(codes: &[&str]) -> TokenStream {
+    use pasta_script::*;
+    let mut scripts: Vec<Script> = Vec::new();
+    for code in codes {
+        let node = parse_one(Rule::script, code).unwrap();
+        if let AST::Script(ref script) = PastaParser::script(node).unwrap() {
+            scripts.push(script.clone());
+        }
+    }
+    gen_script(&scripts[..])
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -21,9 +34,9 @@ enum MatchCode {
     Anchor,
 }
 
-pub fn gen_script(script: &Script) -> TokenStream {
+pub fn gen_script(scripts: &[Script]) -> TokenStream {
     // 仕訳
-    let mut root = scan(script);
+    let mut root = scan(scripts);
 
     // ID設定
     fix_id("H", &mut root.hasira);
@@ -246,7 +259,8 @@ fn gen_script_test() {
 "##;
     let node = parse_one(Rule::script, code).unwrap();
     if let AST::Script(ref script) = PastaParser::script(node).unwrap() {
-        let ts = gen_script(script);
+        let script = script.clone();
+        let ts = gen_script(&[script][..]);
         println!("###src###\nts={}", ts);
     }
 }

@@ -5,3 +5,4 @@ mod script;
 mod utils;
 
 pub use crate::script::gen_code as gen_pasta_code;
+pub use crate::script::gen_codes as gen_pasta_codes;

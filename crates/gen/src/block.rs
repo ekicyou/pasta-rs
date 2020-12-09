@@ -213,7 +213,11 @@ impl Builder {
     /// l1 push
     fn push_doc_comment(mut self, ast: &AST) -> Self {
         match ast.clone() {
-            AST::DocComment(a) => self.l1.doc_comment = Some(a),
+            AST::DocComment(a) => {
+                if self.l1.doc_comment == None {
+                    self.l1.doc_comment = Some(a)
+                }
+            }
             _ => panic!("push_doc_comment: ast={:?}", ast),
         };
         self
@@ -356,9 +360,9 @@ impl Builder {
 }
 
 /// script to root block
-pub fn scan(script: &Script) -> RootBlock {
+pub fn scan(scripts: &[Script]) -> RootBlock {
     let mut builder = Builder::new();
-    for ast in script {
+    for ast in scripts.into_iter().flatten() {
         builder = match ast {
             AST::DocComment(_) => builder.push_doc_comment(ast),
             AST::Comment(_) => builder.push_comment(ast),
