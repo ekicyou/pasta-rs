@@ -1,21 +1,27 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use std::env;
+use std::iter::FromIterator;
 use std::path::PathBuf;
 
 #[proc_macro]
 pub fn build(stream: TokenStream) -> TokenStream {
-    let mut codes: Vec<String> = Vec::new();
+    let mut pasta_codes: Vec<String> = Vec::new();
     for t in stream {
-        println!("{:?}", &t);
-        let build: syn::LitStr = syn::parse(t).unwrap();
-        let build = build.value();
-        let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-        build_path.push(build);
-        let code = std::fs::read_to_string(&build_path).unwrap();
+        let t = std::iter::repeat(t).take(1);
+        let t = TokenStream::from_iter(t);
+        let build: Result<syn::LitStr, _> = syn::parse(t);
+        if let Ok(build) = build {
+            println!("{:?}", &build);
+            let build = build.value();
+            let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+            build_path.push(build);
+            let code = std::fs::read_to_string(&build_path).unwrap();
+            pasta_codes.push(code);
+        }
     }
 
-    let tokens = pasta_gen::gen_pasta_code(&code).into_string();
+    let tokens = pasta_gen::gen_pasta_codes(pasta_codes.as_slice()).into_string();
     let tokens = quote! {
         use ::std::io::Write;
         let mut path = ::std::path::PathBuf::from(

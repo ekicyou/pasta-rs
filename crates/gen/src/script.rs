@@ -14,7 +14,7 @@ pub fn gen_code(code: &str) -> TokenStream {
     }
 }
 
-pub fn gen_codes(codes: &[&str]) -> TokenStream {
+pub fn gen_codes(codes: &[String]) -> TokenStream {
     use pasta_script::*;
     let mut scripts: Vec<Script> = Vec::new();
     for code in codes {
