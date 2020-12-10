@@ -1,23 +1,34 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use std::env;
+use std::ffi::OsStr;
 use std::iter::FromIterator;
 use std::path::PathBuf;
 
 #[proc_macro]
 pub fn build(stream: TokenStream) -> TokenStream {
     let mut pasta_codes: Vec<String> = Vec::new();
+    let mut csv_codes: Vec<String> = Vec::new();
     for t in stream {
         let t = std::iter::repeat(t).take(1);
         let t = TokenStream::from_iter(t);
         let build: Result<syn::LitStr, _> = syn::parse(t);
         if let Ok(build) = build {
-            println!("{:?}", &build);
             let build = build.value();
             let mut build_path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
             build_path.push(build);
-            let code = std::fs::read_to_string(&build_path).unwrap();
-            pasta_codes.push(code);
+            let code = std::fs::read_to_string(&build_path)
+                .expect(&format!("file not found: path={:?}", &build_path));
+            match build_path.extension() {
+                Some(ext) => {
+                    if ext == "pasta" {
+                        pasta_codes.push(code);
+                    } else if ext == "csv" {
+                        csv_codes.push(code);
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
