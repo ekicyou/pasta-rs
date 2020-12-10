@@ -1,5 +1,7 @@
 mod word;
 
+pub use word::WordDic;
+
 use async_trait::*;
 use rand::rngs::ThreadRng;
 
