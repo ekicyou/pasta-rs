@@ -3,6 +3,6 @@ fn main() {
         "dic/main.pasta"
         "dic/main2.pasta"
         "dic/sakuhin.csv"
-        "dic/word.csv"
+        "dic/words.csv"
     };
 }
