@@ -50,6 +50,10 @@ impl WordDic {
             map: HashMap::new(),
         }
     }
+    
+    pub fn map(&self) -> &HashMap<String, HashSet<String>> {
+        &self.map
+    }
 
     /// １要素を単語辞書に登録します。
     pub fn push_kv<K: Into<String>, V: Into<String>>(&mut self, k: K, v: V) {
@@ -155,21 +159,32 @@ fn create_dic() {
         vec!["キャラ", "上田麗奈", "星野みやこ", "星野家", "私に天使"]
     );
 
+    let set = dic.get("上田麗奈").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(set, vec!["みゃー姉", "星野みやこ"]);
+
     let set = dic.get("呼称").unwrap();
     let set: BTreeSet<_> = set.iter().cloned().collect();
     let set: Vec<_> = set.iter().cloned().collect();
-    assert_eq!(set, vec!["星野みやこ"]);
+    assert_eq!(set, vec!["ひなた", "みゃー姉"]);
 
     let set = dic.get("私に天使").unwrap();
     let set: BTreeSet<_> = set.iter().cloned().collect();
     let set: Vec<_> = set.iter().cloned().collect();
     assert_eq!(
         set,
-        vec!["星野ひなた", "星野みやこ", "私に天使が舞い降りた！"]
+        vec![
+            "ひなた",
+            "みゃー姉",
+            "星野ひなた",
+            "星野みやこ",
+            "私に天使が舞い降りた！"
+        ]
     );
 
     let set = dic.get("星野家").unwrap();
     let set: BTreeSet<_> = set.iter().cloned().collect();
     let set: Vec<_> = set.iter().cloned().collect();
-    assert_eq!(set, vec!["所属", "星野ひなた", "星野みやこ"]);
+    assert_eq!(set, vec!["ひなた", "みゃー姉", "星野ひなた", "星野みやこ"]);
 }
