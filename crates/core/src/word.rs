@@ -50,7 +50,7 @@ impl WordDic {
             map: HashMap::new(),
         }
     }
-    
+
     pub fn map(&self) -> &HashMap<String, HashSet<String>> {
         &self.map
     }
@@ -187,4 +187,22 @@ fn create_dic() {
     let set: BTreeSet<_> = set.iter().cloned().collect();
     let set: Vec<_> = set.iter().cloned().collect();
     assert_eq!(set, vec!["ひなた", "みゃー姉", "星野ひなた", "星野みやこ"]);
+}
+
+#[test]
+fn create_dic2() {
+    use csv;
+    let data = r#"作品略称,名称,呼称,カテゴリー,CV,所属
+私に天使,私に天使が舞い降りた！,,作品,,マンガ,
+私に天使,星野みやこ,みゃー姉,キャラ,上田麗奈,星野家,
+私に天使,星野ひなた,ひなた,キャラ,長江里加,星野家,"#;
+    let mut rdr = csv::Reader::from_reader(data.as_bytes());
+    let header = rdr.headers().unwrap();
+    assert_eq!(header.len(), 6);
+
+    for rec in rdr.records() {
+        let rec = rec.unwrap();
+        println!("{:?}", rec);
+    }
+
 }
