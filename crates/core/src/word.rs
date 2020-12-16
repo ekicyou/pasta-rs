@@ -192,17 +192,24 @@ fn create_dic() {
 #[test]
 fn create_dic2() {
     use csv;
-    let data = r#"作品略称,名称,呼称,カテゴリー,CV,所属
-私に天使,私に天使が舞い降りた！,,作品,,マンガ,
-私に天使,星野みやこ,みゃー姉,キャラ,上田麗奈,星野家,
-私に天使,星野ひなた,ひなた,キャラ,長江里加,星野家,"#;
-    let mut rdr = csv::Reader::from_reader(data.as_bytes());
+    let data = r#"#
+作品略称,名称                  ,呼称    ,カテゴリー,CV      ,所属
+私に天使,私に天使が舞い降りた！,        ,作品      ,        ,マンガ
+私に天使,星野みやこ            ,みゃー姉,キャラ    ,上田麗奈,星野家
+私に天使,星野ひなた            ,ひなた  ,キャラ    ,長江里加,星野家
+"#;
+    let mut rdr = csv::ReaderBuilder::new()
+        .comment(Some(b'#'))
+        .has_headers(true)
+        .trim(csv::Trim::All)
+        .terminator(csv::Terminator::CRLF)
+        .from_reader(data.as_bytes());
     let header = rdr.headers().unwrap();
     assert_eq!(header.len(), 6);
+    println!("{:?}", header);
 
     for rec in rdr.records() {
         let rec = rec.unwrap();
         println!("{:?}", rec);
     }
-
 }
