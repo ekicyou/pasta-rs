@@ -70,7 +70,7 @@ impl WordDic {
     }
 
     /// csvレコード１行を単語辞書に登録します。
-    pub fn push<'a, T: AsRef<str>>(&mut self, header: &'a [T], record: &'a [T]) {
+    pub fn push<'a, H: AsRef<str>, R: AsRef<str>>(&mut self, header: &'a [H], record: &'a [R]) {
         // 属性⇒値
         let mut name1: Option<String> = None;
         let mut name2: Option<String> = None;
@@ -206,10 +206,10 @@ fn create_dic2() {
         .from_reader(data.as_bytes());
     let header = rdr.headers().unwrap();
     assert_eq!(header.len(), 6);
-    println!("{:?}", header);
 
+    let mut dic = WordDic::new();
     for rec in rdr.records() {
         let rec = rec.unwrap();
-        println!("{:?}", rec);
+        dic.push(header.into(), &rec.into());
     }
 }
