@@ -26,9 +26,12 @@ pub fn gen_word_dic(dic: WordDic) -> TokenStream {
     let mut push = TokenStream::new();
     let map = dic.map();
     for (k, items) in map {
+        push.combine(&quote! {
+            let k = #k;
+        });
         for v in items {
             push.combine(&quote! {
-                dic.push(#k, #v);
+                dic.push_kv(k, #v);
             });
         }
     }

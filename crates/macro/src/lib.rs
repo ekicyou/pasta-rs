@@ -32,7 +32,10 @@ pub fn build(stream: TokenStream) -> TokenStream {
         }
     }
 
-    let tokens = pasta_gen::gen_pasta_codes(pasta_codes.as_slice()).into_string();
+    let tokens = pasta_gen::gen(pasta_codes.as_slice(), csv_codes.as_slice())
+        .into_string()
+        .replace(" ; ", ";\n");
+
     let tokens = quote! {
         use ::std::io::Write;
         let mut path = ::std::path::PathBuf::from(
