@@ -70,12 +70,12 @@ impl WordDic {
     }
 
     /// csvレコード１行を単語辞書に登録します。
-    pub fn push<'a, H: AsRef<str>, R: AsRef<str>>(&mut self, header: &'a [H], record: &'a [R]) {
+    pub fn push<H: AsRef<str>, R: AsRef<str>>(&mut self, header: &[H], record: &[R]) {
         // 属性⇒値
         let mut name1: Option<String> = None;
         let mut name2: Option<String> = None;
         {
-            let zip = header.iter().zip(record);
+            let zip = header.into_iter().zip(record.into_iter());
             for (k, v) in zip {
                 let k = k.as_ref();
                 let v = v.as_ref();
@@ -89,7 +89,7 @@ impl WordDic {
         }
         // 名称⇒値
         if let Some(name) = name1 {
-            for v in record {
+            for v in record.into_iter() {
                 let v = v.as_ref();
                 if v == name {
                     continue;
@@ -99,7 +99,7 @@ impl WordDic {
             }
         } // 呼称⇒値
         if let Some(name) = name2 {
-            for v in record {
+            for v in record.into_iter() {
                 let v = v.as_ref();
                 if v == name {
                     continue;
@@ -140,6 +140,7 @@ fn create_dic() {
         "星野家",
     ][..];
     let mut dic = WordDic::new();
+    let _a = &header.into_iter();
     dic.push(header, rec1);
     dic.push(header, rec2);
     dic.push(header, rec3);
@@ -192,6 +193,8 @@ fn create_dic() {
 #[test]
 fn create_dic2() {
     use csv;
+    use std::collections::BTreeSet;
+
     let data = r#"#
 作品略称,名称                  ,呼称    ,カテゴリー,CV      ,所属
 私に天使,私に天使が舞い降りた！,        ,作品      ,        ,マンガ
@@ -205,11 +208,57 @@ fn create_dic2() {
         .terminator(csv::Terminator::CRLF)
         .from_reader(data.as_bytes());
     let header = rdr.headers().unwrap();
-    assert_eq!(header.len(), 6);
+    let header: Vec<_> = header.into_iter().map(|a| a.to_owned()).collect();
 
     let mut dic = WordDic::new();
     for rec in rdr.records() {
         let rec = rec.unwrap();
-        dic.push(header.into(), &rec.into());
+        let rec: Vec<_> = rec.into_iter().collect();
+        dic.push(header.as_slice(), rec.as_slice());
     }
+
+    let set = dic.get("名称").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(
+        set,
+        vec!["星野ひなた", "星野みやこ", "私に天使が舞い降りた！"]
+    );
+
+    let set = dic.get("みゃー姉").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(
+        set,
+        vec!["キャラ", "上田麗奈", "星野みやこ", "星野家", "私に天使"]
+    );
+
+    let set = dic.get("上田麗奈").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(set, vec!["みゃー姉", "星野みやこ"]);
+
+    let set = dic.get("呼称").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(set, vec!["ひなた", "みゃー姉"]);
+
+    let set = dic.get("私に天使").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(
+        set,
+        vec![
+            "ひなた",
+            "みゃー姉",
+            "星野ひなた",
+            "星野みやこ",
+            "私に天使が舞い降りた！"
+        ]
+    );
+
+    let set = dic.get("星野家").unwrap();
+    let set: BTreeSet<_> = set.iter().cloned().collect();
+    let set: Vec<_> = set.iter().cloned().collect();
+    assert_eq!(set, vec!["ひなた", "みゃー姉", "星野ひなた", "星野みやこ"]);
 }
