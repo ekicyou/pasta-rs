@@ -32,9 +32,7 @@ pub fn build(stream: TokenStream) -> TokenStream {
         }
     }
 
-    let tokens = pasta_gen::gen(pasta_codes.as_slice(), csv_codes.as_slice())
-        .into_string()
-        .replace(" ; ", ";\n");
+    let tokens = pasta_gen::gen(pasta_codes.as_slice(), csv_codes.as_slice()).into_string(); //.replace(" ; ", ";\n");
 
     let tokens = quote! {
         use ::std::io::Write;

@@ -115,35 +115,49 @@ impl WordDic {
 fn create_dic() {
     use std::collections::BTreeSet;
     let header = &["作品略称", "名称", "呼称", "カテゴリー", "CV", "所属"][..];
-    let rec1 = &[
-        "私に天使",
-        "私に天使が舞い降りた！",
-        "",
-        "作品",
-        "",
-        "マンガ",
-    ][..];
-    let rec2 = &[
-        "私に天使",
-        "星野みやこ",
-        "みゃー姉",
-        "キャラ",
-        "上田麗奈",
-        "星野家",
-    ][..];
-    let rec3 = &[
-        "私に天使",
-        "星野ひなた",
-        "ひなた",
-        "キャラ",
-        "長江里加",
-        "星野家",
+    let recs = &[
+        &[
+            "私に天使",
+            "私に天使が舞い降りた！",
+            "",
+            "作品",
+            "",
+            "マンガ",
+        ][..],
+        &[
+            "私に天使",
+            "星野みやこ",
+            "みゃー姉",
+            "キャラ",
+            "上田麗奈",
+            "星野家",
+        ][..],
+        &[
+            "私に天使",
+            "星野ひなた",
+            "ひなた",
+            "キャラ",
+            "長江里加",
+            "星野家",
+        ][..],
     ][..];
     let mut dic = WordDic::new();
     let _a = &header.into_iter();
-    dic.push(header, rec1);
-    dic.push(header, rec2);
-    dic.push(header, rec3);
+    for rec in recs {
+        dic.push(header, rec);
+    }
+    dic.push(
+        header,
+        &[
+            "私に天使",
+            "星野ひなた",
+            "ひなた",
+            "キャラ",
+            "長江里加",
+            "星野家",
+        ][..],
+    );
+
     let set = dic.get("名称").unwrap();
     let set: BTreeSet<_> = set.iter().cloned().collect();
     let set: Vec<_> = set.iter().cloned().collect();
