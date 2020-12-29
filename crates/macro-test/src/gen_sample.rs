@@ -97,85 +97,77 @@ pub enum JT {
     H5A1,
 }
 
-pub struct Walker {
-    jump: JT,
-}
-impl Walker {
-    pub fn new() -> Self {
-        Self { jump: JT::START }
-    }
-    async fn walk_one(&mut self){
-
+pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
+    let mut jump = jump;
+    loop {
+        jump = walk_one(s, jump).await;
+        s.commit_tags();
     }
 }
 
 #[doc = "パスタスクリプトテスト構文
 
 最初の柱まではドキュメントコメントとします。"]
-pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
-    let mut jump = jump;
-    loop {
-        match jump {
-            JT::START => {
-                jump = JT::H1;
-            }
-            JT::H1 => {
-                jump = JT::H1A1;
-            }
-            JT::H1A1 => {
-                s.actor("パスタ");
-                s.serif("おはようございます。");
-                s.serif("明日の天気を当ててみてましょう。");
-                s.start().await;
-                jump = rand_jump(s, JT::H1A2);
-            }
-            JT::H1A2 => {
-                s.serif("サンダルは晴れと出ました！");
-                s.serif("お出かけ出来たら楽しいですよ。");
-                s.start().await;
-                jump = rand_jump(s, JT::H1A3);
-            }
-            JT::H1A3 => {
-                s.serif("サンダルは雨と出ました。");
-                s.serif("引きこもりでも、雨はじっとりなのです。");
-                s.start().await;
-                jump = JT::H2;
-            }
-            JT::H2 => {
-                jump = JT::H2A1;
-            }
-            JT::H2A1 => {
-                s.actor("パスタ");
-                s.serif("トーク区切り。");
-                s.start().await;
-                jump = rand_jump(s, JT::H3);
-            }
-            JT::H3 => {
-                jump = JT::H3A1;
-            }
-            JT::H3A1 => {
-                s.start().await;
-                jump = rand_jump(s, JT::H4);
-            }
-            JT::H4 => {
-                jump = JT::H4A1;
-            }
-            JT::H4A1 => {
-                s.start().await;
-                jump = rand_jump(s, JT::H5);
-            }
-            JT::H5 => {
-                jump = JT::H5A1;
-            }
-            JT::H5A1 => {
-                s.actor("パスタ");
-                s.serif("こんにちは！");
-                s.serif("お昼過ぎになりましたね。");
-                s.start().await;
-                jump = rand_jump(s, JT::START);
-            }
+pub async fn walk_one<S: Scriptor>(s: &mut S, jump: JT) -> JT {
+    match jump {
+        JT::START => {
+            return JT::H1;
         }
-        s.commit_tags();
+        JT::H1 => {
+            return JT::H1A1;
+        }
+        JT::H1A1 => {
+            s.actor("パスタ");
+            s.serif("おはようございます。");
+            s.serif("明日の天気を当ててみてましょう。");
+            s.start().await;
+            return rand_jump(s, JT::H1A2);
+        }
+        JT::H1A2 => {
+            s.serif("サンダルは晴れと出ました！");
+            s.serif("お出かけ出来たら楽しいですよ。");
+            s.start().await;
+            return rand_jump(s, JT::H1A3);
+        }
+        JT::H1A3 => {
+            s.serif("サンダルは雨と出ました。");
+            s.serif("引きこもりでも、雨はじっとりなのです。");
+            s.start().await;
+            return JT::H2;
+        }
+        JT::H2 => {
+            return JT::H2A1;
+        }
+        JT::H2A1 => {
+            s.actor("パスタ");
+            s.serif("トーク区切り。");
+            s.start().await;
+            return rand_jump(s, JT::H3);
+        }
+        JT::H3 => {
+            return JT::H3A1;
+        }
+        JT::H3A1 => {
+            s.start().await;
+            return rand_jump(s, JT::H4);
+        }
+        JT::H4 => {
+            return JT::H4A1;
+        }
+        JT::H4A1 => {
+            s.start().await;
+            return rand_jump(s, JT::H5);
+        }
+        JT::H5 => {
+            return JT::H5A1;
+        }
+        JT::H5A1 => {
+            s.actor("パスタ");
+            s.serif("こんにちは！");
+            s.serif("お昼過ぎになりましたね。");
+            s.start().await;
+            return rand_jump(s, JT::START);
+        }
     }
 }
 mod h_checks {
