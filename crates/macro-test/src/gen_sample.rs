@@ -1,31 +1,29 @@
 use once_cell::sync::Lazy;
 use pasta_core::Scriptor;
 use std::collections::{HashMap, HashSet};
-use std::iter::IntoIterator;
 use std::sync::Mutex;
 static FN_MAP: Lazy<HashMap<String, Vec<fn(&HashSet<String>) -> Option<JT>>>> = Lazy::new(|| {
     let mut m: HashMap<String, Vec<fn(&HashSet<String>) -> Option<JT>>> = HashMap::new();
-    m.entry("起動トーク".to_owned()).or_insert(vec![
+    m.entry("午前".to_owned()).or_insert(vec![
         h_checks::H1,
         h_checks::H2,
         h_checks::H3,
         h_checks::H4,
     ]);
-    m.entry("午前中".to_owned()).or_insert(vec![
+    m.entry("お昼過ぎ".to_owned()).or_insert(vec![h_checks::H5]);
+    m.entry("通常トーク".to_owned()).or_insert(vec![
         h_checks::H1,
         h_checks::H2,
         h_checks::H3,
         h_checks::H4,
+        h_checks::H5,
     ]);
     m
 });
-
 static USED_HASIRA: Lazy<Mutex<HashSet<JT>>> = Lazy::new(|| Mutex::new(HashSet::new()));
-
-fn rand_jump<S: Scriptor>(s: &mut S, default_target: JT) -> JT {
+pub fn rand_jump<S: Scriptor>(s: &mut S, default_target: JT) -> JT {
     let mut target: Option<_> = None;
     let mut target_len = usize::MAX;
-    // 最も候補が少ない有効エントリを検索
     for tag in s.tags() {
         match FN_MAP.get(tag) {
             None => {
@@ -40,7 +38,6 @@ fn rand_jump<S: Scriptor>(s: &mut S, default_target: JT) -> JT {
             }
         }
     }
-    // 最小有効エントリから候補の絞り込み
     let targets: Vec<_> = match target {
         Some(a) => a.into_iter().filter_map(|f| f(s.tags())).collect(),
         _ => {
@@ -94,7 +91,24 @@ pub enum JT {
     H4,
     #[doc = "同名柱："]
     H4A1,
+    #[doc = "お昼過ぎですね"]
+    H5,
+    #[doc = "お昼過ぎですね："]
+    H5A1,
 }
+
+pub struct Walker {
+    jump: JT,
+}
+impl Walker {
+    pub fn new() -> Self {
+        Self { jump: JT::START }
+    }
+    async fn walk_one(&mut self){
+
+    }
+}
+
 #[doc = "パスタスクリプトテスト構文
 
 最初の柱まではドキュメントコメントとします。"]
@@ -148,6 +162,16 @@ pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
             }
             JT::H4A1 => {
                 s.start().await;
+                jump = rand_jump(s, JT::H5);
+            }
+            JT::H5 => {
+                jump = JT::H5A1;
+            }
+            JT::H5A1 => {
+                s.actor("パスタ");
+                s.serif("こんにちは！");
+                s.serif("お昼過ぎになりましたね。");
+                s.start().await;
                 jump = rand_jump(s, JT::START);
             }
         }
@@ -158,70 +182,50 @@ mod h_checks {
     #![allow(non_snake_case)]
     use super::JT;
     use std::collections::HashSet;
-
     pub fn H1(tags: &HashSet<String>) -> Option<JT> {
-        let mut r0 = false;
-        let mut r1 = false;
-        for tag in tags {
-            if tag == "起動トーク" {
-                r0 = true;
-            }
-            if tag == "午前中" {
-                r1 = true;
-            }
-            if r0 && r1 {
-                return Some(JT::H1);
-            }
+        if !tags.contains("通常トーク") {
+            return None;
         }
-        None
+        if !tags.contains("午前") {
+            return None;
+        }
+        Some(JT::H1)
     }
     pub fn H2(tags: &HashSet<String>) -> Option<JT> {
-        let mut r0 = false;
-        let mut r1 = false;
-        for tag in tags {
-            if tag == "起動トーク" {
-                r0 = true;
-            }
-            if tag == "午前中" {
-                r1 = true;
-            }
-            if r0 && r1 {
-                return Some(JT::H2);
-            }
+        if !tags.contains("通常トーク") {
+            return None;
         }
-        None
+        if !tags.contains("午前") {
+            return None;
+        }
+        Some(JT::H2)
     }
     pub fn H3(tags: &HashSet<String>) -> Option<JT> {
-        let mut r0 = false;
-        let mut r1 = false;
-        for tag in tags {
-            if tag == "起動トーク" {
-                r0 = true;
-            }
-            if tag == "午前中" {
-                r1 = true;
-            }
-            if r0 && r1 {
-                return Some(JT::H3);
-            }
+        if !tags.contains("通常トーク") {
+            return None;
         }
-        None
+        if !tags.contains("午前") {
+            return None;
+        }
+        Some(JT::H3)
     }
     pub fn H4(tags: &HashSet<String>) -> Option<JT> {
-        let mut r0 = false;
-        let mut r1 = false;
-        for tag in tags {
-            if tag == "起動トーク" {
-                r0 = true;
-            }
-            if tag == "午前中" {
-                r1 = true;
-            }
-            if r0 && r1 {
-                return Some(JT::H4);
-            }
+        if !tags.contains("通常トーク") {
+            return None;
         }
-        None
+        if !tags.contains("午前") {
+            return None;
+        }
+        Some(JT::H4)
+    }
+    pub fn H5(tags: &HashSet<String>) -> Option<JT> {
+        if !tags.contains("通常トーク") {
+            return None;
+        }
+        if !tags.contains("お昼過ぎ") {
+            return None;
+        }
+        Some(JT::H5)
     }
 }
 pub fn create_word_dic() -> ::pasta_core::WordDic {

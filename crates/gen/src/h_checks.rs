@@ -6,6 +6,12 @@ pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
     let mut funcs = TokenStream::new();
     for h in hasira {
         let fn_name = format_ident(&h.attr.id);
+        let some = quote! { Some(JT::#fn_name) };
+        let none = quote! { None };
+        let ret_ok = quote! {{ return #some; }};
+        let ret_ng = quote! {{ return #none; }};
+        let mut is_require = false;
+
         if h.attr.require.len() == 0 && h.attr.either.len() == 0 {
             funcs.combine(&quote! {
             pub fn #fn_name(tags: &[String]) -> Option<JT> {
@@ -13,57 +19,30 @@ pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
             }});
             continue;
         };
-        let mut init = TokenStream::new();
-        let mut expr = TokenStream::new();
-        let mut ok_require = TokenStream::new();
-        let mut ok_either = TokenStream::new();
-        for (index, value) in (&h.attr.require).iter().enumerate() {
-            let id = format!("r{}", index);
-            let id = format_ident(&id);
+        let mut expr_require = TokenStream::new();
+        let mut expr_either = TokenStream::new();
+        for value in (&h.attr.require).iter() {
+            is_require = true;
             let value = require_value(value);
-            init.combine(&quote! { let mut            #id = false; });
-            expr.combine(&quote! { if tag == #value { #id = true; }});
-            if index == 0 {
-                ok_require = quote! {#id};
-            } else {
-                ok_require.combine(&quote! { && #id})
-            }
+            expr_require.combine(&quote! { if !tags.contains(#value) #ret_ng });
         }
-        for (index, value) in (&h.attr.either).iter().enumerate() {
-            let id = format!("e{}", index);
-            let id = format_ident(&id);
+        for value in (&h.attr.either).iter() {
             let value = either_value(value);
-            init.combine(&quote! { let mut            #id = false; });
-            expr.combine(&quote! { if tag == #value { #id = true; }});
-            if index == 0 {
-                ok_either = quote! {#id};
-            } else {
-                ok_either.combine(&quote! { || #id })
-            }
+            expr_either.combine(&quote! { if tags.contains(#value) #ret_ok });
         }
-        let if_ok = if h.attr.require.len() > 0 && h.attr.either.len() > 0 {
-            quote! { #ok_require && ( #ok_either ) }
-        } else if h.attr.require.len() > 0 {
-            quote! { #ok_require }
-        } else {
-            quote! { #ok_either }
-        };
+        let result = if is_require { some } else { none };
         funcs.combine(&quote! {
-        pub fn #fn_name(tags: &[String]) -> Option<JT> {
-            #init
-            for tag in tags{
-                #expr
-                if #if_ok {
-                    return Some(JT::#fn_name);
-                }
-            }
-            None
+        pub fn #fn_name(tags: &HashSet<String>) -> Option<JT> {
+            #expr_require
+            #expr_either
+            #result
         }});
     }
     quote! {
         mod h_checks {
             #![allow(non_snake_case)]
             use super::JT;
+            use std::collections::HashSet;
             #funcs
         }
     }

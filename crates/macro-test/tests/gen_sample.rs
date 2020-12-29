@@ -1,12 +1,34 @@
 use async_trait::*;
+use futures::channel::mpsc::{channel, Receiver, Sender};
+use futures::executor::LocalPool;
+use futures::task::LocalSpawnExt;
 use macro_test::gen_sample::*;
 use pasta_core::Scriptor;
-use rand;
 use std::collections::HashSet;
 use std::ops::Range;
 
 struct TestScriptor {
     tags: HashSet<String>,
+    talk: String,
+    tx: Sender<String>,
+}
+
+impl TestScriptor {
+    pub fn new() -> (Self, Receiver<String>) {
+        let (tx, rx) = channel(0);
+        (
+            Self {
+                tags: Default::default(),
+                talk: Default::default(),
+                tx: tx,
+            },
+            rx,
+        )
+    }
+
+    pub fn talk(&self) -> &String {
+        &self.talk
+    }
 }
 
 #[async_trait]
@@ -15,13 +37,19 @@ impl Scriptor for TestScriptor {
     async fn start(&mut self) {}
 
     /// アクター切替
-    fn actor(&mut self, _t: &str) {}
+    fn actor(&mut self, t: &str) {
+        self.talk.push_str(&format!("actor({})\n", t));
+    }
 
     /// アクション（表情）の指定
-    fn action(&mut self, _t: &str) {}
+    fn action(&mut self, t: &str) {
+        self.talk.push_str(&format!("action({})\n", t));
+    }
 
     /// セリフの指定
-    fn serif(&mut self, _t: &str) {}
+    fn serif(&mut self, t: &str) {
+        self.talk.push_str(&format!("serif({})\n", t));
+    }
 
     /// タグを取得
     fn tags(&self) -> &HashSet<String> {
@@ -74,7 +102,19 @@ impl Scriptor for TestScriptor {
 }
 
 #[test]
-fn rund_test() {
-    let a = rand::random::<u32>();
-    println!("{}", a);
+fn rand_jump_test() {
+    let (mut s, _) = TestScriptor::new();
+    s.tags_mut().insert("通常トーク".to_owned());
+    s.tags_mut().insert("お昼過ぎ".to_owned());
+    let jt = rand_jump(&mut s, JT::START);
+    assert_eq!(JT::H5, jt);
+}
+
+#[test]
+fn talk_test_1() {
+    let (mut s, rx) = TestScriptor::new();
+    s.tags_mut().insert("通常トーク".to_owned());
+    s.tags_mut().insert("午前".to_owned());
+    let mut pool = LocalPool::new();
+    let spawner = pool.spawner();
 }
