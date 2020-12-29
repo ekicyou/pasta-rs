@@ -112,10 +112,10 @@ impl WordDic {
         }
     }
 
-    pub fn shuffle<Q: ?Sized>(&mut self, k: &Q) -> Option<&str>
+    pub fn shuffle<Q>(&mut self, k: &Q) -> Option<&str>
     where
         String: Borrow<Q>,
-        Q: Hash + Eq + Into<String>,
+        Q: ?Sized + Hash + Eq + Into<String>,
     {
         // キャッシュに無ければ要素を作る
         if !self.cache.contains_key(k) {
