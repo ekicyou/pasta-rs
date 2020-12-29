@@ -33,10 +33,14 @@ CV          ⇒上田麗奈
 ```
 */
 
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
+#[derive(Default)]
 pub struct WordDic {
     map: HashMap<String, HashSet<String>>,
+    cache: HashMap<String, Vec<&str>>,
 }
 
 impl WordDic {
@@ -46,9 +50,7 @@ impl WordDic {
     }
 
     pub fn new() -> Self {
-        Self {
-            map: HashMap::new(),
-        }
+        Default::default()
     }
 
     pub fn map(&self) -> &HashMap<String, HashSet<String>> {
@@ -108,6 +110,37 @@ impl WordDic {
                 self.push_kv(v, &name);
             }
         }
+    }
+
+    pub fn shuffle<Q: ?Sized>(&mut self, k: &Q) -> Option<&str>
+    where
+        String: Borrow<Q>,
+        Q: Hash + Eq + Into<String>,
+    {
+        // キャッシュに無ければ要素を作る
+        if !self.cache.contains_key(k) {
+            let items = self.map.get(k).unwrap();
+            let items: Vec<_> = items.iter().map(|s| unsafe { s.as_str() }).collect();
+            let k = k.into();
+            self.cache.entry(k).insert(items);
+        }
+
+        // 一番後ろの要素を戻り値に
+
+
+        // キャッシュされた要素の数が０ならキャッシュを消す
+
+
+
+        let items = match self.cache.get(k) {
+            Some(a) => *a,
+            None => {
+                let items = self.map.get(k).unwrap();
+                let items: Vec<_> = items.iter().map(|s| unsafe { s.as_str() }).collect();
+                items.s
+                items
+            }
+        };
     }
 }
 
