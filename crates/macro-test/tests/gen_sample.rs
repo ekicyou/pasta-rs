@@ -152,10 +152,10 @@ fn talk_test_2() {
         })
         .unwrap();
 
-    let act = pool.run_until(async move { rx.next().await.unwrap() });
+    let left = pool.run_until(async move { rx.next().await.unwrap() });
     let mut right: String = Default::default();
     right.push_str("actor(パスタ)\n");
     right.push_str("serif(こんにちは！)\n");
     right.push_str("serif(お昼過ぎになりましたね。)\n");
-    assert_eq!(right, act);
+    assert_eq!(right, left);
 }
