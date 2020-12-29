@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use std::env;
-use std::ffi::OsStr;
 use std::iter::FromIterator;
 use std::path::PathBuf;
 

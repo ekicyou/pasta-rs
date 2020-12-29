@@ -1,5 +1,4 @@
 use csv;
-use pasta_core::WordDic;
 use squote::{quote, TokenStream};
 
 fn gen_csv_rec(rec: &csv::StringRecord) -> TokenStream {

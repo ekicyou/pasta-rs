@@ -13,6 +13,5 @@ pasta_core = {path = "../core"}
 rand = "0.7"
 
 [build-dependencies]
-async-trait = "0.1"
 log = "0.4"
 pasta_macro = {path = "../macro"}

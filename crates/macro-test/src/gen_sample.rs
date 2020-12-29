@@ -1,10 +1,10 @@
 use once_cell::sync::Lazy;
 use pasta_core::Scriptor;
-use rand::Rng;
 use std::collections::{HashMap, HashSet};
+use std::iter::IntoIterator;
 use std::sync::Mutex;
-static FN_MAP: Lazy<HashMap<String, Vec<fn(&[String]) -> Option<JT>>>> = Lazy::new(|| {
-    let mut m: HashMap<String, Vec<fn(&[String]) -> Option<JT>>> = HashMap::new();
+static FN_MAP: Lazy<HashMap<String, Vec<fn(&HashSet<String>) -> Option<JT>>>> = Lazy::new(|| {
+    let mut m: HashMap<String, Vec<fn(&HashSet<String>) -> Option<JT>>> = HashMap::new();
     m.entry("起動トーク".to_owned()).or_insert(vec![
         h_checks::H1,
         h_checks::H2,
@@ -19,13 +19,14 @@ static FN_MAP: Lazy<HashMap<String, Vec<fn(&[String]) -> Option<JT>>>> = Lazy::n
     ]);
     m
 });
+
 static USED_HASIRA: Lazy<Mutex<HashSet<JT>>> = Lazy::new(|| Mutex::new(HashSet::new()));
+
 fn rand_jump<S: Scriptor>(s: &mut S, default_target: JT) -> JT {
-    let tags = s.tags();
-    let mut r = s.thread_rng();
     let mut target: Option<_> = None;
     let mut target_len = usize::MAX;
-    for tag in tags {
+    // 最も候補が少ない有効エントリを検索
+    for tag in s.tags() {
         match FN_MAP.get(tag) {
             None => {
                 continue;
@@ -39,8 +40,9 @@ fn rand_jump<S: Scriptor>(s: &mut S, default_target: JT) -> JT {
             }
         }
     }
+    // 最小有効エントリから候補の絞り込み
     let targets: Vec<_> = match target {
-        Some(a) => a.into_iter().filter_map(|f| f(tags)).collect(),
+        Some(a) => a.into_iter().filter_map(|f| f(s.tags())).collect(),
         _ => {
             return default_target;
         }
@@ -63,7 +65,7 @@ fn rand_jump<S: Scriptor>(s: &mut S, default_target: JT) -> JT {
     } else {
         nouse
     };
-    let sel = r.gen_range(0, nouse.len());
+    let sel = s.rand_range_usize(0..nouse.len());
     let sel = nouse[sel];
     used_hasira.insert(sel);
     sel
@@ -155,7 +157,9 @@ pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
 mod h_checks {
     #![allow(non_snake_case)]
     use super::JT;
-    pub fn H1(tags: &[String]) -> Option<JT> {
+    use std::collections::HashSet;
+
+    pub fn H1(tags: &HashSet<String>) -> Option<JT> {
         let mut r0 = false;
         let mut r1 = false;
         for tag in tags {
@@ -171,7 +175,7 @@ mod h_checks {
         }
         None
     }
-    pub fn H2(tags: &[String]) -> Option<JT> {
+    pub fn H2(tags: &HashSet<String>) -> Option<JT> {
         let mut r0 = false;
         let mut r1 = false;
         for tag in tags {
@@ -187,7 +191,7 @@ mod h_checks {
         }
         None
     }
-    pub fn H3(tags: &[String]) -> Option<JT> {
+    pub fn H3(tags: &HashSet<String>) -> Option<JT> {
         let mut r0 = false;
         let mut r1 = false;
         for tag in tags {
@@ -203,7 +207,7 @@ mod h_checks {
         }
         None
     }
-    pub fn H4(tags: &[String]) -> Option<JT> {
+    pub fn H4(tags: &HashSet<String>) -> Option<JT> {
         let mut r0 = false;
         let mut r1 = false;
         for tag in tags {
