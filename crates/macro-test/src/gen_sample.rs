@@ -96,7 +96,9 @@ pub enum JT {
     #[doc = "お昼過ぎですね："]
     H5A1,
 }
+#[doc = "パスタスクリプトテスト構文
 
+最初の柱まではドキュメントコメントとします。"]
 pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
     let mut jump = jump;
     loop {
@@ -104,14 +106,10 @@ pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
         s.commit_tags();
     }
 }
-
-#[doc = "パスタスクリプトテスト構文
-
-最初の柱まではドキュメントコメントとします。"]
 pub async fn walk_one<S: Scriptor>(s: &mut S, jump: JT) -> JT {
     match jump {
         JT::START => {
-            return JT::H1;
+            return rand_jump(s, JT::H1);
         }
         JT::H1 => {
             return JT::H1A1;

@@ -125,7 +125,7 @@ pub fn gen_script(scripts: &[Script]) -> TokenStream {
         let now_type = match_items[x].1;
         let next_type = match_items[y].1;
         let (start, rand_jump, next_jump) = if now_type == MatchCode::Start {
-            (false, false, true)
+            (false, true, false)
         } else if next_type == MatchCode::Chain {
             (true, false, true)
         } else if next_type == MatchCode::Hasira {
@@ -144,14 +144,14 @@ pub fn gen_script(scripts: &[Script]) -> TokenStream {
         };
         let rand_jump = if rand_jump {
             quote! {
-                jump = rand_jump(s, JT::#next_id);
+                return rand_jump(s, JT::#next_id);
             }
         } else {
             TokenStream::new()
         };
         let next_jump = if next_jump {
             quote! {
-                jump = JT::#next_id;
+                return JT::#next_id;
             }
         } else {
             TokenStream::new()
@@ -195,13 +195,16 @@ pub fn gen_script(scripts: &[Script]) -> TokenStream {
     }
 
     let fn_run = quote! {
-        pub async fn walk<S: Scriptor>(s: &mut S, jump: JT){
+        pub async fn walk<S: Scriptor>(s: &mut S, jump: JT) {
             let mut jump = jump;
-            loop{
-                match jump{
-                    #code_run
-                }
+            loop {
+                jump = walk_one(s, jump).await;
                 s.commit_tags();
+            }
+        }
+        pub async fn walk_one<S: Scriptor>(s: &mut S, jump: JT) -> JT {
+            match jump{
+                #code_run
             }
         }
     };

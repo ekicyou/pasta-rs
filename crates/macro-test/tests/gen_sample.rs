@@ -1,6 +1,8 @@
 use async_trait::*;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::executor::LocalPool;
+use futures::sink::SinkExt;
+use futures::stream::StreamExt;
 use futures::task::LocalSpawnExt;
 use macro_test::gen_sample::*;
 use pasta_core::Scriptor;
@@ -25,30 +27,32 @@ impl TestScriptor {
             rx,
         )
     }
-
-    pub fn talk(&self) -> &String {
-        &self.talk
-    }
 }
 
 #[async_trait]
 impl Scriptor for TestScriptor {
     /// トーク開始
-    async fn start(&mut self) {}
+    async fn start(&mut self) {
+        let t = std::mem::replace(&mut self.talk, Default::default());
+        self.tx.send(t).await.unwrap();
+    }
 
     /// アクター切替
     fn actor(&mut self, t: &str) {
-        self.talk.push_str(&format!("actor({})\n", t));
+        let s = format!("actor({})", t);
+        self.talk.push_str(&format!("{}\n", &s));
     }
 
     /// アクション（表情）の指定
     fn action(&mut self, t: &str) {
-        self.talk.push_str(&format!("action({})\n", t));
+        let s = format!("action({})", t);
+        self.talk.push_str(&format!("{}\n", &s));
     }
 
     /// セリフの指定
     fn serif(&mut self, t: &str) {
-        self.talk.push_str(&format!("serif({})\n", t));
+        let s = format!("serif({})", t);
+        self.talk.push_str(&format!("{}\n", &s));
     }
 
     /// タグを取得
@@ -112,9 +116,46 @@ fn rand_jump_test() {
 
 #[test]
 fn talk_test_1() {
-    let (mut s, rx) = TestScriptor::new();
-    s.tags_mut().insert("通常トーク".to_owned());
-    s.tags_mut().insert("午前".to_owned());
     let mut pool = LocalPool::new();
     let spawner = pool.spawner();
+
+    let (mut s, mut rx) = TestScriptor::new();
+    spawner
+        .spawn_local(async move {
+            s.tags_mut().insert("通常トーク".to_owned());
+            s.tags_mut().insert("お昼過ぎ".to_owned());
+            let jump = walk_one(&mut s, JT::START).await;
+            let jump = walk_one(&mut s, jump).await;
+            walk_one(&mut s, jump).await;
+        })
+        .unwrap();
+
+    let act = pool.run_until(async move { rx.next().await.unwrap() });
+    let mut right: String = Default::default();
+    right.push_str("actor(パスタ)\n");
+    right.push_str("serif(こんにちは！)\n");
+    right.push_str("serif(お昼過ぎになりましたね。)\n");
+    assert_eq!(right, act);
+}
+
+#[test]
+fn talk_test_2() {
+    let mut pool = LocalPool::new();
+    let spawner = pool.spawner();
+
+    let (mut s, mut rx) = TestScriptor::new();
+    spawner
+        .spawn_local(async move {
+            s.tags_mut().insert("通常トーク".to_owned());
+            s.tags_mut().insert("お昼過ぎ".to_owned());
+            walk(&mut s, JT::START).await;
+        })
+        .unwrap();
+
+    let act = pool.run_until(async move { rx.next().await.unwrap() });
+    let mut right: String = Default::default();
+    right.push_str("actor(パスタ)\n");
+    right.push_str("serif(こんにちは！)\n");
+    right.push_str("serif(お昼過ぎになりましたね。)\n");
+    assert_eq!(right, act);
 }

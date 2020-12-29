@@ -11,6 +11,7 @@ pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
         let ret_ok = quote! {{ return #some; }};
         let ret_ng = quote! {{ return #none; }};
         let mut is_require = false;
+        let mut is_either = false;
 
         if h.attr.require.len() == 0 && h.attr.either.len() == 0 {
             funcs.combine(&quote! {
@@ -27,10 +28,15 @@ pub fn h_checks(hasira: &[HasiraBlock]) -> TokenStream {
             expr_require.combine(&quote! { if !tags.contains(#value) #ret_ng });
         }
         for value in (&h.attr.either).iter() {
+            is_either = true;
             let value = either_value(value);
             expr_either.combine(&quote! { if tags.contains(#value) #ret_ok });
         }
-        let result = if is_require { some } else { none };
+        let result = if is_require && (!is_either) {
+            some
+        } else {
+            none
+        };
         funcs.combine(&quote! {
         pub fn #fn_name(tags: &HashSet<String>) -> Option<JT> {
             #expr_require
