@@ -10,9 +10,9 @@ version = "0.1.0"
 async-trait = "0.1.42"
 futures = "0.3.8"
 once_cell = "1.5"
-pasta_core = {path = "../core"}
-rand = "0.7"
+pasta_core = { path = "../core" }
+rand = "0.8"
 
 [build-dependencies]
 log = "0.4"
-pasta_macro = {path = "../macro"}
+pasta_macro = { path = "../macro" }
